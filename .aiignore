@@ -1,0 +1,32 @@
+﻿# Secrets
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+
+# Build outputs
+backend/target/
+backend/build/
+frontend/node_modules/
+frontend/dist/
+frontend/.quasar/
+frontend/.vite/
+
+# Local data and volumes
+infra/docker-compose/data/
+infra/docker-compose/postgres-data/
+infra/docker-compose/uploads/
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# IDE internals
+.idea/
+.vscode/
