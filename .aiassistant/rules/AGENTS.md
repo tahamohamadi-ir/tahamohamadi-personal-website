@@ -1,4 +1,8 @@
-﻿# AGENTS.md
+﻿---
+apply: always
+---
+
+# AGENTS.md
 
 ## Project
 
@@ -66,3 +70,4 @@ For each task:
 Documentation and project setup.
 
 Do not create application implementation code until the operational docs are split from docs/master-plan.md.
+
