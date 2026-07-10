@@ -1,0 +1,24 @@
+{
+  "name": "tahamohamadi-ir-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "quasar dev -m ssr",
+    "build": "quasar build -m ssr"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.16.17",
+    "pinia": "^3.0.1",
+    "quasar": "^2.18.0",
+    "vue": "^3.5.13",
+    "vue-i18n": "^11.1.2",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": "^2.2.0"
+  },
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
+  }
+}

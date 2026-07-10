@@ -1,0 +1,13 @@
+html,
+body,
+#q-app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+html[dir='rtl'] {
+  text-align: right;
+}
