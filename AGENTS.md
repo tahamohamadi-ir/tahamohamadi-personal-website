@@ -39,6 +39,15 @@ Before planning or implementing, read:
 13. Add tests for implemented behavior.
 14. Update docs when behavior changes.
 
+## Token Efficiency Rules
+
+1. Read only files needed for the current task.
+2. Prefer docs summaries over the full master plan after docs are split.
+3. Use Graphify reports for repo navigation after the codebase grows.
+4. Do not paste large files into prompts.
+5. Do not modify unrelated files.
+6. Keep each task small and reviewable.
+
 ## Development Workflow
 
 For each task:
