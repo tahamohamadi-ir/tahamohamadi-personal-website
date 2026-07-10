@@ -117,13 +117,35 @@ Recommended backend modules:
 9. All public content must support Persian and English translations.
 10. Every feature must include acceptance criteria and tests.
 
+## Primary Project Reference Document
+
+The main full project specification is located at:
+
+- `docs/master-plan.md`
+
+AI coding agents must read this file before planning or implementing major features.
+
+Use this document as the source of truth for:
+
+- product requirements
+- technical architecture
+- database design
+- API design
+- security strategy
+- SEO strategy
+- i18n strategy
+- roadmap
+- backlog
+- AI-assisted development setup
+
 ## AI Agent Rule
 
 Before implementing any task, an AI coding agent must read:
 
-- .codex/project-context.md
-- related .codex/*-rules.md files
-- related docs/* files
+- `.codex/project-context.md`
+- `docs/master-plan.md`
+- related `.codex/*-rules.md` files
+- related `docs/*` files
 
 The agent must not implement unrelated features.
 The agent must not introduce new infrastructure unless the task explicitly requires it.

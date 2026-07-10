@@ -34,8 +34,16 @@ scripts/
 
 Before implementing any feature, read files inside:
 
-.codex/
-docs/
+- .codex/
+- docs/
+
+## Master Plan
+
+The complete Product + Technical + Architecture + Roadmap + AI Development Setup document is available at:
+
+- docs/master-plan.md
+
+AI coding tools should read this file together with .codex rules before implementing features.
 
 ## MVP
 
