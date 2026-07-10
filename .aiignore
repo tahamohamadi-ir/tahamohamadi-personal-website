@@ -19,6 +19,10 @@ infra/docker-compose/data/
 infra/docker-compose/postgres-data/
 infra/docker-compose/uploads/
 
+# Graphify outputs
+graphify-out/
+.graphify/
+
 # Logs
 logs/
 *.log
