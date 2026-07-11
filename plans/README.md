@@ -3,11 +3,15 @@
 | Order | Plan | Status | Depends on |
 |---|---|---|
 | 001 | [Spring Security session foundation](001-spring-security-session-foundation.md) | Ready for human review | None |
+| 002 | [JSON session authentication APIs](002-json-session-authentication-api.md) | Ready for human review | 001 |
 
 ## Execution order
 
 Execute plan 001 as one focused change. It establishes the security foundation
 needed before a later, separately scoped JSON login/logout/current-user slice.
+
+Execute plan 002 after plan 001. It adds the JSON login, logout, and current-
+user workflows on top of the committed server-session foundation.
 
 ## Plan-index rules
 
