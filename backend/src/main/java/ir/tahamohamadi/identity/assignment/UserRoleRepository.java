@@ -16,4 +16,15 @@ public interface UserRoleRepository extends JpaRepository<UserRole, UserRoleId> 
             order by assignment.assignedAt asc
             """)
     List<UserRole> findByUserId(@Param("userId") UUID userId);
+
+    @Query("""
+            select role.code
+            from UserRole assignment
+            join assignment.role role
+            where assignment.id.userId = :userId
+              and role.active = true
+              and role.deletedAt is null
+            order by role.code asc
+            """)
+    List<String> findActiveRoleCodesByUserId(@Param("userId") UUID userId);
 }

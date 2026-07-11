@@ -101,6 +101,10 @@ public class AppUser {
         this.deletedAt = Objects.requireNonNull(deletedAt, "deletedAt must not be null");
     }
 
+    public String passwordHashForAuthentication() {
+        return passwordHash;
+    }
+
     private static String normalizeEmail(String email) {
         return requireNonBlank(email, "email").trim();
     }

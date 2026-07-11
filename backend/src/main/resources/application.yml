@@ -2,6 +2,11 @@ spring:
   application:
     name: tahamohamadi-backend
 
+taha:
+  security:
+    bcrypt-strength: ${TAHA_AUTH_BCRYPT_STRENGTH:12}
+    secure-cookies: true
+
 management:
   endpoints:
     web:
@@ -11,3 +16,13 @@ management:
     health:
       probes:
         enabled: true
+
+server:
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${taha.security.secure-cookies}
+        path: /

@@ -14,5 +14,9 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+taha:
+  security:
+    secure-cookies: false
+
 server:
   port: ${TAHA_BACKEND_PORT:8080}

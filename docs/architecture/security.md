@@ -25,6 +25,20 @@ Source: `docs/master-plan.md` v2.0 and `.codex/seo-rules.md`/architecture rules 
 - ADR-007: Use Spring Security with secure session/cookie strategy for MVP.
 - Admin and Super Admin actions must be audited when sensitive.
 
+## Authentication Foundation Boundary
+
+The session-security foundation establishes the Spring Security filter chain,
+persisted identity lookup, persisted role mapping, password encoder, server-side
+session policy, CSRF transport convention, and JSON authorization failures. It
+does not implement login, logout, a current-user API, login counters, lockout
+policy, or authentication audit writes.
+
+A later login/logout workflow must use a dedicated audit writer for
+`AUTH_LOGIN`, `AUTH_LOGIN_FAILED`, `AUTH_LOGOUT`, and `AUTH_ACCOUNT_LOCKED`
+events. Audit details must be sanitized and must never contain passwords,
+password hashes, session identifiers, cookie values, CSRF tokens, or raw
+credential input.
+
 ## Risk Table
 
 | ID | Risk | Severity | Mitigation | Test |
