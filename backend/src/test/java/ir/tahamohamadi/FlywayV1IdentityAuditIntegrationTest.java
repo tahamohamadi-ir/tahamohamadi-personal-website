@@ -1,5 +1,17 @@
 package ir.tahamohamadi;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import ir.tahamohamadi.audit.event.AuditEvent;
+import ir.tahamohamadi.audit.event.AuditEventRepository;
+import ir.tahamohamadi.identity.assignment.UserRole;
+import ir.tahamohamadi.identity.assignment.UserRoleId;
+import ir.tahamohamadi.identity.assignment.UserRoleRepository;
+import ir.tahamohamadi.identity.role.Role;
+import ir.tahamohamadi.identity.role.RoleRepository;
+import ir.tahamohamadi.identity.user.AppUser;
+import ir.tahamohamadi.identity.user.AppUserRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.output.MigrateResult;
@@ -16,6 +28,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -35,6 +50,9 @@ class FlywayV1IdentityAuditIntegrationTest {
 
     private static final UUID ADMIN_ROLE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
     private static final UUID SUPER_ADMIN_ROLE_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    private static final Instant TEST_TIME = Instant.parse("2026-01-02T03:04:05Z");
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Container
     @ServiceConnection
@@ -51,6 +69,21 @@ class FlywayV1IdentityAuditIntegrationTest {
 
     @Autowired
     private EntityManagerFactory entityManagerFactory;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private AppUserRepository appUserRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private UserRoleRepository userRoleRepository;
+
+    @Autowired
+    private AuditEventRepository auditEventRepository;
 
     @Test
     void appliesV1ToAFreshPostgreSqlDatabase() {
@@ -199,6 +232,225 @@ class FlywayV1IdentityAuditIntegrationTest {
     @Test
     void startsHibernateValidationAgainstTheMigratedSchema() {
         assertThat(entityManagerFactory).isNotNull();
+        assertThat(jdbcTemplate.queryForObject("SELECT version()", String.class)).contains("PostgreSQL 17");
+    }
+
+    @Test
+    void persistsAndReloadsAnAppUser() {
+        AppUser user = newUser("persist-reload", "persist-reload@example.test");
+
+        appUserRepository.saveAndFlush(user);
+        entityManager.clear();
+
+        AppUser reloaded = appUserRepository.findById(user.getId()).orElseThrow();
+        assertThat(reloaded.getEmail()).isEqualTo("persist-reload@example.test");
+        assertThat(reloaded.getDisplayName()).isEqualTo("Persistence Test");
+        assertThat(reloaded.isEnabled()).isTrue();
+        assertThat(reloaded.getFailedLoginCount()).isZero();
+    }
+
+    @Test
+    void assignsAppUserUuidBeforePersistence() {
+        AppUser user = newUser("application-uuid", "application-uuid@example.test");
+
+        assertThat(user.getId()).isNotNull();
+        appUserRepository.saveAndFlush(user);
+
+        assertThat(appUserRepository.findById(user.getId())).isPresent();
+    }
+
+    @Test
+    void initializesAndUpdatesTheOptimisticVersion() {
+        AppUser user = appUserRepository.saveAndFlush(newUser("versioned", "versioned@example.test"));
+        assertThat(user.getVersion()).isZero();
+
+        user.rename("Renamed Persistence Test");
+        AppUser updated = appUserRepository.saveAndFlush(user);
+
+        assertThat(updated.getVersion()).isEqualTo(1L);
+    }
+
+    @Test
+    void findsANondeletedUserByNormalizedCaseInsensitiveEmail() {
+        AppUser user = appUserRepository.saveAndFlush(newUser("case-insensitive", "Case.User@example.test"));
+
+        assertThat(appUserRepository.findByNormalizedEmail("  case.user@EXAMPLE.test  "))
+                .map(AppUser::getId)
+                .contains(user.getId());
+        assertThat(appUserRepository.existsByNormalizedEmail("CASE.USER@example.test")).isTrue();
+    }
+
+    @Test
+    void excludesSoftDeletedUsersFromNormalEmailLookup() {
+        AppUser user = appUserRepository.saveAndFlush(newUser("soft-deleted", "soft-deleted@example.test"));
+        user.softDelete(null, TEST_TIME.plusSeconds(1));
+        appUserRepository.saveAndFlush(user);
+
+        assertThat(appUserRepository.findByNormalizedEmail("soft-deleted@example.test")).isEmpty();
+        assertThat(appUserRepository.existsByNormalizedEmail("soft-deleted@example.test")).isFalse();
+    }
+
+    @Test
+    void permitsEmailReuseAfterSoftDeletion() {
+        AppUser deletedUser = appUserRepository.saveAndFlush(newUser("reused-deleted", "reused@example.test"));
+        deletedUser.softDelete(null, TEST_TIME.plusSeconds(1));
+        appUserRepository.saveAndFlush(deletedUser);
+
+        AppUser reusedUser = appUserRepository.saveAndFlush(newUser("reused-active", "REUSED@example.test"));
+
+        assertThat(appUserRepository.findByNormalizedEmail("reused@example.test"))
+                .map(AppUser::getId)
+                .contains(reusedUser.getId());
+    }
+
+    @Test
+    void mapsAndLoadsSeededActiveRoles() {
+        Role admin = roleRepository.findActiveByCode("ADMIN").orElseThrow();
+        Role superAdmin = roleRepository.findActiveByCode("SUPER_ADMIN").orElseThrow();
+
+        assertThat(admin.getId()).isEqualTo(ADMIN_ROLE_ID);
+        assertThat(superAdmin.getId()).isEqualTo(SUPER_ADMIN_ROLE_ID);
+        assertThat(admin.isActive()).isTrue();
+    }
+
+    @Test
+    void persistsAndLoadsAUserRoleWithItsCompositeIdentifier() {
+        AppUser user = appUserRepository.saveAndFlush(newUser("user-role", "user-role@example.test"));
+        Role role = roleRepository.findActiveByCode("ADMIN").orElseThrow();
+        UserRole assignment = UserRole.assign(user, role, null, TEST_TIME);
+
+        userRoleRepository.saveAndFlush(assignment);
+        entityManager.clear();
+
+        UserRole reloaded = userRoleRepository.findById(new UserRoleId(user.getId(), role.getId())).orElseThrow();
+        assertThat(reloaded.getAssignedAt()).isEqualTo(TEST_TIME);
+        assertThat(userRoleRepository.findByUserId(user.getId())).extracting(UserRole::getId)
+                .containsExactly(new UserRoleId(user.getId(), role.getId()));
+    }
+
+    @Test
+    void rejectsDuplicateUserRoleAssignmentsThroughTheDatabaseConstraint() {
+        AppUser user = appUserRepository.saveAndFlush(newUser("duplicate-user-role", "duplicate-user-role@example.test"));
+        Role role = roleRepository.findActiveByCode("ADMIN").orElseThrow();
+        userRoleRepository.saveAndFlush(UserRole.assign(user, role, null, TEST_TIME));
+
+        assertThatThrownBy(() -> assignRole(user.getId(), role.getId()))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void removingAUserRoleDoesNotDeleteItsUserOrRole() {
+        AppUser user = appUserRepository.saveAndFlush(newUser("remove-user-role", "remove-user-role@example.test"));
+        Role role = roleRepository.findActiveByCode("ADMIN").orElseThrow();
+        UserRole assignment = userRoleRepository.saveAndFlush(UserRole.assign(user, role, null, TEST_TIME));
+
+        userRoleRepository.delete(assignment);
+        userRoleRepository.flush();
+
+        assertThat(userRoleRepository.existsById(assignment.getId())).isFalse();
+        assertThat(appUserRepository.existsById(user.getId())).isTrue();
+        assertThat(roleRepository.existsById(role.getId())).isTrue();
+    }
+
+    @Test
+    void persistsAndReloadsAnAuditEventWithObjectJsonDetails() throws Exception {
+        AppUser actor = appUserRepository.saveAndFlush(newUser("audit-actor", "audit-actor@example.test"));
+        ObjectNode details = objectMapper.createObjectNode().put("source", "persistence-test");
+        AuditEvent event = AuditEvent.record(
+                uuidFor("audit-json"),
+                TEST_TIME,
+                actor,
+                "USER_LOGIN",
+                "app_user",
+                actor.getId(),
+                "SUCCESS",
+                "request-audit-json",
+                InetAddress.getByName("203.0.113.10"),
+                details
+        );
+
+        auditEventRepository.saveAndFlush(event);
+        entityManager.clear();
+
+        AuditEvent reloaded = auditEventRepository.findById(event.getId()).orElseThrow();
+        assertThat(reloaded.getDetails().path("source").asText()).isEqualTo("persistence-test");
+        assertThat(reloaded.getIpAddress()).isEqualTo(InetAddress.getByName("203.0.113.10"));
+    }
+
+    @Test
+    void leavesNonObjectAuditDetailsRejectedByTheDatabase() {
+        assertThatThrownBy(() -> jdbcTemplate.update(
+                """
+                        INSERT INTO audit_event (id, occurred_at, action, target_type, outcome, details)
+                        VALUES (?, ?, ?, ?, ?, CAST(? AS jsonb))
+                        """,
+                uuidFor("invalid-audit-details"), OffsetDateTime.ofInstant(TEST_TIME, ZoneOffset.UTC),
+                "USER_LOGIN", "app_user", "SUCCESS", "[\"invalid\"]"
+        )).isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void retrievesAuditEventsByActorInDescendingOccurrenceOrder() {
+        AppUser actor = appUserRepository.saveAndFlush(newUser("ordered-audit-actor", "ordered-audit-actor@example.test"));
+        AuditEvent older = auditEventRepository.saveAndFlush(newAuditEvent("older-audit-event", actor, TEST_TIME));
+        AuditEvent newer = auditEventRepository.saveAndFlush(newAuditEvent("newer-audit-event", actor, TEST_TIME.plusSeconds(1)));
+
+        assertThat(auditEventRepository.findByActorIdOrderByOccurredAtDesc(actor.getId()))
+                .extracting(AuditEvent::getId)
+                .containsExactly(newer.getId(), older.getId());
+    }
+
+    @Test
+    void omitsPasswordHashFromAppUserToString() {
+        AppUser user = AppUser.create(
+                uuidFor("to-string"),
+                "to-string@example.test",
+                "sensitive-password-hash",
+                "Persistence Test",
+                TEST_TIME
+        );
+
+        assertThat(user).doesNotHaveToString("sensitive-password-hash");
+    }
+
+    @Test
+    void basesEntityEqualityOnIdentifiersWithoutTraversingAssociations() {
+        AppUser user = newUser("equality-user", "equality-user@example.test");
+        Role role = roleRepository.findActiveByCode("ADMIN").orElseThrow();
+        UserRole first = UserRole.assign(user, role, null, TEST_TIME);
+        UserRole second = UserRole.assign(user, role, null, TEST_TIME.plusSeconds(1));
+
+        assertThat(first).isEqualTo(second);
+        assertThat(first.toString()).doesNotContain("user=", "role=");
+    }
+
+    private AppUser newUser(String idSeed, String email) {
+        return AppUser.create(
+                uuidFor(idSeed),
+                email,
+                "test-password-hash-" + idSeed,
+                "Persistence Test",
+                TEST_TIME
+        );
+    }
+
+    private AuditEvent newAuditEvent(String idSeed, AppUser actor, Instant occurredAt) {
+        return AuditEvent.record(
+                uuidFor(idSeed),
+                occurredAt,
+                actor,
+                "USER_LOGIN",
+                "app_user",
+                actor.getId(),
+                "SUCCESS",
+                "request-" + idSeed,
+                null,
+                objectMapper.createObjectNode().put("seed", idSeed)
+        );
+    }
+
+    private UUID uuidFor(String value) {
+        return UUID.nameUUIDFromBytes(value.getBytes(StandardCharsets.UTF_8));
     }
 
     private void insertUser(UUID id, String email, OffsetDateTime deletedAt) {
