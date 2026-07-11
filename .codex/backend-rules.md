@@ -64,3 +64,16 @@ Required test types:
 - Integration tests for repositories and APIs
 - Security tests for protected endpoints
 - Validation tests for request DTOs
+
+## Lombok Policy
+
+Lombok is approved for this project.
+
+Rules:
+
+1. Lombok may be used for entities, DTO classes, configuration properties, builders, and simple data containers.
+2. Prefer targeted annotations such as `@Getter`, `@Setter`, `@Builder`, and constructor annotations.
+3. Avoid `@Data` on JPA entities.
+4. Do not generate `equals`, `hashCode`, or `toString` for JPA relationships without explicit review.
+5. Do not expose sensitive fields such as passwords or tokens through generated `toString`.
+6. Use Java records where they are simpler and appropriate for immutable API DTOs.

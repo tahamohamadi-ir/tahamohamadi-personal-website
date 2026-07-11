@@ -71,3 +71,7 @@ Documentation and project setup.
 
 Do not create application implementation code until the operational docs are split from docs/master-plan.md.
 
+## Java and Lombok
+
+Lombok is approved for backend development. Do not remove it unless explicitly requested. Use targeted annotations and avoid `@Data` on JPA entities.
+
