@@ -76,3 +76,39 @@ The MVP includes:
 8. Phase 7: Security Hardening and QA
 9. Phase 8: Launch Preparation
 10. Phase 9: Post-launch Improvements
+
+## Local PostgreSQL Development
+
+PostgreSQL 17 is used for local development because the project documentation selects PostgreSQL but does not specify a major version. `compose.yaml` starts only the database; the backend remains a local Spring Boot process.
+
+```powershell
+# Start PostgreSQL from the repository root
+docker compose up -d postgres
+docker compose ps
+
+# Start the backend from the repository root
+$env:SPRING_PROFILES_ACTIVE = 'local'
+.\backend\mvnw.cmd spring-boot:run
+
+# Stop PostgreSQL without deleting the named data volume
+docker compose down
+```
+
+Use `.env.example` only as a local-variable reference. Do not commit `.env` or production credentials.
+
+### Windows Port Troubleshooting
+
+Some Windows, WSL2, or Hyper-V configurations reserve host port `5432`. Check reserved ranges with:
+
+```powershell
+netsh interface ipv4 show excludedportrange protocol=tcp
+```
+
+If `5432` is reserved, set both local variables to `55432`:
+
+```text
+POSTGRES_PORT=55432
+DB_PORT=55432
+```
+
+This maps host port `55432` to PostgreSQL container port `5432`; the generic project default remains `5432`.
