@@ -2,6 +2,7 @@
   "name": "tahamohamadi-ir-frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "quasar dev -m ssr",
     "build": "quasar build -m ssr"

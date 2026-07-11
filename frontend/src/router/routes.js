@@ -1,5 +1,9 @@
 const routes = [
   {
+    path: '/',
+    redirect: '/language'
+  },
+  {
     path: '/language',
     component: () => import('pages/LanguagePage.vue')
   },

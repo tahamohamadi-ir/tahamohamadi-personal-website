@@ -5,11 +5,12 @@ Initial Quasar 2 / Vue 3 frontend skeleton for TahaMohamadi.ir.
 ## Included
 
 - Quasar with SSR configuration for public pages
-- Vue Router routes for `/language`, `/fa`, `/en`, and `/admin`
+- Vue Router routes for `/`, `/language`, `/fa`, `/en`, and `/admin`
 - Pinia initialization
 - `fa` and `en` message catalogs
 - Public and admin layout placeholders
 - RTL/LTR placeholders driven by public route metadata
+- Static favicon served from `/favicon.ico`
 
 ## Commands
 
