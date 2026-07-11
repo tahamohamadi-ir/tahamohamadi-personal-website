@@ -75,3 +75,9 @@ Do not create application implementation code until the operational docs are spl
 
 Lombok is approved for backend development. Do not remove it unless explicitly requested. Use targeted annotations and avoid `@Data` on JPA entities.
 
+## Java and Lombok
+
+Lombok is approved for backend development and must not be removed unless explicitly requested.
+Prefer targeted annotations and avoid @Data on JPA entities.
+Review generated equals, hashCode, and 	oString behavior for JPA entities and sensitive fields.
+
