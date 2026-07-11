@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication.Type;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,7 +30,6 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(PersistedUserDetailsService.class)
     AuthenticationManager authenticationManager(
             PersistedUserDetailsService userDetailsService,
             PasswordEncoder passwordEncoder
@@ -54,7 +52,6 @@ public class SecurityConfiguration {
 
     @Bean
     @ConditionalOnWebApplication(type = Type.SERVLET)
-    @ConditionalOnBean(AuthenticationManager.class)
     SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             AuthenticationManager authenticationManager,
