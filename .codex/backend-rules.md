@@ -77,17 +77,3 @@ Rules:
 4. Do not generate `equals`, `hashCode`, or `toString` for JPA relationships without explicit review.
 5. Do not expose sensitive fields such as passwords or tokens through generated `toString`.
 6. Use Java records where they are simpler and appropriate for immutable API DTOs.
-
-## Lombok Policy
-
-Lombok is approved for this project and must not be removed unless explicitly requested by the project owner.
-
-Rules:
-
-1. Lombok may be used for entities, DTO classes, configuration properties, builders, and simple data containers.
-2. Prefer targeted annotations such as @Getter, @Setter, @Builder, @NoArgsConstructor, and @RequiredArgsConstructor.
-3. Avoid @Data on JPA entities.
-4. Do not generate equals, hashCode, or 	oString across JPA relationships without explicit review.
-5. Exclude sensitive fields such as passwords, tokens, and secrets from generated 	oString methods.
-6. Use Java records when they are simpler for immutable request or response DTOs.
-7. Lombok must remain optional and excluded from the executable Spring Boot artifact.
