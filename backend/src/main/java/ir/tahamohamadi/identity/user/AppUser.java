@@ -101,6 +101,25 @@ public class AppUser {
         this.deletedAt = Objects.requireNonNull(deletedAt, "deletedAt must not be null");
     }
 
+    public void recordFailedAuthentication(Instant occurredAt) {
+        Instant authenticationTime = Objects.requireNonNull(occurredAt, "occurredAt must not be null");
+        if (failedLoginCount < 0) {
+            throw new IllegalStateException("failedLoginCount must not be negative");
+        }
+        failedLoginCount = Math.incrementExact(failedLoginCount);
+        updatedAt = authenticationTime;
+    }
+
+    public void recordSuccessfulAuthentication(Instant occurredAt) {
+        Instant authenticationTime = Objects.requireNonNull(occurredAt, "occurredAt must not be null");
+        if (failedLoginCount < 0) {
+            throw new IllegalStateException("failedLoginCount must not be negative");
+        }
+        failedLoginCount = 0;
+        lastLoginAt = authenticationTime;
+        updatedAt = authenticationTime;
+    }
+
     public String passwordHashForAuthentication() {
         return passwordHash;
     }

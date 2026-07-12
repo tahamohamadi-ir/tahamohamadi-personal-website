@@ -30,14 +30,40 @@ Source: `docs/master-plan.md` v2.0 and `.codex/seo-rules.md`/architecture rules 
 The session-security foundation establishes the Spring Security filter chain,
 persisted identity lookup, persisted role mapping, password encoder, server-side
 session policy, CSRF transport convention, and JSON authorization failures. It
-does not implement login, logout, a current-user API, login counters, lockout
-policy, or authentication audit writes.
+also provides JSON session authentication endpoints:
 
-A later login/logout workflow must use a dedicated audit writer for
-`AUTH_LOGIN`, `AUTH_LOGIN_FAILED`, `AUTH_LOGOUT`, and `AUTH_ACCOUNT_LOCKED`
-events. Audit details must be sanitized and must never contain passwords,
-password hashes, session identifiers, cookie values, CSRF tokens, or raw
-credential input.
+- `POST /api/v1/auth/login` accepts a CSRF-protected JSON email/password
+  request and returns only the authenticated user ID, display name, and sorted
+  active role codes. Successful login explicitly saves the authenticated
+  `SecurityContext` to the HTTP session after rotating the pre-authentication
+  session ID.
+- `POST /api/v1/auth/logout` requires an authenticated, CSRF-protected session,
+  records logout, clears the context, invalidates the server session, and
+  expires the `JSESSIONID` cookie.
+- `GET /api/v1/auth/me` requires an authenticated session and returns the same
+  safe current-user representation.
+
+All three responses use `Cache-Control: no-store`. Login failures have one
+generic `401 Invalid credentials` response for unknown, wrong-password,
+disabled, locked, and soft-deleted users. Login and logout remain CSRF
+protected through the `XSRF-TOKEN` cookie and `X-XSRF-TOKEN` header.
+
+Successful and failed login attempts update the persisted account state: failed
+attempts increment `failed_login_count`; successful attempts reset it and set
+`last_login_at`. Authentication writes immutable, sanitized `AUTH_LOGIN`,
+`AUTH_LOGIN_FAILED`, and `AUTH_LOGOUT` audit events containing only the
+authentication method. IP and request identifiers remain null until the
+privacy/proxy policy is decided.
+
+Rate limiting, lock thresholds/durations, account-unlock behavior, and
+concurrent-session policy remain deferred; this slice does not introduce any
+token storage or external session infrastructure.
+
+The authentication workflow uses a dedicated audit writer for `AUTH_LOGIN`,
+`AUTH_LOGIN_FAILED`, and `AUTH_LOGOUT`. Any future lock transition must add an
+`AUTH_ACCOUNT_LOCKED` event. Audit details must be sanitized and must never
+contain passwords, password hashes, session identifiers, cookie values, CSRF
+tokens, or raw credential input.
 
 ## Risk Table
 
