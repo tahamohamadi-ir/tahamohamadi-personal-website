@@ -10,6 +10,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -24,17 +27,33 @@ class FlywayUpgradeIntegrationTest {
             .withPassword("taha_test");
 
     @Test
-    void upgradesAV1OnlyDatabaseToWaveAWithoutChangingTheV1Checksum() throws Exception {
+    void upgradesV4DatabaseToV7WithoutLosingExistingDataAndThenIsANoOp() throws Exception {
         Flyway v1 = configuredFlyway().target("1").load();
         v1.migrate();
         Integer v1Checksum = checksumFor("1");
 
         Flyway current = configuredFlyway().target("4").load();
         assertThat(current.migrate().migrationsExecuted).isEqualTo(3);
+        UUID pageId = UUID.randomUUID();
+        try (Connection connection = POSTGRES.createConnection("");
+             Statement statement = connection.createStatement()) {
+            Instant now = Instant.parse("2026-01-01T00:00:00Z");
+            statement.executeUpdate("""
+                    INSERT INTO content_page (id, page_key, status, published_at, created_at, updated_at, version)
+                    VALUES ('%s', 'upgrade-page', 'PUBLISHED', '%s', '%s', '%s', 0)
+                    """.formatted(pageId, now, now, now));
+        }
+
+        Flyway waveB = configuredFlyway().target("7").load();
+        assertThat(waveB.migrate().migrationsExecuted).isEqualTo(3);
 
         assertThat(checksumFor("1")).isEqualTo(v1Checksum);
-        assertThat(current.info().current().getVersion().getVersion()).isEqualTo("4");
-        assertThatCode(current::validate).doesNotThrowAnyException();
+        assertThat(waveB.info().current().getVersion().getVersion()).isEqualTo("7");
+        assertThat(tableExists("portfolio_project")).isTrue();
+        assertThat(tableExists("publication")).isTrue();
+        assertThat(tableExists("featured_item")).isTrue();
+        assertThat(waveB.migrate().migrationsExecuted).isZero();
+        assertThatCode(waveB::validate).doesNotThrowAnyException();
     }
 
     private FluentConfiguration configuredFlyway() {
@@ -53,6 +72,14 @@ class FlywayUpgradeIntegrationTest {
                      """.formatted(version))) {
             assertThat(result.next()).isTrue();
             return result.getInt(1);
+        }
+    }
+
+    private boolean tableExists(String table) throws Exception {
+        try (Connection connection = POSTGRES.createConnection("");
+             Statement statement = connection.createStatement();
+             ResultSet result = statement.executeQuery("SELECT to_regclass('public.%s')".formatted(table))) {
+            return result.next() && result.getString(1) != null;
         }
     }
 }
