@@ -1,0 +1,1 @@
+package ir.tahamohamadi.skill; import ir.tahamohamadi.common.domain.LanguageCode; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface SkillTranslationRepository extends JpaRepository<SkillTranslation,UUID>{ Optional<SkillTranslation> findBySkillIdAndLanguageCodeAndDeletedAtIsNull(UUID skillId,LanguageCode language); }

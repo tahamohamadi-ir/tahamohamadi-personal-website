@@ -1,0 +1,1 @@
+package ir.tahamohamadi.blog.tag; import ir.tahamohamadi.common.domain.LanguageCode; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface TagTranslationRepository extends JpaRepository<TagTranslation,UUID>{ Optional<TagTranslation> findByTagIdAndLanguageCodeAndDeletedAtIsNull(UUID tagId,LanguageCode language); }

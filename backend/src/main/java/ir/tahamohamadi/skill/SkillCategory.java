@@ -1,0 +1,2 @@
+package ir.tahamohamadi.skill; import ir.tahamohamadi.common.persistence.AuditedSoftDeletableEntity; import jakarta.persistence.*; import lombok.*;
+@Entity @Table(name="skill_category") @Getter @NoArgsConstructor(access=AccessLevel.PROTECTED) public class SkillCategory extends AuditedSoftDeletableEntity { @Column(name="category_key",nullable=false) private String categoryKey; @Column(name="sort_order",nullable=false) private int sortOrder; @Column(name="is_active",nullable=false) private boolean active; }

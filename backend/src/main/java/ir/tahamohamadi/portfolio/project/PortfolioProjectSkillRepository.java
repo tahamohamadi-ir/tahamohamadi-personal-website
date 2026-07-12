@@ -1,0 +1,1 @@
+package ir.tahamohamadi.portfolio.project; import org.springframework.data.jpa.repository.JpaRepository; public interface PortfolioProjectSkillRepository extends JpaRepository<PortfolioProjectSkill,PortfolioProjectSkillId>{}

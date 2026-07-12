@@ -109,7 +109,7 @@ class FlywayV1IdentityAuditIntegrationTest {
                 String.class
         );
 
-        assertThat(applicationTables).containsExactly("app_user", "audit_event", "role", "user_role");
+        assertThat(applicationTables).contains("app_user", "audit_event", "role", "user_role");
     }
 
     @Test

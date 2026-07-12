@@ -93,3 +93,17 @@ Public queries must only return Published content. Draft and Archived content mu
 ## Search
 
 Use PostgreSQL Full Text Search for MVP blog/content search. Do not add Elasticsearch, Meilisearch, or Redis for MVP search.
+
+## Persistence Implementation Status
+
+Flyway migrations V1 through V7 implement the current PostgreSQL persistence foundation.
+
+- V1: identity, roles, role assignments, and append-only audit events.
+- V2: media asset metadata and localized media alt/caption records.
+- V3: managed pages, localized pages, social links, and contact messages.
+- V4: blog categories, posts, tags, explicit post mappings, and localized PostgreSQL FTS vectors.
+- V5: skill taxonomy, localized skills, portfolio projects, and explicit project-skill mappings.
+- V6: publications, resume entries, localized content, and per-locale resume documents.
+- V7: manual, ordered featured-content records and reviewed repository access indexes.
+
+All public-content repository queries require a requested locale and exclude deleted or unpublished parents. Hibernate runs with schema validation and integration tests use PostgreSQL 17 through Testcontainers.

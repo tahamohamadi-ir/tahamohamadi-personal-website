@@ -1,0 +1,1 @@
+package ir.tahamohamadi.blog.tag; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface TagRepository extends JpaRepository<Tag,UUID>{ Optional<Tag> findByTagKeyAndActiveTrueAndDeletedAtIsNull(String tagKey); }

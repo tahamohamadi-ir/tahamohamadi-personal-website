@@ -1,0 +1,1 @@
+package ir.tahamohamadi.resume; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface ResumeEntryRepository extends JpaRepository<ResumeEntry,UUID>{ List<ResumeEntry> findByStatusAndDeletedAtIsNullOrderBySortOrderAscStartedOnDescIdAsc(ir.tahamohamadi.common.domain.ContentStatus status); }

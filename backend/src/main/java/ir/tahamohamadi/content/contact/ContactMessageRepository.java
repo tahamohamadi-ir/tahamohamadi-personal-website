@@ -1,0 +1,1 @@
+package ir.tahamohamadi.content.contact; import org.springframework.data.domain.*; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface ContactMessageRepository extends JpaRepository<ContactMessage,UUID>{ Page<ContactMessage> findByStatusOrderBySubmittedAtDescIdDesc(ContactMessageStatus status, Pageable pageable); }

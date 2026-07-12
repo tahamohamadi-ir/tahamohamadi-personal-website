@@ -439,6 +439,8 @@ This scope is small enough to review independently and does not force unfinished
 
 ## 40. Review Checklist
 
+**Implementation status (2026-07-12):** Migrations V1-V7 and their initial JPA persistence mappings are implemented and verified with PostgreSQL 17 Testcontainers. V1 remains immutable; V2-V7 are forward-only migrations.
+
 - [ ] Every table maps to a documented MVP requirement or an explicit supporting invariant.
 - [ ] V1 remains limited to identity/RBAC foundation and audit.
 - [ ] Every relationship has an explicit FK or a documented audit-only exception.

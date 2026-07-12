@@ -1,0 +1,1 @@
+package ir.tahamohamadi.publication; import org.springframework.data.domain.*; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface PublicationRepository extends JpaRepository<Publication,UUID>{ Page<Publication> findByDeletedAtIsNullOrderByUpdatedAtDescIdDesc(Pageable page); }

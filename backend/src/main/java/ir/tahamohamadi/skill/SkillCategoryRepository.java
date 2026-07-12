@@ -1,0 +1,1 @@
+package ir.tahamohamadi.skill; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface SkillCategoryRepository extends JpaRepository<SkillCategory,UUID>{ List<SkillCategory> findByActiveTrueAndDeletedAtIsNullOrderBySortOrderAscIdAsc(); }

@@ -1,0 +1,1 @@
+package ir.tahamohamadi.blog.post; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface BlogPostMediaRepository extends JpaRepository<BlogPostMedia,BlogPostMediaId>{ List<BlogPostMedia> findByBlogPostIdAndIdUsageOrderBySortOrderAsc(UUID blogPostId,BlogPostMediaUsage usage); }
