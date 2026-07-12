@@ -6,6 +6,9 @@ taha:
   security:
     bcrypt-strength: ${TAHA_AUTH_BCRYPT_STRENGTH:12}
     secure-cookies: true
+  media:
+    storage:
+      root: ${TAHA_MEDIA_STORAGE_ROOT:./var/media}
 
 management:
   endpoints:

@@ -44,4 +44,5 @@ public class MediaAssetTranslation extends AuditedSoftDeletableEntity {
     public static MediaAssetTranslation create(UUID id, MediaAsset asset, LanguageCode language, String altText, String caption, Instant createdAt) {
         return new MediaAssetTranslation(id, asset, language, altText, caption, createdAt);
     }
+    public void update(String altText, String caption) { this.altText = requireNonBlank(altText, "altText"); this.caption = caption; }
 }
