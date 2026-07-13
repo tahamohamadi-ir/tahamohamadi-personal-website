@@ -13,7 +13,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.springframework.dao.DataIntegrityViolationException;
-import ir.tahamohamadi.publicsite.api.TranslationUnavailableException;
+import ir.tahamohamadi.common.i18n.TranslationUnavailableException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

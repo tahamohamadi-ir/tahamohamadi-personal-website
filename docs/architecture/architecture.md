@@ -38,6 +38,7 @@ Local Media Volume / Future S3-compatible Storage
 - Keep public APIs and admin APIs separate.
 - Use DTOs; never expose JPA entities directly.
 - Public APIs expose only published content.
+- Public discoverability data is a bounded DTO contract: parameterized PostgreSQL FTS, locale-available canonical/hreflang metadata, sitemap-data for SSR, and environment-safe robots policy stay in the backend without taking ownership of `/sitemap.xml` rendering.
 - Admin APIs require authentication, authorization, and audit logging for sensitive operations.
 - Use PostgreSQL first before adding new infrastructure.
 - Public pages must be SSR/hybrid-rendered, semantic, SEO-friendly, and AI-search-friendly.

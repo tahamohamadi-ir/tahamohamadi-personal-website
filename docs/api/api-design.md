@@ -29,10 +29,10 @@ Source: `docs/master-plan.md` v2.0.
 | API-BLOG-004 | GET | `/api/v1/public/{lang}/tags` | Tags | No |
 | API-PORT-001 | GET | `/api/v1/public/{lang}/portfolio` | Portfolio list | No |
 | API-CONTACT-001 | POST | `/api/v1/public/contact` | Send contact message | No |
-| API-SEO-001 | GET | `/sitemap.xml` | Sitemap | No |
-| API-SEO-002 | GET | `/robots.txt` | Robots | No |
+| API-SEO-001 | GET | `/api/v1/public/sitemap-data` | Bounded SSR sitemap input for published, locale-available routes | No |
+| API-SEO-002 | GET | `/robots.txt` | Production crawl policy; nonproduction no-index policy | No |
 
-Public endpoints must return only Published content and must respect language-specific slugs and missing translation behavior.
+Public endpoints must return only Published content and must respect language-specific slugs and missing translation behavior. Public post search uses parameterized PostgreSQL FTS (English `english`, Persian `simple`) after deterministic Persian normalization; blank queries are rejected. Canonical paths, locale-aware hreflang alternatives, SEO title/description, and Open Graph title/description must reflect only eligible translations. `/sitemap.xml` remains an SSR/delivery concern fed by the sitemap-data contract.
 
 ## Auth APIs
 
