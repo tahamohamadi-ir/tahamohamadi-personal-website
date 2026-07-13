@@ -1,0 +1,1 @@
+package ir.tahamohamadi.blog.post.api.admin; import jakarta.validation.*; import jakarta.validation.constraints.*; import java.util.*; public record AdminBlogUpdateRequest(@NotNull UUID categoryId,@Valid @NotNull BlogTranslationRequest fa,@Valid @NotNull BlogTranslationRequest en,@NotNull Long version){}

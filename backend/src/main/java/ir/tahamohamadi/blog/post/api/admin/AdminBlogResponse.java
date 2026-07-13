@@ -1,0 +1,1 @@
+package ir.tahamohamadi.blog.post.api.admin; import java.util.*; public record AdminBlogResponse(UUID id,UUID categoryId,String status,BlogTranslationRequest fa,BlogTranslationRequest en,long version){}

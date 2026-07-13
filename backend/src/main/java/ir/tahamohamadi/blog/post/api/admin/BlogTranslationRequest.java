@@ -1,0 +1,1 @@
+package ir.tahamohamadi.blog.post.api.admin; import jakarta.validation.constraints.*; public record BlogTranslationRequest(@NotBlank @Size(max=255) String title,@NotBlank @Size(max=255) String slug,@Size(max=10000) String excerpt,@NotBlank @Size(max=100000) String bodyMarkdown,@Size(max=255) String seoTitle,@Size(max=500) String seoDescription){}
