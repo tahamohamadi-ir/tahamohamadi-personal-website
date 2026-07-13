@@ -14,10 +14,10 @@
 |---|---|
 | Current branch | `feat/backend-completion` |
 | Baseline commit | `2741a53 feat(backend): add authenticated admin audit actor` |
-| Last completed task | F1: Verify all admin contracts |
-| Next task | H1: Implement featured/social admin/public contracts |
+| Last completed task | H1: Implement featured/social admin/public contracts |
+| Next task | I1: Implement all published localized read endpoints |
 | Known blockers | None |
-| Last verification date | 2026-07-13 - F1 PostgreSQL 17.10 Pack B suite, compile, migration-integrity, and diff checks passed |
+| Last verification date | 2026-07-13 - H1 PostgreSQL 17.10 focused featured/social suite, compile, and diff checks passed |
 | Backend readiness | `BACKEND_NOT_READY` — Pack B is ready; Pack C and later gates remain pending |
 
 ## Global constraints
@@ -108,11 +108,11 @@
 ## H. Featured Content and Social Links
 ### H1: Implement featured/social admin/public contracts
 **Files:** Create `content/{featured,social}/api/{admin,publicsite}/*`; create `backend/src/test/java/ir/tahamohamadi/{admin,publicapi}/FeaturedSocialIntegrationTest.java`.
-- [ ] Write RED active-window/published-target/order/CSRF/version/audit/public filtering tests.
-- [ ] Run `mvn "-Dtest=FeaturedSocialIntegrationTest" test`; expect RED.
-- [ ] Implement bounded DTO workflows and `ADMIN_FEATURED_ITEM_*`, `ADMIN_SOCIAL_LINK_*` audits.
-- [ ] Run the same command; expect PG17 `BUILD SUCCESS`.
-- [ ] Run `git diff --check`; expect no output. Checkpoint message: `feat(content): add featured and social`.
+- [x] Write RED active-window/published-target/order/CSRF/version/audit/public filtering tests.
+- [x] Run `mvn -f backend/pom.xml "-Dtest=FeaturedSocialIntegrationTest" test`; RED: absent admin featured/social routes returned 404.
+- [x] Implement bounded DTO workflows and `ADMIN_FEATURED_ITEM_*`, `ADMIN_SOCIAL_LINK_*` audits.
+- [x] Run the same command; PostgreSQL 17.10 `BUILD SUCCESS` (2 tests, zero failures/errors/skips, 32.749s Maven time).
+- [x] Run `git diff --check`; no output. Checkpoint message: `feat(content): add featured and social`.
 **Acceptance:** no inactive/private target public leak. **Maximum:** 60 minutes.
 
 ## I. Public content APIs
@@ -196,7 +196,7 @@
 | E1 Pages correction | [x] | `71e9616` | `mvn -f backend/pom.xml '-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest' test` (PostgreSQL 17); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; `git diff --stat`; `git status --short` | 36.361s RED + 41.371s GREEN + 2.198s compile | Batch translations remove list N+1; actor audit, safe stale 409, CSRF/RBAC, paging, deterministic order, and DTO response boundaries verified |
 | F1 Pack B gate | [x] | `1f43bcd` | `mvn -f backend/pom.xml "-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest,AdminBlogCrudIntegrationTest,AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest,AdminSkillIntegrationTest,AdminProjectIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check` | 61s test + 1.823s compile | 11 tests, zero failures/errors/skips; stale Page/Skill/Project requests now explicitly prove newer state is preserved; V1-V7 unchanged |
 | G1 Publication/resume | [x] | pending | `mvn -f backend/pom.xml "-Dtest=PublicationResumeIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check` | 31.178s RED + 32.735s GREEN + 1.916s compile | DTO-only localized admin/public workflows, deterministic bounds, audit actors, stale-write protection, and V8 DOI constraint correction |
-| H1 Featured/social | [ ] | — | — | — | — |
+| H1 Featured/social | [x] | pending | `mvn -f backend/pom.xml "-Dtest=FeaturedSocialIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; `git status --short`; `git diff --stat` | 32.749s test + 1.953s compile | 2 tests, DTO-only bounded admin/public contracts; active-window, published-target, order, CSRF/RBAC, optimistic locking, principal audit, and public filtering verified |
 | I1 Public content | [ ] | — | — | — | — |
 | J1 SEO/search | [ ] | — | — | — | — |
 | K1 Pack C gate | [ ] | — | — | — | — |
