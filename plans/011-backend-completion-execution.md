@@ -14,11 +14,11 @@
 |---|---|
 | Current branch | `feat/backend-completion` |
 | Baseline commit | `2741a53 feat(backend): add authenticated admin audit actor` |
-| Last completed task | B1: Blog lifecycle |
-| Next task | C1: Categories and skills |
+| Last completed task | C1: Categories and skills |
+| Next task | D1: Localized projects |
 | Known blockers | None |
-| Last verification date | 2026-07-13 - B1 review-fix focused PostgreSQL 17 tests, compile, and diff check passed |
-| Backend readiness | `BACKEND_NOT_READY` |
+| Last verification date | 2026-07-13 - C1 focused PostgreSQL 17 tests, compile, diff check, and independent review passed |
+| Backend readiness | `BACKEND_NOT_READY` — C1 complete; D1 and later gates remain pending |
 
 ## Global constraints
 
@@ -56,11 +56,11 @@
 
 ### C1: Categories and skills
 **Files:** Create `backend/src/main/java/ir/tahamohamadi/skill/api/admin/*`; modify skill repositories/entities only for bounded projection/update methods; create `backend/src/test/java/ir/tahamohamadi/admin/AdminSkillIntegrationTest.java`.
-- [ ] Write RED CRUD/deactivate/order/locale/CSRF/role/version/audit tests.
-- [ ] Run `mvn "-Dtest=AdminSkillIntegrationTest" test`; expect RED.
-- [ ] Implement DTO mapper/services/controllers with size 1..100, sort allow-list, translation batch query, `ADMIN_SKILL_CATEGORY_*` and `ADMIN_SKILL_*` audits.
-- [ ] Run the same command; expect PostgreSQL 17 `BUILD SUCCESS`.
-- [ ] Run `git diff --check`; expect no output. Checkpoint message: `feat(skills): add admin CRUD`.
+- [x] Write RED CRUD/deactivate/order/locale/CSRF/role/version/audit tests.
+- [x] Run `mvn -f backend/pom.xml -Dtest=AdminSkillIntegrationTest test`; RED observed for missing routes (2 expected failures).
+- [x] Implement DTO mapper/services/controllers with size 1..100, sort allow-list, translation batch query, `ADMIN_SKILL_CATEGORY_*` and `ADMIN_SKILL_*` audits.
+- [x] Run the same command; PostgreSQL 17 `BUILD SUCCESS` (2 tests, zero failures/errors/skips, final verification 23.032 seconds).
+- [x] Run `git diff --check`; no output. Checkpoint commit: `fd22ddd feat(skills): add admin CRUD`.
 **Acceptance:** DTO-only ordered deactivate semantics. **Rollback-safe:** no migration. **Maximum:** 60 minutes. **Do not change:** portfolio/public APIs.
 
 ## D. Admin Portfolio
@@ -191,7 +191,7 @@
 | Pack A media/contact | [x] | `2741a53` ancestry | Focused PG17 media tests | recorded | Preserve |
 | Admin Pages foundation | [x] | working tree | `AdminPageApiIntegrationTest` | recorded | Needs E1 correction |
 | A1 Blog draft CRUD | [x] | `af57ef7` | AdminBlogCrudIntegrationTest; compile; diff check | 25.670s test + 1.682s compile | Category entity graph and aggregate version verified |
-| C1 Skills | [ ] | — | — | — | — |
+| C1 Skills | [x] | `fd22ddd` | `mvn -f backend/pom.xml -Dtest=AdminSkillIntegrationTest test` (PostgreSQL 17); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; independent review | 23.032s test + 1.988s compile | B1 Blog taxonomy reused unchanged; Skills categories/skills are DTO-only, paged/sorted, locked, CSRF/RBAC protected, actor-audited, and batch-mapped |
 | D1 Portfolio | [ ] | — | — | — | — |
 | E1 Pages correction | [ ] | — | — | — | — |
 | F1 Pack B gate | [ ] | — | — | — | — |
