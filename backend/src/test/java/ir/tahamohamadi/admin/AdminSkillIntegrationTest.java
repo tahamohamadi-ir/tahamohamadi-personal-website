@@ -69,14 +69,17 @@ class AdminSkillIntegrationTest {
         String original = mvc.perform(get("/api/v1/admin/skills/categories/{id}", first).with(adminUser(admin)))
                 .andReturn().getResponse().getContentAsString();
         long version = ((Number) JsonPath.read(original, "$.version")).longValue();
+        String updatedCategoryKey = "updated-" + UUID.randomUUID();
         mvc.perform(put("/api/v1/admin/skills/categories/{id}", first).contentType(MediaType.APPLICATION_JSON)
-                        .content(categoryPayload("updated-" + UUID.randomUUID(), 0, version)).with(adminUser(admin))
+                        .content(categoryPayload(updatedCategoryKey, 0, version)).with(adminUser(admin))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.sortOrder").value(0));
         mvc.perform(put("/api/v1/admin/skills/categories/{id}", first).contentType(MediaType.APPLICATION_JSON)
                         .content(categoryPayload("stale-" + UUID.randomUUID(), 0, version)).with(adminUser(admin))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("OPTIMISTIC_LOCK_CONFLICT"));
+        mvc.perform(get("/api/v1/admin/skills/categories/{id}", first).with(adminUser(admin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.categoryKey").value(updatedCategoryKey));
         mvc.perform(delete("/api/v1/admin/skills/categories/{id}", first).param("version", Long.toString(version + 1))
                         .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isNoContent());
@@ -115,14 +118,17 @@ class AdminSkillIntegrationTest {
                         .content(skillPayload(UUID.randomUUID().toString(), "missing-" + UUID.randomUUID(), 0, null))
                         .with(superAdminUser(superAdmin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isNotFound());
+        String updatedSkillKey = "java-updated-" + UUID.randomUUID();
         mvc.perform(put("/api/v1/admin/skills/{id}", skill).contentType(MediaType.APPLICATION_JSON)
-                        .content(skillPayload(category, "java-updated-" + UUID.randomUUID(), 0, version)).with(superAdminUser(superAdmin))
+                        .content(skillPayload(category, updatedSkillKey, 0, version)).with(superAdminUser(superAdmin))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.sortOrder").value(0));
         mvc.perform(put("/api/v1/admin/skills/{id}", skill).contentType(MediaType.APPLICATION_JSON)
                         .content(skillPayload(category, "java-stale-" + UUID.randomUUID(), 0, version)).with(superAdminUser(superAdmin))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("OPTIMISTIC_LOCK_CONFLICT"));
+        mvc.perform(get("/api/v1/admin/skills/{id}", skill).with(superAdminUser(superAdmin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.skillKey").value(updatedSkillKey));
         mvc.perform(delete("/api/v1/admin/skills/{id}", skill).param("version", Long.toString(version + 1))
                         .with(superAdminUser(superAdmin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isNoContent());

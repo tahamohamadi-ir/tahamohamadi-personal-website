@@ -44,19 +44,36 @@ Public endpoints must return only Published content and must respect language-sp
 
 ## Admin APIs
 
-| API ID | Method | Endpoint | Purpose | Roles |
-|---|---|---|---|---|
-| API-ADM-POST-001 | GET | `/api/v1/admin/posts` | Admin post list | Admin/Editor |
-| API-ADM-POST-002 | POST | `/api/v1/admin/posts` | Create post | Admin/Editor |
-| API-ADM-POST-003 | PUT | `/api/v1/admin/posts/{id}` | Update post | Admin/Editor |
-| API-ADM-POST-004 | POST | `/api/v1/admin/posts/{id}/publish` | Publish post | Admin |
-| API-ADM-PAGE-001 | GET | `/api/v1/admin/pages` | Page list | Admin |
-| API-ADM-PAGE-002 | POST | `/api/v1/admin/pages` | Create page | Admin |
-| API-ADM-MEDIA-001 | POST | `/api/v1/admin/media` | Upload media | Admin/Editor |
-| API-ADM-SEO-001 | PUT | `/api/v1/admin/seo/{entityType}/{id}` | Update SEO metadata | Admin |
-| API-ADM-ANL-001 | GET | `/api/v1/admin/analytics/summary` | Admin stats | Admin |
+The verified Pack B content-management routes are all restricted to `ADMIN` or
+`SUPER_ADMIN`; `EDITOR` is not an MVP authority. `GET` collections return
+`PageResponse<DTO>` and all mutation/detail responses are DTOs.
 
-Admin APIs require authentication, authorization, input validation, and audit logging where sensitive.
+| Area | Methods | Endpoint | Contract |
+|---|---|---|---|
+| Managed pages | GET, POST | `/api/v1/admin/pages` | Paged localized list; create |
+| Managed pages | GET, PUT, DELETE | `/api/v1/admin/pages/{id}` | Detail, versioned update, versioned soft delete |
+| Managed pages | POST | `/api/v1/admin/pages/{id}/{publish,archive}` | Versioned lifecycle transitions |
+| Blog posts | GET, POST | `/api/v1/admin/blog/posts` | Paged list; localized draft create |
+| Blog posts | GET, PUT, DELETE | `/api/v1/admin/blog/posts/{id}` | Detail, versioned update, versioned soft delete |
+| Blog posts | POST | `/api/v1/admin/blog/posts/{id}/{publish,archive}` | Versioned lifecycle transitions |
+| Blog categories | GET, POST | `/api/v1/admin/blog/categories` | Paged localized list; create |
+| Blog categories | GET, PUT, DELETE | `/api/v1/admin/blog/categories/{id}` | Detail, versioned update, versioned deactivate |
+| Blog tags | GET, POST | `/api/v1/admin/blog/tags` | Paged localized list; create |
+| Blog tags | GET, PUT, DELETE | `/api/v1/admin/blog/tags/{id}` | Detail, versioned update, versioned deactivate |
+| Skill categories | GET, POST | `/api/v1/admin/skills/categories` | Paged, sorted localized list; create |
+| Skill categories | GET, PUT, DELETE | `/api/v1/admin/skills/categories/{id}` | Detail, versioned update, versioned deactivate |
+| Skills | GET, POST | `/api/v1/admin/skills` | Paged, sorted localized list; create |
+| Skills | GET, PUT, DELETE | `/api/v1/admin/skills/{id}` | Detail, versioned update, versioned deactivate |
+| Portfolio projects | GET, POST | `/api/v1/admin/portfolio/projects` | Paged, sorted localized list; create with active ordered references |
+| Portfolio projects | GET, PUT, DELETE | `/api/v1/admin/portfolio/projects/{id}` | Detail, versioned update, versioned soft delete |
+| Portfolio projects | POST | `/api/v1/admin/portfolio/projects/{id}/{publish,archive}` | Versioned lifecycle transitions |
+
+For every verified Pack B list, `page >= 0` and `1 <= size <= 100`; supported
+sorts are allow-listed and include an ID tie-breaker, while fixed-order lists
+use repository-defined deterministic ordering. Mutations require the CSRF
+token and write a sanitized, actor-attributed audit event. `version` is
+returned by applicable detail/create/update contracts and is required for
+updates, deactivation, deletion, publishing, and archiving.
 
 ## Later APIs
 

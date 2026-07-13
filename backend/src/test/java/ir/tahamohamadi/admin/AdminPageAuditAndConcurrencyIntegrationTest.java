@@ -134,6 +134,9 @@ class AdminPageAuditAndConcurrencyIntegrationTest {
                 .andExpect(jsonPath("$.message").value("The resource was changed by another request"))
                 .andExpect(jsonPath("$.exception").doesNotExist())
                 .andExpect(jsonPath("$.stackTrace").doesNotExist());
+        mvc.perform(get("/api/v1/admin/pages/{id}", pageId).with(adminUser(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pageKey").value("versioned-page-updated"));
     }
 
     private void seed(String pageKey, Instant createdAt) {

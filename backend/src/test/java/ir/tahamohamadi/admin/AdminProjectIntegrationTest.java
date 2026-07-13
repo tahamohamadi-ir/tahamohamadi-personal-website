@@ -145,6 +145,8 @@ class AdminProjectIntegrationTest {
                         .content(payload("stale", cover.getId(), List.of(), version, 0)).with(adminUser(admin))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("OPTIMISTIC_LOCK_CONFLICT"));
+        mvc.perform(get("/api/v1/admin/portfolio/projects/{id}", projectId).with(adminUser(admin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.projectKey").value("updated"));
         mvc.perform(post("/api/v1/admin/portfolio/projects/{id}/archive", projectId).param("version", Long.toString(updatedVersion))
                         .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("STATE_CONFLICT"));
@@ -202,7 +204,7 @@ class AdminProjectIntegrationTest {
     private MediaAsset asset(String name) { return media.saveAndFlush(MediaAsset.create(UUID.randomUUID(), "storage-" + name + "-" + UUID.randomUUID(), name + ".png", "png", "image/png", 12, "a".repeat(64), 1, 1, Instant.now())); }
     private Skill skill(String key, int sortOrder) { SkillCategory category = skillCategories.saveAndFlush(SkillCategory.create(UUID.randomUUID(), "category-" + key + "-" + UUID.randomUUID(), 0, Instant.now())); return skills.saveAndFlush(Skill.create(UUID.randomUUID(), "skill-" + key + "-" + UUID.randomUUID(), category, sortOrder, Instant.now())); }
     private AppUser actor(String name) { return users.saveAndFlush(AppUser.create(name + "-" + UUID.randomUUID() + "@example.test", "hash", name, Instant.now())); }
-    private void assertAudits(AppUser actor, String... actions) { List<AuditEvent> events = audit.findByActorIdOrderByOccurredAtDesc(actor.getId()); assertThat(events).extracting(AuditEvent::getAction).contains(actions); assertThat(events).allSatisfy(event -> assertThat(event.getDetails().toString()).doesNotContain("password", "bodyMarkdown", "storageKey", "email")); }
+    private void assertAudits(AppUser actor, String... actions) { List<AuditEvent> events = audit.findByActorIdOrderByOccurredAtDesc(actor.getId()); assertThat(events).extracting(AuditEvent::getAction).contains(actions); assertThat(events).allSatisfy(event -> { assertThat(event.getActor().getId()).isEqualTo(actor.getId()); assertThat(event.getDetails().toString()).doesNotContain("password", "bodyMarkdown", "storageKey", "email"); }); }
     private static SecurityMockMvcRequestPostProcessors.UserRequestPostProcessor adminUser(AppUser user) { return SecurityMockMvcRequestPostProcessors.user(user.getEmail()).roles("ADMIN"); }
     private record SkillReference(UUID skillId, int sortOrder) { }
 }
