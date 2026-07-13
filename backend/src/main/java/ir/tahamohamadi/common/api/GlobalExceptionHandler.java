@@ -3,6 +3,7 @@ package ir.tahamohamadi.common.api;
 import ir.tahamohamadi.media.api.MediaUploadException;
 import ir.tahamohamadi.blog.post.api.admin.PublishValidationException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.*;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,6 +16,7 @@ import java.util.NoSuchElementException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class) ResponseEntity<ApiErrorResponse> invalid(MethodArgumentNotValidException e,HttpServletRequest r) { return response(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","Request validation failed",r,e.getBindingResult().getFieldErrors().stream().map(f->new FieldValidationError(f.getField(),f.getDefaultMessage())).toList()); }
+    @ExceptionHandler(ConstraintViolationException.class) ResponseEntity<ApiErrorResponse> constrained(ConstraintViolationException e,HttpServletRequest r) { return response(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","Request validation failed",r,List.of()); }
     @ExceptionHandler(MediaUploadException.class) ResponseEntity<ApiErrorResponse> media(MediaUploadException e,HttpServletRequest r) { return response(e.status(),e.code(),e.status().is5xxServerError()?"Unable to process uploaded file":"Uploaded file was rejected",r,List.of()); }
     @ExceptionHandler(NoSuchElementException.class) ResponseEntity<ApiErrorResponse> absent(NoSuchElementException e,HttpServletRequest r) { return response(HttpStatus.NOT_FOUND,"RESOURCE_NOT_FOUND","Resource not found",r,List.of()); }
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class) ResponseEntity<ApiErrorResponse> conflict(ObjectOptimisticLockingFailureException e,HttpServletRequest r) { return response(HttpStatus.CONFLICT,"OPTIMISTIC_LOCK_CONFLICT","The resource was changed by another request",r,List.of()); }
