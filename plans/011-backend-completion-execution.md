@@ -14,10 +14,10 @@
 |---|---|
 | Current branch | `feat/backend-completion` |
 | Baseline commit | `2741a53 feat(backend): add authenticated admin audit actor` |
-| Last completed task | H1: Implement featured/social admin/public contracts |
-| Next task | I1: Implement all published localized read endpoints |
+| Last completed task | I1: Implement all published localized read endpoints |
+| Next task | J1: Implement public discoverability contracts |
 | Known blockers | None |
-| Last verification date | 2026-07-13 - H1 PostgreSQL 17.10 focused featured/social suite, compile, and diff checks passed |
+| Last verification date | 2026-07-13 - I1 PostgreSQL 17.10 focused public-content suite, compile, independent review, and diff checks passed |
 | Backend readiness | `BACKEND_NOT_READY` — Pack B is ready; Pack C and later gates remain pending |
 
 ## Global constraints
@@ -118,11 +118,11 @@
 ## I. Public content APIs
 ### I1: Implement all published localized read endpoints
 **Files:** Replace `publicsite/api/*` with exact paths listed in Plan 006; create `content/api/publicsite/*`, `blog/api/publicsite/*`, `skill/api/publicsite/*`, `portfolio/project/api/publicsite/*`; create `backend/src/test/java/ir/tahamohamadi/publicapi/PublicContentIntegrationTest.java`.
-- [ ] Write RED fa/en/missing-locale/draft/future/deleted/page-size/filter/sort tests.
-- [ ] Run `mvn "-Dtest=PublicContentIntegrationTest" test`; expect RED.
-- [ ] Implement DTO-only projections with size <=50, canonical/locale metadata and no fallback.
-- [ ] Run the same command; expect PG17 `BUILD SUCCESS`.
-- [ ] Run `git diff --check`; expect no output. Checkpoint message: `feat(public): add localized content APIs`.
+- [x] Write RED fa/en/missing-locale/draft/future/deleted/page-size/filter/sort tests.
+- [x] Run `mvn -f backend/pom.xml '-Dtest=PublicContentIntegrationTest#resolvesHomeByStablePageKeyInTheRequestedLocale,PublicContentIntegrationTest#countsOnlyEligiblePostsInTheRequestedTaxonomyLocale,PublicContentIntegrationTest#fetchesMultipleFeaturedTargetsInABoundedNumberOfQueries' test`; expected RED failures observed for locale-slug home lookup, absent taxonomy counts, and featured N+1/future leakage.
+- [x] Implement DTO-only projections with size <=50, canonical/locale metadata and no fallback.
+- [x] Run `mvn -f backend/pom.xml '-Dtest=PublicContentIntegrationTest,PublicationResumeIntegrationTest,FeaturedSocialIntegrationTest' test`; PostgreSQL 17.10 `BUILD SUCCESS`, 20 tests, zero failures/errors/skips (28.071 seconds Maven time).
+- [x] Run `mvn -f backend/pom.xml -DskipTests compile` and `git diff --check`; `BUILD SUCCESS` (1.479 seconds) and no diff errors. Independent review: zero remaining P1/P2 findings. Checkpoint commit: `fbb226e fix(public): close I1 content review findings`.
 **Acceptance:** all Plan 006 content endpoints bounded/published-only. **Maximum:** 120 minutes.
 
 ## J. Search, localization, SEO, hreflang, sitemap-data
@@ -197,7 +197,7 @@
 | F1 Pack B gate | [x] | `1f43bcd` | `mvn -f backend/pom.xml "-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest,AdminBlogCrudIntegrationTest,AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest,AdminSkillIntegrationTest,AdminProjectIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check` | 61s test + 1.823s compile | 11 tests, zero failures/errors/skips; stale Page/Skill/Project requests now explicitly prove newer state is preserved; V1-V7 unchanged |
 | G1 Publication/resume | [x] | pending | `mvn -f backend/pom.xml "-Dtest=PublicationResumeIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check` | 31.178s RED + 32.735s GREEN + 1.916s compile | DTO-only localized admin/public workflows, deterministic bounds, audit actors, stale-write protection, and V8 DOI constraint correction |
 | H1 Featured/social | [x] | pending | `mvn -f backend/pom.xml "-Dtest=FeaturedSocialIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; `git status --short`; `git diff --stat` | 32.749s test + 1.953s compile | 2 tests, DTO-only bounded admin/public contracts; active-window, published-target, order, CSRF/RBAC, optimistic locking, principal audit, and public filtering verified |
-| I1 Public content | [ ] | — | — | — | — |
+| I1 Public content | [x] | `fbb226e` | `mvn -f backend/pom.xml '-Dtest=PublicContentIntegrationTest,PublicationResumeIntegrationTest,FeaturedSocialIntegrationTest' test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; independent review | 28.071s test + 1.479s compile | 20 tests, zero failures/errors/skips; stable-key localized home, safe public metadata/DTOs, grouped eligible taxonomy counts, and bounded featured batching verified |
 | J1 SEO/search | [ ] | — | — | — | — |
 | K1 Pack C gate | [ ] | — | — | — | — |
 | L1 Backend gate | [ ] | — | — | — | — |
