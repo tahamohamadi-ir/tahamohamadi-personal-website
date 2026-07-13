@@ -12,6 +12,9 @@ import ir.tahamohamadi.skill.Skill;
 import ir.tahamohamadi.skill.SkillCategory;
 import ir.tahamohamadi.skill.SkillCategoryRepository;
 import ir.tahamohamadi.skill.SkillRepository;
+import jakarta.persistence.EntityManagerFactory;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -44,6 +47,7 @@ class AdminProjectIntegrationTest {
     @Autowired SkillRepository skills;
     @Autowired PortfolioProjectRepository projects;
     @Autowired AuditEventRepository audit;
+    @Autowired EntityManagerFactory entityManagerFactory;
 
     @Test
     void managesLocalizedProjectsWithValidatedReferencesLifecycleSecurityVersionsAndAudits() throws Exception {
@@ -64,10 +68,24 @@ class AdminProjectIntegrationTest {
                 .andExpect(status().isBadRequest());
 
         MediaAsset cover = asset("cover");
+        MediaAsset archivedCover = asset("archived-cover");
+        archivedCover.archive();
+        media.saveAndFlush(archivedCover);
         Skill firstSkill = skill("first", 0);
         Skill secondSkill = skill("second", 1);
+        Skill inactiveSkill = skill("inactive", 2);
+        inactiveSkill.deactivate();
+        skills.saveAndFlush(inactiveSkill);
         mvc.perform(post("/api/v1/admin/portfolio/projects").contentType(MediaType.APPLICATION_JSON)
                         .content(payload("missing", UUID.randomUUID(), List.of(), null, 0)).with(adminUser(admin))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/api/v1/admin/portfolio/projects").contentType(MediaType.APPLICATION_JSON)
+                        .content(payload("archived-cover", archivedCover.getId(), List.of(), null, 0)).with(adminUser(admin))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isNotFound());
+        mvc.perform(post("/api/v1/admin/portfolio/projects").contentType(MediaType.APPLICATION_JSON)
+                        .content(payload("inactive-skill", cover.getId(), List.of(new SkillReference(inactiveSkill.getId(), 0)), null, 0)).with(adminUser(admin))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isNotFound());
 
@@ -87,25 +105,53 @@ class AdminProjectIntegrationTest {
         long version = ((Number) JsonPath.read(created, "$.version")).longValue();
 
         String second = create(admin, payload("second", cover.getId(), List.of(), null, 1));
+        create(admin, payload("third", cover.getId(), List.of(), null, 4));
+        create(admin, payload("fourth", cover.getId(), List.of(), null, 5));
         mvc.perform(get("/api/v1/admin/portfolio/projects").param("size", "101").with(adminUser(admin)))
                 .andExpect(status().isBadRequest());
         mvc.perform(get("/api/v1/admin/portfolio/projects").param("sort", "status,desc").with(adminUser(admin)))
                 .andExpect(status().isBadRequest());
+        Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
         mvc.perform(get("/api/v1/admin/portfolio/projects").param("sort", "sortOrder,asc").with(adminUser(admin)))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].id").value(second));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].id").value(second))
+                .andExpect(jsonPath("$.totalElements").value(4));
+        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(3);
         mvc.perform(get("/api/v1/admin/portfolio/projects/{id}", projectId).with(adminUser(admin)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.skills[0].sortOrder").value(0));
 
+        mvc.perform(put("/api/v1/admin/portfolio/projects/{id}", projectId).contentType(MediaType.APPLICATION_JSON)
+                        .content(payload("archived-update", archivedCover.getId(), List.of(new SkillReference(firstSkill.getId(), 0)), version, 0))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isNotFound());
+        mvc.perform(put("/api/v1/admin/portfolio/projects/{id}", projectId).contentType(MediaType.APPLICATION_JSON)
+                        .content(payload("inactive-update", cover.getId(), List.of(new SkillReference(inactiveSkill.getId(), 0)), version, 0))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isNotFound());
+
         String updated = mvc.perform(put("/api/v1/admin/portfolio/projects/{id}", projectId).contentType(MediaType.APPLICATION_JSON)
-                        .content(payload("updated", cover.getId(), List.of(new SkillReference(firstSkill.getId(), 0)), version, 0))
+                        .content(payloadWithUpdatedTranslations("updated", cover.getId(), List.of(new SkillReference(secondSkill.getId(), 0), new SkillReference(firstSkill.getId(), 1)), version, 0))
                         .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.projectKey").value("updated"))
+                .andExpect(jsonPath("$.fa.slug").value("fa-updated"))
+                .andExpect(jsonPath("$.en.title").value("Project updated"))
+                .andExpect(jsonPath("$.en.summary").value("Summary updated"))
+                .andExpect(jsonPath("$.skills[0].skillId").value(secondSkill.getId().toString()))
+                .andExpect(jsonPath("$.skills[1].skillId").value(firstSkill.getId().toString()))
                 .andReturn().getResponse().getContentAsString();
         long updatedVersion = ((Number) JsonPath.read(updated, "$.version")).longValue();
         mvc.perform(put("/api/v1/admin/portfolio/projects/{id}", projectId).contentType(MediaType.APPLICATION_JSON)
                         .content(payload("stale", cover.getId(), List.of(), version, 0)).with(adminUser(admin))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("OPTIMISTIC_LOCK_CONFLICT"));
+        mvc.perform(post("/api/v1/admin/portfolio/projects/{id}/archive", projectId).param("version", Long.toString(updatedVersion))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("STATE_CONFLICT"));
+        String withoutStarted = create(admin, payloadWithoutStarted("without-started", cover.getId()));
+        mvc.perform(post("/api/v1/admin/portfolio/projects/{id}/publish", withoutStarted).param("version", "0")
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
 
         String published = mvc.perform(post("/api/v1/admin/portfolio/projects/{id}/publish", projectId)
                         .param("version", Long.toString(updatedVersion)).with(adminUser(admin))
@@ -113,6 +159,10 @@ class AdminProjectIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PUBLISHED"))
                 .andReturn().getResponse().getContentAsString();
         long publishedVersion = ((Number) JsonPath.read(published, "$.version")).longValue();
+        mvc.perform(post("/api/v1/admin/portfolio/projects/{id}/publish", projectId)
+                        .param("version", Long.toString(publishedVersion)).with(adminUser(admin))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("STATE_CONFLICT"));
         String archived = mvc.perform(post("/api/v1/admin/portfolio/projects/{id}/archive", projectId)
                         .param("version", Long.toString(publishedVersion)).with(adminUser(admin))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
@@ -137,6 +187,16 @@ class AdminProjectIntegrationTest {
                 .collect(java.util.stream.Collectors.joining(","));
         String versionField = version == null ? "" : ",\"version\":" + version;
         return "{\"projectKey\":\"" + key + "\",\"coverMediaId\":\"" + coverMediaId + "\",\"startedOn\":\"2025-01-01\",\"endedOn\":\"2025-02-01\",\"projectUrl\":\"https://example.test/projects/" + key + "\",\"repositoryUrl\":\"https://github.com/example/" + key + "\",\"sortOrder\":" + sortOrder + ",\"fa\":{\"title\":\"پروژه\",\"slug\":\"fa-" + key + "\",\"summary\":\"خلاصه\",\"bodyMarkdown\":\"متن\",\"seoTitle\":\"سئو\",\"seoDescription\":\"توضیح\"},\"en\":{\"title\":\"Project\",\"slug\":\"en-" + key + "\",\"summary\":\"Summary\",\"bodyMarkdown\":\"Body\",\"seoTitle\":\"SEO\",\"seoDescription\":\"Description\"},\"skills\":[" + skillsField + "]" + versionField + "}";
+    }
+
+    private String payloadWithUpdatedTranslations(String key, UUID coverMediaId, List<SkillReference> references, Long version, int sortOrder) {
+        return payload(key, coverMediaId, references, version, sortOrder)
+                .replace("\"title\":\"Project\"", "\"title\":\"Project updated\"")
+                .replace("\"summary\":\"Summary\"", "\"summary\":\"Summary updated\"");
+    }
+
+    private String payloadWithoutStarted(String key, UUID coverMediaId) {
+        return payload(key, coverMediaId, List.of(), null, 0).replace("\"startedOn\":\"2025-01-01\",", "");
     }
 
     private MediaAsset asset(String name) { return media.saveAndFlush(MediaAsset.create(UUID.randomUUID(), "storage-" + name + "-" + UUID.randomUUID(), name + ".png", "png", "image/png", 12, "a".repeat(64), 1, 1, Instant.now())); }
