@@ -14,11 +14,11 @@
 |---|---|
 | Current branch | `feat/backend-completion` |
 | Baseline commit | `2741a53 feat(backend): add authenticated admin audit actor` |
-| Last completed task | C1: Categories and skills |
-| Next task | D1: Localized projects |
+| Last completed task | D1: Localized projects |
+| Next task | E1: Page query and audit regression |
 | Known blockers | None |
-| Last verification date | 2026-07-13 - C1 focused PostgreSQL 17 tests, compile, diff check, and independent review passed |
-| Backend readiness | `BACKEND_NOT_READY` — C1 complete; D1 and later gates remain pending |
+| Last verification date | 2026-07-13 - D1 focused PostgreSQL 17 tests, diff checks, and independent re-review passed |
+| Backend readiness | `BACKEND_NOT_READY` — D1 complete; E1 and later gates remain pending |
 
 ## Global constraints
 
@@ -67,11 +67,11 @@
 
 ### D1: Localized projects
 **Files:** Create `backend/src/main/java/ir/tahamohamadi/portfolio/project/api/admin/*`; modify project repositories/junction entities; create `backend/src/test/java/ir/tahamohamadi/admin/AdminProjectIntegrationTest.java`.
-- [ ] Write RED localized CRUD/media/skill order/publish/archive/CSRF/role/version/audit tests.
-- [ ] Run `mvn "-Dtest=AdminProjectIntegrationTest" test`; expect RED.
-- [ ] Implement bounded projections, active reference validation, lifecycle, mapper, and `ADMIN_PROJECT_*` audits.
-- [ ] Run the same command; expect PostgreSQL 17 `BUILD SUCCESS`.
-- [ ] Run `git diff --check`; expect no output. Checkpoint message: `feat(portfolio): add admin projects`.
+- [x] Write RED localized CRUD/media/skill order/publish/archive/CSRF/role/version/audit tests.
+- [x] Run `mvn -f backend/pom.xml -Dtest=AdminProjectIntegrationTest test`; expected RED observed: missing admin route returned 404 where validated request expected 400 (PostgreSQL 17, 27.494s).
+- [x] Implement bounded projections, active reference validation, lifecycle, mapper, and `ADMIN_PROJECT_*` audits.
+- [x] Run the same command; PostgreSQL 17 `BUILD SUCCESS`: 1 test, zero failures/errors/skips, 33.784s; independent-review invariant proof rerun: 1 test, zero failures/errors/skips, 28.730s.
+- [x] Run `git diff --check`; no output. Checkpoint commits: `deeabc4 feat(portfolio): add admin projects`; `0e832b2 test(portfolio): cover project admin invariants`.
 **Acceptance:** localized DTO-only projects with no N+1. **Rollback-safe:** no migration. **Maximum:** 75 minutes. **Do not change:** public APIs.
 
 ## E. Admin Pages corrections
@@ -192,7 +192,7 @@
 | Admin Pages foundation | [x] | working tree | `AdminPageApiIntegrationTest` | recorded | Needs E1 correction |
 | A1 Blog draft CRUD | [x] | `af57ef7` | AdminBlogCrudIntegrationTest; compile; diff check | 25.670s test + 1.682s compile | Category entity graph and aggregate version verified |
 | C1 Skills | [x] | `fd22ddd` | `mvn -f backend/pom.xml -Dtest=AdminSkillIntegrationTest test` (PostgreSQL 17); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; independent review | 23.032s test + 1.988s compile | B1 Blog taxonomy reused unchanged; Skills categories/skills are DTO-only, paged/sorted, locked, CSRF/RBAC protected, actor-audited, and batch-mapped |
-| D1 Portfolio | [ ] | — | — | — | — |
+| D1 Portfolio | [x] | `deeabc4`, `0e832b2` | `mvn -f backend/pom.xml -Dtest=AdminProjectIntegrationTest test` (PostgreSQL 17); `git diff --check`; independent re-review | 27.494s RED + 33.784s GREEN + 28.730s invariant proof | Localized DTO-only project CRUD, ordered active references, lifecycle, CSRF/RBAC, optimistic locking, audit actions, and query-count proof verified |
 | E1 Pages correction | [ ] | — | — | — | — |
 | F1 Pack B gate | [ ] | — | — | — | — |
 | G1 Publication/resume | [ ] | — | — | — | — |
