@@ -14,11 +14,11 @@
 |---|---|
 | Current branch | `feat/backend-completion` |
 | Baseline commit | `2741a53 feat(backend): add authenticated admin audit actor` |
-| Last completed task | I1: Implement all published localized read endpoints |
-| Next task | J1: Implement public discoverability contracts |
+| Last completed task | J1: Implement public discoverability contracts |
+| Next task | K1: Verify Pack C |
 | Known blockers | None |
-| Last verification date | 2026-07-13 - I1 PostgreSQL 17.10 focused public-content suite, compile, independent review, and diff checks passed |
-| Backend readiness | `BACKEND_NOT_READY` — Pack B is ready; Pack C and later gates remain pending |
+| Last verification date | 2026-07-13 - J1 local PostgreSQL 17.10 regression suite, compile, manual review of reported P1 findings, and diff checks passed |
+| Backend readiness | `BACKEND_NOT_READY` — J1 is verified; Pack C and full backend gates remain pending |
 
 ## Global constraints
 
@@ -128,11 +128,11 @@
 ## J. Search, localization, SEO, hreflang, sitemap-data
 ### J1: Implement public discoverability contracts
 **Files:** Create `common/i18n/{LocaleNormalizer.java,TranslationUnavailableException.java}`, `seo/{SeoMetadataResponse.java,HreflangResponse.java,SitemapDataController.java,SitemapDataService.java,SitemapEntryResponse.java,RobotsController.java}`; create `PublicBlogSearchIntegrationTest.java`, `PublicSeoContractIntegrationTest.java`, `LocaleNormalizerUnitTest.java`.
-- [ ] Write RED bounded FTS/injection/locale/empty query, canonical/hreflang/OG/sitemap/robots tests.
-- [ ] Run `mvn "-Dtest=LocaleNormalizerUnitTest,PublicBlogSearchIntegrationTest,PublicSeoContractIntegrationTest" test`; expect RED.
-- [ ] Implement parameterized PG FTS, Persian normalizer, DTO SEO metadata, published sitemap entries and no-index nonproduction robots.
-- [ ] Run the same command; expect PG17 `BUILD SUCCESS`.
-- [ ] Run `git diff --check`; expect no output. Checkpoint message: `feat(seo): add public discovery contracts`.
+- [x] Write RED bounded FTS/injection/locale/empty query, canonical/hreflang/OG/sitemap/robots tests.
+- [x] Run `mvn "-Dtest=LocaleNormalizerUnitTest,PublicBlogSearchIntegrationTest,PublicSeoContractIntegrationTest" test`; expect RED.
+- [x] Implement parameterized PG FTS, Persian normalizer, DTO SEO metadata, published sitemap entries and no-index nonproduction robots.
+- [x] Run the same command; expect PG17 `BUILD SUCCESS`.
+- [x] Run `git diff --check`; expect no output. Checkpoint message: `feat(seo): add public discovery contracts`.
 **Acceptance:** Plan 006 SEO/i18n complete. **Maximum:** 90 minutes.
 
 ## K. Pack C acceptance gate
@@ -198,9 +198,9 @@
 | G1 Publication/resume | [x] | pending | `mvn -f backend/pom.xml "-Dtest=PublicationResumeIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check` | 31.178s RED + 32.735s GREEN + 1.916s compile | DTO-only localized admin/public workflows, deterministic bounds, audit actors, stale-write protection, and V8 DOI constraint correction |
 | H1 Featured/social | [x] | pending | `mvn -f backend/pom.xml "-Dtest=FeaturedSocialIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; `git status --short`; `git diff --stat` | 32.749s test + 1.953s compile | 2 tests, DTO-only bounded admin/public contracts; active-window, published-target, order, CSRF/RBAC, optimistic locking, principal audit, and public filtering verified |
 | I1 Public content | [x] | `fbb226e` | `mvn -f backend/pom.xml '-Dtest=PublicContentIntegrationTest,PublicationResumeIntegrationTest,FeaturedSocialIntegrationTest' test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; independent review | 28.071s test + 1.479s compile | 20 tests, zero failures/errors/skips; stable-key localized home, safe public metadata/DTOs, grouped eligible taxonomy counts, and bounded featured batching verified |
-| J1 SEO/search | [ ] | — | — | — | — |
-| K1 Pack C gate | [ ] | — | — | — | — |
-| L1 Backend gate | [ ] | — | — | — | — |
-| M1 Public frontend | [ ] | — | — | — | blocked by L1 |
-| N1 Admin frontend | [ ] | — | — | — | blocked by M1 |
-| O1 Delivery | [ ] | — | — | — | blocked by N1 |
+| J1 SEO/search | [x] | `0184472` | 27 focused PostgreSQL 17.10 tests; compile; diff check; manual review of reported P1 findings | 34.53s test + 6.52s compile | FTS normalization, canonical/hreflang, safe OG media, sitemap-data, robots policy, home canonical fallback, and bounded locale alternate metadata verified |
+| K1 Pack C gate | [ ] | â€” | â€” | â€” | â€” |
+| L1 Backend gate | [ ] | â€” | â€” | â€” | â€” |
+| M1 Public frontend | [ ] | â€” | â€” | â€” | blocked by L1 |
+| N1 Admin frontend | [ ] | â€” | â€” | â€” | blocked by M1 |
+| O1 Delivery | [ ] | â€” | â€” | â€” | blocked by N1 |
