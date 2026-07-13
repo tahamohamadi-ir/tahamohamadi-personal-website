@@ -97,10 +97,15 @@ class PublicationResumeIntegrationTest {
         mvc.perform(get("/api/v1/public/fa/publications").param("page", "0").param("size", "50"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.locale").value("fa"))
                 .andExpect(jsonPath("$.items[0].slug").value("fa-updated"))
-                .andExpect(jsonPath("$.items[0].status").doesNotExist());
+                .andExpect(jsonPath("$.items[0].status").doesNotExist())
+                .andExpect(jsonPath("$.canonicalPath").value("/fa/publications"))
+                .andExpect(jsonPath("$.items[0].canonicalPath").value("/fa/publications/fa-updated"))
+                .andExpect(jsonPath("$.items[0].id").doesNotExist());
         mvc.perform(get("/api/v1/public/en/publications/en-updated"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.locale").value("en"))
-                .andExpect(jsonPath("$.publicationKey").doesNotExist());
+                .andExpect(jsonPath("$.publicationKey").doesNotExist())
+                .andExpect(jsonPath("$.canonicalPath").value("/en/publications/en-updated"))
+                .andExpect(jsonPath("$.id").doesNotExist());
 
         mvc.perform(post("/api/v1/admin/publications/{id}/archive", id).param("version", Long.toString(publishedVersion))
                         .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
@@ -150,8 +155,10 @@ class PublicationResumeIntegrationTest {
         mvc.perform(get("/api/v1/public/fa/resume"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.locale").value("fa"))
                 .andExpect(jsonPath("$.entries").isEmpty())
+                .andExpect(jsonPath("$.canonicalPath").value("/fa/resume"))
                 .andExpect(jsonPath("$.document.mediaUrl").value("/api/v1/public/media/" + first.getId()))
-                .andExpect(jsonPath("$.document.storageKey").doesNotExist());
+                .andExpect(jsonPath("$.document.storageKey").doesNotExist())
+                .andExpect(jsonPath("$.document.id").doesNotExist());
         assertAudits(admin, "ADMIN_RESUME_ENTRY_CREATED", "ADMIN_RESUME_ENTRY_PUBLISHED", "ADMIN_RESUME_ENTRY_ARCHIVED", "ADMIN_RESUME_DOCUMENT_CREATED", "ADMIN_RESUME_DOCUMENT_PUBLISHED");
     }
 

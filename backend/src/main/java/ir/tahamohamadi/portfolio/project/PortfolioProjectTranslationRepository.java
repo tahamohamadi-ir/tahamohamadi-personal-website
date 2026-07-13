@@ -13,4 +13,5 @@ public interface PortfolioProjectTranslationRepository extends JpaRepository<Por
     Optional<PortfolioProjectTranslation> findPublishedByLanguageAndSlug(@Param("language") LanguageCode language, @Param("slug") String slug);
     List<PortfolioProjectTranslation> findByProjectIdAndDeletedAtIsNull(UUID projectId);
     List<PortfolioProjectTranslation> findByProjectIdInAndDeletedAtIsNull(Collection<UUID> projectIds);
+    List<PortfolioProjectTranslation> findByProjectIdInAndLanguageCodeAndDeletedAtIsNull(Collection<UUID> projectIds, LanguageCode language);
 }
