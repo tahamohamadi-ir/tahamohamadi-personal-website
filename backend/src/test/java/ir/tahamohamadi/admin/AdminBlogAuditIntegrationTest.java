@@ -37,6 +37,13 @@ class AdminBlogAuditIntegrationTest {
     @Test
     void managesLocalizedCategoriesAndTagsWithPersistedSanitizedAudits() throws Exception {
         AppUser superAdmin = users.saveAndFlush(AppUser.create("taxonomy-" + UUID.randomUUID() + "@example.test", "hash", "Taxonomy", Instant.now()));
+        String securedCategoryPayload = categoryPayload("secured-" + UUID.randomUUID(), 0);
+        mvc.perform(post("/api/v1/admin/blog/categories").contentType(MediaType.APPLICATION_JSON).content(securedCategoryPayload).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/admin/blog/categories").contentType(MediaType.APPLICATION_JSON).content(securedCategoryPayload).with(SecurityMockMvcRequestPostProcessors.user("reader@example.test").roles("USER")).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/admin/blog/tags").contentType(MediaType.APPLICATION_JSON).content(tagPayload("secured-tag-" + UUID.randomUUID())).with(superAdminUser(superAdmin)))
+                .andExpect(status().isForbidden());
         String category = create("/api/v1/admin/blog/categories", categoryPayload("category-" + UUID.randomUUID(), 2), superAdmin)
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.fa.name").value("دسته"))
                 .andExpect(jsonPath("$.hibernateLazyInitializer").doesNotExist()).andReturn().getResponse().getContentAsString();
@@ -45,6 +52,9 @@ class AdminBlogAuditIntegrationTest {
         mvc.perform(put("/api/v1/admin/blog/categories/{id}", categoryId).contentType(MediaType.APPLICATION_JSON)
                         .content(categoryPayload("changed-" + UUID.randomUUID(), 1, categoryVersion)).with(superAdminUser(superAdmin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.sortOrder").value(1));
+        mvc.perform(put("/api/v1/admin/blog/categories/{id}", categoryId).contentType(MediaType.APPLICATION_JSON)
+                        .content(categoryPayload("stale-" + UUID.randomUUID(), 1, categoryVersion)).with(superAdminUser(superAdmin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("OPTIMISTIC_LOCK_CONFLICT"));
         mvc.perform(get("/api/v1/admin/blog/categories").with(superAdminUser(superAdmin)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].id").value(categoryId));
         mvc.perform(delete("/api/v1/admin/blog/categories/{id}", categoryId).param("version", "1")

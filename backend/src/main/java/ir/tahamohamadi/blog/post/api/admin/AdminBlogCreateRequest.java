@@ -6,4 +6,4 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 
-public record AdminBlogCreateRequest(@NotNull UUID categoryId,@Valid @NotNull BlogTranslationRequest fa,@Valid @NotNull BlogTranslationRequest en,@Size(max=50) List<@NotNull UUID> tagIds) { }
+public record AdminBlogCreateRequest(@NotNull UUID categoryId,@Valid @NotNull BlogTranslationRequest fa,@Valid @NotNull BlogTranslationRequest en,@Size(max=50) List<@NotNull UUID> tagIds,@Valid @Size(max=100) List<@NotNull AdminBlogMediaReferenceRequest> media) { }
