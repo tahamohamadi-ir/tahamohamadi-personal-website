@@ -14,11 +14,11 @@
 |---|---|
 | Current branch | `feat/backend-completion` |
 | Baseline commit | `2741a53 feat(backend): add authenticated admin audit actor` |
-| Last completed task | D1: Localized projects |
-| Next task | E1: Page query and audit regression |
+| Last completed task | E1: Page query and audit regression |
+| Next task | F1: Verify all admin contracts |
 | Known blockers | None |
-| Last verification date | 2026-07-13 - D1 focused PostgreSQL 17 tests, diff checks, and independent re-review passed |
-| Backend readiness | `BACKEND_NOT_READY` — D1 complete; E1 and later gates remain pending |
+| Last verification date | 2026-07-13 - E1 PostgreSQL 17 RED/GREEN tests, compile, and diff checks passed |
+| Backend readiness | `BACKEND_NOT_READY` — E1 complete; F1 and later gates remain pending |
 
 ## Global constraints
 
@@ -78,11 +78,11 @@
 
 ### E1: Page query and audit regression
 **Files:** Modify `content/page/{ContentPageRepository.java,ContentPageTranslationRepository.java,api/admin/AdminPageService.java}`; modify `AdminPageApiIntegrationTest`; create `AdminPageAuditAndConcurrencyIntegrationTest.java`.
-- [ ] Write RED query-count, persisted actor, stale update, CSRF/role/paging tests.
-- [ ] Run `mvn "-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest" test`; expect RED.
-- [ ] Replace per-page translation lookups with one projection/batch query; preserve response shape and 409 mapping.
-- [ ] Run the same command; expect PostgreSQL 17 `BUILD SUCCESS`.
-- [ ] Run `git diff --check`; expect no output. Checkpoint message: `fix(pages): remove translation n plus one`.
+- [x] Write RED query-count, persisted actor, stale update, CSRF/role/paging, deterministic-order, and DTO-boundary tests.
+- [x] Run `mvn -f backend/pom.xml '-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest' test`; RED confirmed: list query count was 8 for 3 pages, exceeding the maximum 3 (36.361s).
+- [x] Replace per-page translation lookups with one repository batch query; preserve response shape, deterministic order, persisted actor, and 409 mapping.
+- [x] Run the same command; PostgreSQL 17 `BUILD SUCCESS`, 4 tests, zero failures/errors/skips (41.371s).
+- [x] Run `mvn -f backend/pom.xml -DskipTests compile`; `BUILD SUCCESS` (2.198s). Run `git diff --check`, `git diff --stat`, and `git status --short`; no whitespace errors and only E1 files changed. Checkpoint message: `fix(pages): remove translation n plus one`.
 **Acceptance:** no per-row translation queries; audit actor stored. **Maximum:** 35 minutes.
 
 ## F. Pack B acceptance gate
@@ -193,7 +193,7 @@
 | A1 Blog draft CRUD | [x] | `af57ef7` | AdminBlogCrudIntegrationTest; compile; diff check | 25.670s test + 1.682s compile | Category entity graph and aggregate version verified |
 | C1 Skills | [x] | `fd22ddd` | `mvn -f backend/pom.xml -Dtest=AdminSkillIntegrationTest test` (PostgreSQL 17); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; independent review | 23.032s test + 1.988s compile | B1 Blog taxonomy reused unchanged; Skills categories/skills are DTO-only, paged/sorted, locked, CSRF/RBAC protected, actor-audited, and batch-mapped |
 | D1 Portfolio | [x] | `deeabc4`, `0e832b2` | `mvn -f backend/pom.xml -Dtest=AdminProjectIntegrationTest test` (PostgreSQL 17); `git diff --check`; independent re-review | 27.494s RED + 33.784s GREEN + 28.730s invariant proof | Localized DTO-only project CRUD, ordered active references, lifecycle, CSRF/RBAC, optimistic locking, audit actions, and query-count proof verified |
-| E1 Pages correction | [ ] | — | — | — | — |
+| E1 Pages correction | [x] | `71e9616` | `mvn -f backend/pom.xml '-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest' test` (PostgreSQL 17); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; `git diff --stat`; `git status --short` | 36.361s RED + 41.371s GREEN + 2.198s compile | Batch translations remove list N+1; actor audit, safe stale 409, CSRF/RBAC, paging, deterministic order, and DTO response boundaries verified |
 | F1 Pack B gate | [ ] | — | — | — | — |
 | G1 Publication/resume | [ ] | — | — | — | — |
 | H1 Featured/social | [ ] | — | — | — | — |
