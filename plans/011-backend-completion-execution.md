@@ -46,7 +46,7 @@
 **Files:** Create `backend/src/main/java/ir/tahamohamadi/blog/{category,tag}/api/admin/*`; modify post tag/media repositories and blog services; create `backend/src/test/java/ir/tahamohamadi/admin/{AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest}.java`.
 **Interfaces:** Produces CRUD `/blog/categories`, `/blog/tags`, `POST /blog/posts/{id}/{publish,archive}`, `DELETE /blog/posts/{id}`.
 - [x] Write RED tests for active localized category/tag CRUD, ordered tags/media, CSRF, ADMIN/SUPER_ADMIN, publish SEO/reference rule 422, stale 409, and actor-attributed sanitized `ADMIN_BLOG_*` audits.
-- [x] Run `mvn "-Dtest=AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest" test`; RED failures observed for missing taxonomy/lifecycle routes (2 failures, 36.398s).
+- [x] Run `mvn -f backend/pom.xml -Dtest=AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest test`; RED failures observed for missing taxonomy/lifecycle routes (2 failures, 36.398s).
 - [x] Implement bounded repository projections, translation batch mapping, lifecycle invariants, soft delete, ordered safe media references, deleted-category publish validation, and same-transaction audit actions `ADMIN_BLOG_CATEGORY_*`, `ADMIN_TAG_*`, `ADMIN_BLOG_POST_{CREATED,UPDATED,PUBLISHED,ARCHIVED,DELETED}`.
 - [x] Run the same command; PostgreSQL 17 `BUILD SUCCESS` after review fixes (3 tests, zero failures/errors/skips, 37.844s measured).
 - [x] Run `mvn -f backend/pom.xml -DskipTests compile` and `git diff --check`; `BUILD SUCCESS` (3.811s measured) and no diff errors. Checkpoint follow-up after review fixes.
@@ -187,7 +187,7 @@
 
 | Task | Status | Commit | Verification | Duration | Notes |
 |---|---|---|---|---|---|
-| B1 Blog lifecycle | [x] | follow-up checkpoint pending | focused PostgreSQL 17 review-fix tests; compile; diff check | 37.844s test + 3.811s compile | Ordered safe media, deleted-category 422, draft archive 409, delete actor, taxonomy negative auth/version |
+| B1 Blog lifecycle | [x] | `9b790e9` | `mvn -f backend/pom.xml -Dtest=AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest test` (PostgreSQL 17); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check` | 37.844s test + 3.811s compile | Ordered safe media, deleted-category 422, draft archive 409, delete actor, taxonomy negative auth/version |
 | Pack A media/contact | [x] | `2741a53` ancestry | Focused PG17 media tests | recorded | Preserve |
 | Admin Pages foundation | [x] | working tree | `AdminPageApiIntegrationTest` | recorded | Needs E1 correction |
 | A1 Blog draft CRUD | [x] | `af57ef7` | AdminBlogCrudIntegrationTest; compile; diff check | 25.670s test + 1.682s compile | Category entity graph and aggregate version verified |
