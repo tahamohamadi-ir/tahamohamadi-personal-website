@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.tahamohamadi.audit.event.AuditEvent;
 import ir.tahamohamadi.audit.event.AuditEventRepository;
 import ir.tahamohamadi.common.domain.LanguageCode;
+import ir.tahamohamadi.common.audit.AuthenticatedAuditActor;
 import ir.tahamohamadi.content.page.ContentPage;
 import ir.tahamohamadi.content.page.ContentPageRepository;
 import ir.tahamohamadi.content.page.ContentPageTranslation;
@@ -22,8 +23,8 @@ import java.util.UUID;
 @ConditionalOnExpression("!'${spring.autoconfigure.exclude:}'.contains('DataSourceAutoConfiguration')")
 public class AdminPageService {
     private final ContentPageRepository pages; private final ContentPageTranslationRepository translations;
-    private final AuditEventRepository audit; private final ObjectMapper mapper;
-    public AdminPageService(ContentPageRepository pages, ContentPageTranslationRepository translations, AuditEventRepository audit, ObjectMapper mapper) { this.pages=pages; this.translations=translations; this.audit=audit; this.mapper=mapper; }
+    private final AuditEventRepository audit; private final ObjectMapper mapper; private final AuthenticatedAuditActor actor;
+    public AdminPageService(ContentPageRepository pages, ContentPageTranslationRepository translations, AuditEventRepository audit, ObjectMapper mapper, AuthenticatedAuditActor actor) { this.pages=pages; this.translations=translations; this.audit=audit; this.mapper=mapper; this.actor=actor; }
     @Transactional(readOnly=true) public Page<AdminPageResponse> list(Pageable pageable) { return pages.findByDeletedAtIsNullOrderByUpdatedAtDescIdDesc(pageable).map(this::response); }
     @Transactional(readOnly=true) public AdminPageResponse get(UUID id) { return response(page(id)); }
     @Transactional public AdminPageResponse create(AdminPageRequest request) { ContentPage page=pages.save(ContentPage.create(UUID.randomUUID(),request.pageKey(),Instant.now())); saveTranslations(page,request); record("ADMIN_PAGE_CREATED",page.getId()); return response(page); }
@@ -38,5 +39,5 @@ public class AdminPageService {
     private PageTranslationRequest translation(ContentPage page,LanguageCode language) { ContentPageTranslation t=translations.findByContentPageIdAndLanguageCodeAndDeletedAtIsNull(page.getId(),language).orElseThrow(()->new java.util.NoSuchElementException("Page translation not found")); return new PageTranslationRequest(t.getTitle(),t.getSlug(),t.getSummary(),t.getBodyMarkdown(),t.getSeoTitle(),t.getSeoDescription(),t.getCanonicalPath()); }
     private void requirePublishable(ContentPage page) { for(LanguageCode lang:LanguageCode.values()) { PageTranslationRequest t=translation(page,lang); if(t.seoTitle()==null||t.seoTitle().isBlank()||t.seoDescription()==null||t.seoDescription().isBlank()) throw new IllegalStateException("Publishing requires localized SEO metadata"); } }
     private static void version(ContentPage page,Long version) { if(version==null||page.getVersion()!=version) throw new ObjectOptimisticLockingFailureException(ContentPage.class,page.getId()); }
-    private void record(String action,UUID id) { audit.save(AuditEvent.record(UUID.randomUUID(),Instant.now(),null,action,"PAGE",id,"SUCCESS",null,null,mapper.createObjectNode().put("changedFields","managed"))); }
+    private void record(String action,UUID id) { audit.save(AuditEvent.record(UUID.randomUUID(),Instant.now(),actor.required(),action,"PAGE",id,"SUCCESS",null,null,mapper.createObjectNode().put("changedFields","managed"))); }
 }
