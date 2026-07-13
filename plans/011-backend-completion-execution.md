@@ -15,7 +15,7 @@
 | Current branch | `feat/backend-completion` |
 | Baseline commit | `2741a53 feat(backend): add authenticated admin audit actor` |
 | Last completed task | F1: Verify all admin contracts |
-| Next task | G1: Implement publication/resume DTO workflows |
+| Next task | H1: Implement featured/social admin/public contracts |
 | Known blockers | None |
 | Last verification date | 2026-07-13 - F1 PostgreSQL 17.10 Pack B suite, compile, migration-integrity, and diff checks passed |
 | Backend readiness | `BACKEND_NOT_READY` — Pack B is ready; Pack C and later gates remain pending |
@@ -98,11 +98,11 @@
 ## G. Publications and Resume admin/public slices
 ### G1: Implement publication/resume DTO workflows
 **Files:** Create `publication/api/{admin,publicsite}/*`, `resume/api/{admin,publicsite}/*`; create `backend/src/test/java/ir/tahamohamadi/{admin,publicapi}/PublicationResumeIntegrationTest.java`.
-- [ ] Write RED admin/public published-only locale/version/audit tests.
-- [ ] Run `mvn "-Dtest=PublicationResumeIntegrationTest" test`; expect RED.
-- [ ] Implement bounded DTO services/controllers, publish/archive, current-document policy, and audit actions.
-- [ ] Run the same command; expect PG17 `BUILD SUCCESS`.
-- [ ] Run `git diff --check`; expect no output. Checkpoint message: `feat(content): add publications and resume`.
+- [x] Write RED admin/public published-only locale/version/audit tests.
+- [x] Run `mvn -f backend/pom.xml "-Dtest=PublicationResumeIntegrationTest" test`; PostgreSQL 17.10 RED: absent admin publication/resume routes returned 404 (2 failures, 31.178s).
+- [x] Implement bounded DTO services/controllers, publish/archive, current-document policy, and audit actions.
+- [x] Run the same command; PostgreSQL 17.10 `BUILD SUCCESS` (2 tests, zero failures/errors/skips, 32.735s).
+- [x] Run `git diff --check`; no output. Checkpoint message: `feat(content): add publications and resume`.
 **Acceptance:** Plan 005/006 publication/resume routes. **Maximum:** 90 minutes.
 
 ## H. Featured Content and Social Links
@@ -195,7 +195,7 @@
 | D1 Portfolio | [x] | `deeabc4`, `0e832b2` | `mvn -f backend/pom.xml -Dtest=AdminProjectIntegrationTest test` (PostgreSQL 17); `git diff --check`; independent re-review | 27.494s RED + 33.784s GREEN + 28.730s invariant proof | Localized DTO-only project CRUD, ordered active references, lifecycle, CSRF/RBAC, optimistic locking, audit actions, and query-count proof verified |
 | E1 Pages correction | [x] | `71e9616` | `mvn -f backend/pom.xml '-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest' test` (PostgreSQL 17); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; `git diff --stat`; `git status --short` | 36.361s RED + 41.371s GREEN + 2.198s compile | Batch translations remove list N+1; actor audit, safe stale 409, CSRF/RBAC, paging, deterministic order, and DTO response boundaries verified |
 | F1 Pack B gate | [x] | `1f43bcd` | `mvn -f backend/pom.xml "-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest,AdminBlogCrudIntegrationTest,AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest,AdminSkillIntegrationTest,AdminProjectIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check` | 61s test + 1.823s compile | 11 tests, zero failures/errors/skips; stale Page/Skill/Project requests now explicitly prove newer state is preserved; V1-V7 unchanged |
-| G1 Publication/resume | [ ] | — | — | — | — |
+| G1 Publication/resume | [x] | pending | `mvn -f backend/pom.xml "-Dtest=PublicationResumeIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check` | 31.178s RED + 32.735s GREEN + 1.916s compile | DTO-only localized admin/public workflows, deterministic bounds, audit actors, stale-write protection, and V8 DOI constraint correction |
 | H1 Featured/social | [ ] | — | — | — | — |
 | I1 Public content | [ ] | — | — | — | — |
 | J1 SEO/search | [ ] | — | — | — | — |

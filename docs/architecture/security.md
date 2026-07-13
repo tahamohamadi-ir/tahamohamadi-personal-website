@@ -119,6 +119,10 @@ tokens, or raw credential input.
 - Do not render unsanitized direct HTML.
 - Public APIs return only Published content.
 - Draft and Archived content must not appear in public responses or sitemaps.
+- Publication, resume entry, and resume document mutations require the existing
+  ADMIN/SUPER_ADMIN and CSRF boundary. Successful lifecycle and CRUD operations
+  append sanitized `ADMIN_PUBLICATION_*`, `ADMIN_RESUME_ENTRY_*`, and
+  `ADMIN_RESUME_DOCUMENT_*` audit events using the authenticated persisted actor.
 
 ## Privacy
 
