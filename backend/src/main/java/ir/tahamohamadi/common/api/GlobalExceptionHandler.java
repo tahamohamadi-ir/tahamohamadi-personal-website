@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -24,5 +25,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class) ResponseEntity<ApiErrorResponse> state(IllegalStateException e,HttpServletRequest r) { return response(HttpStatus.CONFLICT,"STATE_CONFLICT","The requested state transition is not allowed",r,List.of()); }
     @ExceptionHandler(IllegalArgumentException.class) ResponseEntity<ApiErrorResponse> argument(IllegalArgumentException e,HttpServletRequest r) { return response(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","Request validation failed",r,List.of()); }
     @ExceptionHandler(MethodArgumentTypeMismatchException.class) ResponseEntity<ApiErrorResponse> typeMismatch(MethodArgumentTypeMismatchException e,HttpServletRequest r) { return response(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","Request validation failed",r,List.of()); }
+    @ExceptionHandler(DataIntegrityViolationException.class) ResponseEntity<ApiErrorResponse> duplicate(DataIntegrityViolationException e,HttpServletRequest r) { return response(HttpStatus.CONFLICT,"DUPLICATE_RESOURCE","A conflicting resource already exists",r,List.of()); }
     private ResponseEntity<ApiErrorResponse> response(HttpStatus status,String code,String message,HttpServletRequest r,List<FieldValidationError> fields) { return ResponseEntity.status(status).body(new ApiErrorResponse(Instant.now(),status.value(),code,message,r.getRequestURI(),fields)); }
 }

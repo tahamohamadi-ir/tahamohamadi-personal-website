@@ -17,9 +17,6 @@ public class PublicContentController {
     @GetMapping("/posts/{slug}") ResponseEntity<Map<String,Object>> post(@PathVariable LanguageCode lang,@PathVariable String slug){return cached(content.post(lang,slug));}
     @GetMapping("/portfolio") ResponseEntity<Map<String,Object>> projects(@PathVariable LanguageCode lang){return cached(Map.of("items",content.projects(lang)));}
     @GetMapping("/portfolio/{slug}") ResponseEntity<Map<String,Object>> project(@PathVariable LanguageCode lang,@PathVariable String slug){return cached(content.project(lang,slug));}
-    @GetMapping("/publications") ResponseEntity<Map<String,Object>> publications(@PathVariable LanguageCode lang){return cached(Map.of("items",content.publications(lang)));}
-    @GetMapping("/publications/{slug}") ResponseEntity<Map<String,Object>> publication(@PathVariable LanguageCode lang,@PathVariable String slug){return cached(content.publication(lang,slug));}
-    @GetMapping("/resume") ResponseEntity<Map<String,Object>> resume(@PathVariable LanguageCode lang){return cached(Map.of("items",content.resume(lang)));}
     @GetMapping("/social-links") ResponseEntity<Map<String,Object>> social(@PathVariable LanguageCode lang){return cached(Map.of("items",content.social()));}
     private static ResponseEntity<Map<String,Object>> cached(Map<String,Object> body){return ResponseEntity.ok().cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePublic()).body(body);}
     private static void check(int page,int size){if(page<0||size<1||size>50)throw new IllegalArgumentException("Invalid pagination");}
