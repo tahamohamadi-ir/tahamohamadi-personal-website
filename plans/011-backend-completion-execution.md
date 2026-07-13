@@ -189,7 +189,7 @@
 |---|---|---|---|---|---|
 | Pack A media/contact | [x] | `2741a53` ancestry | Focused PG17 media tests | recorded | Preserve |
 | Admin Pages foundation | [x] | working tree | `AdminPageApiIntegrationTest` | recorded | Needs E1 correction |
-| A1 Blog draft CRUD | [x] | pending local checkpoint | AdminBlogCrudIntegrationTest; compile; diff check | 25.670s test + 1.682s compile | Category entity graph and aggregate version verified |
+| A1 Blog draft CRUD | [x] | `af57ef7` | AdminBlogCrudIntegrationTest; compile; diff check | 25.670s test + 1.682s compile | Category entity graph and aggregate version verified |
 | B1 Blog lifecycle | [ ] | — | — | — | — |
 | C1 Skills | [ ] | — | — | — | — |
 | D1 Portfolio | [ ] | — | — | — | — |
