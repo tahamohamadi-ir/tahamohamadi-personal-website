@@ -31,13 +31,13 @@ public class MediaAssetService {
     public MediaAssetService(MediaAssetRepository assets, MediaAssetTranslationRepository translations, MediaStorage storage, MediaValidationService validation, MediaReferenceService references, AuditEventRepository audit, ObjectMapper objectMapper) { this.assets=assets; this.translations=translations; this.storage=storage; this.validation=validation; this.references=references; this.audit=audit; this.objectMapper=objectMapper; }
     @Transactional
     public MediaAssetResponse upload(MultipartFile file, String faAlt, String faCaption, String enAlt, String enCaption) {
-        ValidatedMedia checked = validation.validate(file); requireAlt(faAlt); requireAlt(enAlt);
+        ValidatedMedia checked = validation.validate(file);
         String key = UUID.randomUUID() + "." + checked.extension();
         try {
             String checksum = checksum(file); storage.store(key, file.getInputStream());
             MediaAsset asset = assets.save(MediaAsset.create(key, checked.originalFilename(), checked.extension(), checked.mimeType(), checked.sizeBytes(), checksum, checked.width(), checked.height(), Instant.now()));
-            translations.save(MediaAssetTranslation.create(UUID.randomUUID(), asset, LanguageCode.fa, faAlt.trim(), faCaption, Instant.now()));
-            translations.save(MediaAssetTranslation.create(UUID.randomUUID(), asset, LanguageCode.en, enAlt.trim(), enCaption, Instant.now()));
+            if (hasText(faAlt)) translations.save(MediaAssetTranslation.create(UUID.randomUUID(), asset, LanguageCode.fa, faAlt.trim(), faCaption, Instant.now()));
+            if (hasText(enAlt)) translations.save(MediaAssetTranslation.create(UUID.randomUUID(), asset, LanguageCode.en, enAlt.trim(), enCaption, Instant.now()));
             record("MEDIA_UPLOAD", asset.getId()); return response(asset);
         } catch (IOException | RuntimeException exception) { try { storage.delete(key); } catch (IOException ignored) { } if (exception instanceof RuntimeException runtime) throw runtime; throw new MediaUploadException("Unable to store uploaded file", exception); }
     }
@@ -51,5 +51,6 @@ public class MediaAssetService {
     private MediaAssetResponse response(MediaAsset a) { var fa=translations.findByMediaAssetIdAndLanguageCodeAndDeletedAtIsNull(a.getId(),LanguageCode.fa).orElse(null); var en=translations.findByMediaAssetIdAndLanguageCodeAndDeletedAtIsNull(a.getId(),LanguageCode.en).orElse(null); return new MediaAssetResponse(a.getId(),a.getOriginalFilename(),a.getMimeType(),a.getSizeBytes(),a.getWidth(),a.getHeight(),a.getStatus(),fa==null?null:fa.getAltText(),fa==null?null:fa.getCaption(),en==null?null:en.getAltText(),en==null?null:en.getCaption(),a.getCreatedAt(),a.getVersion()); }
     private String checksum(MultipartFile file) throws IOException { try { MessageDigest digest=MessageDigest.getInstance("SHA-256"); try(var in=file.getInputStream()){ byte[] buffer=new byte[8192]; for(int read;(read=in.read(buffer))!=-1;) digest.update(buffer,0,read); } return HexFormat.of().formatHex(digest.digest()); } catch(java.security.GeneralSecurityException e){throw new IllegalStateException(e);} }
     private void record(String action, UUID target) { audit.save(AuditEvent.record(UUID.randomUUID(),Instant.now(),null,action,"MEDIA_ASSET",target,"SUCCESS",null,null,objectMapper.createObjectNode())); }
-    private static void requireAlt(String alt) { if(alt==null||alt.isBlank()||alt.length()>500) throw new MediaUploadException("Localized alt text is required"); }
+    private static void requireAlt(String alt) { if(!hasText(alt)||alt.length()>500) throw MediaUploadException.invalid("Localized alt text is required"); }
+    private static boolean hasText(String value) { return value != null && !value.isBlank(); }
 }

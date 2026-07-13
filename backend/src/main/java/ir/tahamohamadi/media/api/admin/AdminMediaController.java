@@ -18,7 +18,7 @@ public class AdminMediaController {
     private final MediaAssetService media; private final MediaOrphanReportService orphans;
     public AdminMediaController(MediaAssetService media, MediaOrphanReportService orphans) { this.media=media; this.orphans=orphans; }
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    ResponseEntity<MediaAssetResponse> upload(@RequestPart MultipartFile file,@RequestParam String faAlt,@RequestParam(required=false) String faCaption,@RequestParam String enAlt,@RequestParam(required=false) String enCaption) { MediaAssetResponse response=media.upload(file,faAlt,faCaption,enAlt,enCaption); return ResponseEntity.created(URI.create("/api/v1/admin/media/"+response.id())).body(response); }
+    ResponseEntity<MediaAssetResponse> upload(@RequestPart MultipartFile file,@RequestParam(required=false) String faAlt,@RequestParam(required=false) String faCaption,@RequestParam(required=false) String enAlt,@RequestParam(required=false) String enCaption) { MediaAssetResponse response=media.upload(file,faAlt,faCaption,enAlt,enCaption); return ResponseEntity.created(URI.create("/api/v1/admin/media/"+response.id())).body(response); }
     @GetMapping PageResponse<MediaAssetSummary> list(@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) { return PageResponse.from(media.list(PageRequest.of(validPage(page),validSize(size)))); }
     @GetMapping("/{id}") MediaAssetResponse get(@PathVariable UUID id) { return media.get(id); }
     @PutMapping("/{id}/metadata") MediaAssetResponse metadata(@PathVariable UUID id,@Valid @RequestBody MediaMetadataRequest request) { return media.update(id,request); }

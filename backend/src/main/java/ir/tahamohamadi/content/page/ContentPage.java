@@ -21,6 +21,7 @@ public class ContentPage extends AuditedSoftDeletableEntity {
     @Column(name = "published_at") private Instant publishedAt;
     private ContentPage(UUID id, String pageKey, Instant createdAt) { initialize(id, createdAt); this.pageKey = requireNonBlank(pageKey, "pageKey"); this.status = ContentStatus.DRAFT; }
     public static ContentPage create(UUID id, String pageKey, Instant createdAt) { return new ContentPage(id, pageKey, createdAt); }
+    public void rename(String pageKey) { this.pageKey = requireNonBlank(pageKey, "pageKey"); }
     public void publish(Instant publishedAt) { this.status = ContentStatus.PUBLISHED; this.publishedAt = publishedAt; }
     public void archive() { this.status = ContentStatus.ARCHIVED; }
 }

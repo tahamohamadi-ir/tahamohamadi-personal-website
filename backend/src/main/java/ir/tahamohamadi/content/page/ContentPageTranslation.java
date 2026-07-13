@@ -25,4 +25,8 @@ public class ContentPageTranslation extends AuditedSoftDeletableEntity {
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "og_media_id") private MediaAsset ogMedia;
     private ContentPageTranslation(UUID id, ContentPage page, LanguageCode language, String title, String slug, Instant createdAt) { initialize(id, createdAt); this.contentPage=Objects.requireNonNull(page); this.languageCode=Objects.requireNonNull(language); this.title=requireNonBlank(title,"title"); this.slug=requireNonBlank(slug,"slug"); }
     public static ContentPageTranslation create(UUID id, ContentPage page, LanguageCode language, String title, String slug, Instant createdAt) { return new ContentPageTranslation(id,page,language,title,slug,createdAt); }
+    public void update(String title, String slug, String summary, String bodyMarkdown, String seoTitle, String seoDescription, String canonicalPath) {
+        this.title=requireNonBlank(title,"title"); this.slug=requireNonBlank(slug,"slug"); this.summary=summary; this.bodyMarkdown=bodyMarkdown;
+        this.seoTitle=seoTitle; this.seoDescription=seoDescription; this.canonicalPath=canonicalPath;
+    }
 }
