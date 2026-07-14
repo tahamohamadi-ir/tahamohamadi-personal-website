@@ -14,11 +14,11 @@
 |---|---|
 | Current branch | `feat/backend-completion` |
 | Baseline commit | `2741a53 feat(backend): add authenticated admin audit actor` |
-| Last completed task | J1: Implement public discoverability contracts |
-| Next task | K1: Verify Pack C |
+| Last completed task | K1: Verify Pack C |
+| Next task | L1: Run the full backend acceptance gate |
 | Known blockers | None |
-| Last verification date | 2026-07-13 - J1 local PostgreSQL 17.10 regression suite, compile, manual review of reported P1 findings, and diff checks passed |
-| Backend readiness | `BACKEND_NOT_READY` — J1 is verified; Pack C and full backend gates remain pending |
+| Last verification date | 2026-07-13 - K1 Pack C PostgreSQL 17.10 suite, Contact contract coverage, compile, and diff checks passed |
+| Backend readiness | PACK_C_READY - Pack C is verified; full backend gate L1 remains pending |
 
 ## Global constraints
 
@@ -138,9 +138,9 @@
 ## K. Pack C acceptance gate
 ### K1: Verify Pack C
 **Files:** Modify `docs/api/api-design.md`, `docs/architecture/{architecture.md,security.md}`; tests from G-I.
-- [ ] Run `mvn "-Dtest=PublicContentIntegrationTest,PublicBlogSearchIntegrationTest,PublicContactIntegrationTest,PublicSeoContractIntegrationTest" test`; expect green PG17.
-- [ ] Run `mvn -DskipTests compile` and `git diff --check`; expect success.
-- [ ] Inspect public entity exposure, locale fallback, page limits, FTS plan, media URLs. Checkpoint message: `test(public): verify pack c gate`.
+- [x] Run `mvn "-Dtest=PublicContentIntegrationTest,PublicBlogSearchIntegrationTest,PublicContactIntegrationTest,PublicSeoContractIntegrationTest" test`; expect green PG17.
+- [x] Run `mvn -DskipTests compile` and `git diff --check`; expect success.
+- [x] Inspect public entity exposure, locale fallback, page limits, FTS plan, media URLs. Checkpoint message: `test(public): verify pack c gate`.
 **Acceptance:** Plan 006 complete. **Maximum:** 45 minutes.
 
 ## L. Full backend acceptance gate
@@ -199,8 +199,8 @@
 | H1 Featured/social | [x] | pending | `mvn -f backend/pom.xml "-Dtest=FeaturedSocialIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; `git status --short`; `git diff --stat` | 32.749s test + 1.953s compile | 2 tests, DTO-only bounded admin/public contracts; active-window, published-target, order, CSRF/RBAC, optimistic locking, principal audit, and public filtering verified |
 | I1 Public content | [x] | `fbb226e` | `mvn -f backend/pom.xml '-Dtest=PublicContentIntegrationTest,PublicationResumeIntegrationTest,FeaturedSocialIntegrationTest' test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; independent review | 28.071s test + 1.479s compile | 20 tests, zero failures/errors/skips; stable-key localized home, safe public metadata/DTOs, grouped eligible taxonomy counts, and bounded featured batching verified |
 | J1 SEO/search | [x] | `0184472` | 27 focused PostgreSQL 17.10 tests; compile; diff check; manual review of reported P1 findings | 34.53s test + 6.52s compile | FTS normalization, canonical/hreflang, safe OG media, sitemap-data, robots policy, home canonical fallback, and bounded locale alternate metadata verified |
-| K1 Pack C gate | [ ] | â€” | â€” | â€” | â€” |
-| L1 Backend gate | [ ] | â€” | â€” | â€” | â€” |
-| M1 Public frontend | [ ] | â€” | â€” | â€” | blocked by L1 |
-| N1 Admin frontend | [ ] | â€” | â€” | â€” | blocked by M1 |
-| O1 Delivery | [ ] | â€” | â€” | â€” | blocked by N1 |
+| K1 Pack C gate | [x] | 88bb9bd | PublicContentIntegrationTest, PublicBlogSearchIntegrationTest, PublicContactIntegrationTest, PublicSeoContractIntegrationTest; compile; diff check | 29 tests, PostgreSQL 17.10; 50.07s test + 9.05s compile | zero failures/errors/skips; safe Contact receipt, validation, CSRF, duplicate submission, PII protection, localized content, FTS, sitemap, canonical metadata and robots contracts verified |
+| L1 Backend gate | [ ] | - | - | - | - |
+| M1 Public frontend | [ ] | - | - | - | blocked by L1 |
+| N1 Admin frontend | [ ] | - | - | - | blocked by M1 |
+| O1 Delivery | [ ] | - | - | - | blocked by N1 |
