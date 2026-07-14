@@ -1,32 +1,20 @@
 package ir.tahamohamadi;
 
-import ir.tahamohamadi.audit.event.AuditEventRepository;
-import ir.tahamohamadi.identity.assignment.UserRoleRepository;
-import ir.tahamohamadi.identity.user.AppUserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest(properties = {
-        "spring.autoconfigure.exclude=" +
-                "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration," +
-                "org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration"
-})
+@SpringBootTest
+@Testcontainers
 class TahaMohamadiBackendApplicationSmokeTest {
 
-    @MockitoBean
-    private AppUserRepository appUserRepository;
-
-    @MockitoBean
-    private UserRoleRepository userRoleRepository;
-
-    @MockitoBean
-    private AuditEventRepository auditEventRepository;
-
-    @MockitoBean
-    private TransactionTemplate transactionTemplate;
+    @Container
+    @ServiceConnection
+    static final PostgreSQLContainer<?> POSTGRES =
+            new PostgreSQLContainer<>("postgres:17-alpine");
 
     @Test
     void contextLoads() {
