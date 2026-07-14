@@ -4,7 +4,7 @@
 
 **Goal:** Deliver a DTO-only, PostgreSQL 17-tested backend gate before any frontend task starts.
 
-**Architecture:** Modular Spring Boot monolith; feature-local controllers/services/mappers/repositories; session/CSRF security; Flyway V1-V7 immutable. Public API contracts are language-prefixed, published-only, bounded, and SEO-shaped.
+**Architecture:** Modular Spring Boot monolith; feature-local controllers/services/mappers/repositories; session/CSRF security; Flyway V1-V8 immutable. Public API contracts are language-prefixed, published-only, bounded, and SEO-shaped.
 
 **Tech stack:** Java 21, Spring Boot, Spring Security, JPA, Flyway, PostgreSQL 17 Testcontainers, Maven.
 
@@ -14,15 +14,15 @@
 |---|---|
 | Current branch | `feat/backend-completion` |
 | Baseline commit | `2741a53 feat(backend): add authenticated admin audit actor` |
-| Last completed task | K1: Verify Pack C |
-| Next task | L1: Run the full backend acceptance gate |
+| Last completed task | L1: Run immutable backend gate |
+| Next task | M1: Execute Plan 008 after L1 only |
 | Known blockers | None |
-| Last verification date | 2026-07-13 - K1 Pack C PostgreSQL 17.10 suite, Contact contract coverage, compile, and diff checks passed |
-| Backend readiness | PACK_C_READY - Pack C is verified; full backend gate L1 remains pending |
+| Last verification date | 2026-07-14 - L1 full backend suite, Flyway V1-V8 upgrade gate, compile, diff checks, and manual backend audit passed |
+| Backend readiness | `BACKEND_READY_FOR_FRONTEND` - immutable backend acceptance gate passed; M1 may begin |
 
 ## Global constraints
 
-- Never edit `backend/src/main/resources/db/migration/V1__*` through `V7__*`; add a forward-only migration only when schema requires it.
+- Never edit `backend/src/main/resources/db/migration/V1__*` through `V8__*`; add a forward-only migration only when schema requires it.
 - Use `mvn`, never `mvnw.cmd`; focused tests after each task; full suite only gates F, K, L.
 - Controllers return records/DTOs only; every growing collection has validated pagination and allow-listed deterministic sort.
 - Admin mutations require ADMIN/SUPER_ADMIN and CSRF; audits use `AuthenticatedAuditActor`, never request actor input.
@@ -146,11 +146,11 @@
 ## L. Full backend acceptance gate
 ### L1: Run immutable backend gate
 **Files:** Create/modify only acceptance evidence in `docs/testing/mvp-acceptance.md`.
-- [ ] Run `mvn -DskipTests compile`; expect `BUILD SUCCESS`.
-- [ ] Run `mvn test`; expect zero failures/errors/skips with PostgreSQL 17 Testcontainers.
-- [ ] Run `mvn "-Dtest=FlywayUpgradeIntegrationTest,FlywayWaveAIntegrationTest,FlywayWaveBIntegrationTest" test`; expect V1-V7 validation success.
-- [ ] Run `git diff --check; git status --short; git diff --stat`; expect no scope violation.
-- [ ] Inspect CSRF/RBAC/audit/version/entity exposure/N+1/unbounded repositories; record `BACKEND_READY_FOR_FRONTEND` only if all green. Checkpoint message: `test(backend): pass acceptance gate`.
+- [x] Run `mvn -DskipTests compile`; observed `BUILD SUCCESS` in 10.18 seconds.
+- [x] Run `mvn test`; observed 120 tests across 31 classes with zero failures/errors/skips on PostgreSQL 17.10 Testcontainers in 185.85 seconds.
+- [x] Run `mvn "-Dtest=FlywayUpgradeIntegrationTest,FlywayWaveAIntegrationTest,FlywayWaveBIntegrationTest" test`; observed 3 tests with zero failures/errors/skips and explicit V7-to-V8 upgrade coverage in 28.60 seconds.
+- [x] Run `git diff --check; git status --short; git diff --stat`; observed clean checkpoint state and no frontend, documentation, plan, or migration scope violation during audit corrections.
+- [x] Inspect CSRF/RBAC/audit/version/entity exposure/N+1/unbounded repositories; closed actor attribution, contact/media concurrency, DTO-boundary, page deletion actor, and batched lookup findings; verdict `BACKEND_READY_FOR_FRONTEND`. Checkpoint message: `test(backend): pass acceptance gate`.
 **Acceptance:** backend ready. **Maximum:** 90 minutes. **Do not change:** frontend.
 
 ## M. Public frontend
@@ -200,7 +200,7 @@
 | I1 Public content | [x] | `fbb226e` | `mvn -f backend/pom.xml '-Dtest=PublicContentIntegrationTest,PublicationResumeIntegrationTest,FeaturedSocialIntegrationTest' test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; independent review | 28.071s test + 1.479s compile | 20 tests, zero failures/errors/skips; stable-key localized home, safe public metadata/DTOs, grouped eligible taxonomy counts, and bounded featured batching verified |
 | J1 SEO/search | [x] | `0184472` | 27 focused PostgreSQL 17.10 tests; compile; diff check; manual review of reported P1 findings | 34.53s test + 6.52s compile | FTS normalization, canonical/hreflang, safe OG media, sitemap-data, robots policy, home canonical fallback, and bounded locale alternate metadata verified |
 | K1 Pack C gate | [x] | 88bb9bd | PublicContentIntegrationTest, PublicBlogSearchIntegrationTest, PublicContactIntegrationTest, PublicSeoContractIntegrationTest; compile; diff check | 29 tests, PostgreSQL 17.10; 50.07s test + 9.05s compile | zero failures/errors/skips; safe Contact receipt, validation, CSRF, duplicate submission, PII protection, localized content, FTS, sitemap, canonical metadata and robots contracts verified |
-| L1 Backend gate | [ ] | - | - | - | - |
-| M1 Public frontend | [ ] | - | - | - | blocked by L1 |
+| L1 Backend gate | [x] | `9a67348`, `e33005e` | focused V7-to-V8 upgrade; Flyway gate; focused backend audit suite; full backend suite; compile; diff/scope checks; manual CSRF/RBAC/audit/version/DTO/query review | 21.91s upgrade + 28.60s Flyway + 46.91s focused audit + 185.85s full suite + 10.18s compile | 120 tests across 31 classes, zero failures/errors/skips on PostgreSQL 17.10; audit findings closed; `BACKEND_READY_FOR_FRONTEND` |
+| M1 Public frontend | [ ] | - | - | - | unblocked; execute Plan 008 |
 | N1 Admin frontend | [ ] | - | - | - | blocked by M1 |
 | O1 Delivery | [ ] | - | - | - | blocked by N1 |
