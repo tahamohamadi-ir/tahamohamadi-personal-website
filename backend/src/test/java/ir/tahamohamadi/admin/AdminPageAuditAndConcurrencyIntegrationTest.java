@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -104,10 +105,26 @@ class AdminPageAuditAndConcurrencyIntegrationTest {
                 .andExpect(jsonPath("$.id").isString())
                 .andReturn().getResponse().getContentAsString();
         UUID pageId = UUID.fromString(JsonPath.read(created, "$.id"));
+        long version = ((Number) JsonPath.read(created, "$.version")).longValue();
+
+        mvc.perform(delete("/api/v1/admin/pages/{id}", pageId)
+                        .param("version", Long.toString(version))
+                        .with(adminUser(admin))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isNoContent());
+
+        ContentPage deleted = pages.findById(pageId).orElseThrow();
+        assertThat(deleted.getDeletedBy()).isNotNull();
+        assertThat(deleted.getDeletedBy().getId()).isEqualTo(admin.getId());
 
         List<AuditEvent> events = audit.findByActorIdOrderByOccurredAtDesc(admin.getId());
         assertThat(events).anySatisfy(event -> {
             assertThat(event.getAction()).isEqualTo("ADMIN_PAGE_CREATED");
+            assertThat(event.getTargetId()).isEqualTo(pageId);
+            assertThat(event.getActor().getId()).isEqualTo(admin.getId());
+        });
+        assertThat(events).anySatisfy(event -> {
+            assertThat(event.getAction()).isEqualTo("ADMIN_PAGE_DELETED");
             assertThat(event.getTargetId()).isEqualTo(pageId);
             assertThat(event.getActor().getId()).isEqualTo(admin.getId());
         });

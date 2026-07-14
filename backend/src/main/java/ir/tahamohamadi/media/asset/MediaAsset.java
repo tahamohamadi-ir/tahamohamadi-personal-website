@@ -63,5 +63,11 @@ public class MediaAsset extends AuditedSoftDeletableEntity {
         return create(UUID.randomUUID(), storageKey, originalFilename, extension, mimeType, sizeBytes, checksumSha256, width, height, createdAt);
     }
 
-    public void archive() { this.status = MediaAssetStatus.ARCHIVED; }
+    public void touch(Instant updatedAt) {
+        this.updatedAt = java.util.Objects.requireNonNull(updatedAt, "updatedAt must not be null");
+    }
+
+    public void archive() {
+        this.status = MediaAssetStatus.ARCHIVED;
+    }
 }

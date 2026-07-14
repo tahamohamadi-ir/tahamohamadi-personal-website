@@ -28,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -73,7 +75,42 @@ public class AdminBlogService {
     private void save(BlogPost post,BlogTranslationRequest fa,BlogTranslationRequest en) { save(post,LanguageCode.fa,fa); save(post,LanguageCode.en,en); }
     private void save(BlogPost post,LanguageCode language,BlogTranslationRequest request) { translations.findByBlogPostIdAndDeletedAtIsNull(post.getId()).stream().filter(value->value.getLanguageCode()==language).findFirst().ifPresentOrElse(value->value.update(request.title(),request.slug(),request.excerpt(),request.bodyMarkdown(),request.seoTitle(),request.seoDescription()),()->translations.save(BlogPostTranslation.create(UUID.randomUUID(),post,language,request.title(),request.slug(),request.bodyMarkdown(),Instant.now()))); }
     private void replaceTags(BlogPost post,List<UUID> tagIds) { if(tagIds==null) return; List<UUID> ids=tagIds.stream().distinct().toList(); if(ids.size()!=tagIds.size()) throw new IllegalArgumentException("Tag ids must be unique"); List<Tag> values=tags.findAllById(ids); if(values.size()!=ids.size()||values.stream().anyMatch(value->value.getDeletedAt()!=null||!value.isActive())) throw new NoSuchElementException("Tag not found"); postTags.deleteByIdBlogPostId(post.getId()); postTags.saveAll(values.stream().map(value->BlogPostTag.assign(post,value)).toList()); }
-    private void replaceMedia(BlogPost post,List<AdminBlogMediaReferenceRequest> references) { if(references==null) return; if(references.stream().map(reference->reference.mediaAssetId()+":"+reference.usage()).distinct().count()!=references.size()) throw new IllegalArgumentException("Media references must be unique per usage"); if(references.stream().map(reference->reference.usage()+":"+reference.sortOrder()).distinct().count()!=references.size()) throw new IllegalArgumentException("Media sort order must be unique per usage"); List<MediaAsset> assets=references.stream().map(reference->media.findByIdAndStatusAndDeletedAtIsNull(reference.mediaAssetId(),MediaAssetStatus.ACTIVE).orElseThrow(()->new NoSuchElementException("Media asset not found"))).toList(); postMedia.deleteAllByPostId(post.getId()); postMedia.flush(); postMedia.saveAll(java.util.stream.IntStream.range(0,references.size()).mapToObj(index->BlogPostMedia.attach(post,assets.get(index),references.get(index).usage(),references.get(index).sortOrder())).toList()); }
+    private void replaceMedia(BlogPost post, List<AdminBlogMediaReferenceRequest> references) {
+        if (references == null) return;
+        if (references.stream().map(reference -> reference.mediaAssetId() + ":" + reference.usage()).distinct().count() != references.size()) {
+            throw new IllegalArgumentException("Media references must be unique per usage");
+        }
+        if (references.stream().map(reference -> reference.usage() + ":" + reference.sortOrder()).distinct().count() != references.size()) {
+            throw new IllegalArgumentException("Media sort order must be unique per usage");
+        }
+
+        List<UUID> ids = references.stream()
+                .map(AdminBlogMediaReferenceRequest::mediaAssetId)
+                .distinct()
+                .toList();
+        Map<UUID, MediaAsset> activeMedia = media.findAllById(ids).stream()
+                .filter(asset -> asset.getDeletedAt() == null && asset.getStatus() == MediaAssetStatus.ACTIVE)
+                .collect(Collectors.toMap(MediaAsset::getId, asset -> asset));
+
+        if (activeMedia.size() != ids.size()) {
+            throw new NoSuchElementException("Media asset not found");
+        }
+
+        List<MediaAsset> resolved = references.stream()
+                .map(reference -> activeMedia.get(reference.mediaAssetId()))
+                .toList();
+
+        postMedia.deleteAllByPostId(post.getId());
+        postMedia.flush();
+        postMedia.saveAll(java.util.stream.IntStream.range(0, references.size())
+                .mapToObj(index -> BlogPostMedia.attach(
+                        post,
+                        resolved.get(index),
+                        references.get(index).usage(),
+                        references.get(index).sortOrder()
+                ))
+                .toList());
+    }
     private void requirePublishable(BlogPost post) { if(post.getCategory().getDeletedAt()!=null||!post.getCategory().isActive()) throw new PublishValidationException(); List<BlogPostTranslation> values=translations.findByBlogPostIdAndDeletedAtIsNull(post.getId()); for(LanguageCode language:LanguageCode.values()) { BlogTranslationRequest translation=dto(values,language); if(blank(translation.seoTitle())||blank(translation.seoDescription())) throw new PublishValidationException(); } }
     private static boolean blank(String value) { return value==null||value.isBlank(); }
     private static void version(BlogPost post,long version) { if(post.getVersion()!=version) throw new ObjectOptimisticLockingFailureException(BlogPost.class,post.getId()); }
