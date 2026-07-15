@@ -1,0 +1,23 @@
+# 13 — Decision register
+
+**UX-DEC-REG-001 — Register protocol.** Each material decision has stable ID, state, rationale, evidence, affected scope, accountable owner, phase/date, review trigger, and supersession. `—` in Supersedes means no prior register entry. State meanings are in [README](README.md).
+
+| ID | Decision / state | Rationale and evidence | Scope / owner | Phase or date / review trigger | Supersedes |
+|---|---|---|---|---|---|
+| UX-DEC-001 | Academic Editorial Utility — APPROVED | Content-first audiences and M1 plan reject marketing placeholders. | Public M1; product owner + design reviewer | M1; review on approved brand change | — |
+| UX-DEC-002 | Docs own semantics; source owns runtime values — APPROVED | `tokens.scss` is executable token authority; compatibility redirect is non-normative. | UI docs/source; documentation maintainer | 2026-07 audit; review on ownership conflict | — |
+| UX-DEC-003 | `fa`/RTL and `en`/LTR equal; no fallback — APPROVED | Frontend rules, routes, locale fixtures. | Public routes; frontend owner | M1; review on locale addition | — |
+| UX-DEC-004 | Public SSR/hybrid; admin CSR/noindex permitted — APPROVED | ADR-002 and ADR-006. | Rendering boundary; frontend owner | M1; review on rendering ADR | — |
+| UX-DEC-005 | Dark mode excluded — APPROVED | Public visual direction and M1 scope. | Public visual system; design reviewer | M1; separate contrast decision needed to change | — |
+| UX-DEC-006 | Shell/API boundary is current; CMS route content not complete — APPROVED | Routes use placeholders; API operations/fixtures exist. | Public M1; frontend owner | 2026-07 audit; review after route integrations | — |
+| UX-DEC-007 | Final token/state contrast acceptance — PROVISIONAL | Semantic roles exist; full component/browser contrast evidence absent. | Public components; accessibility reviewer | Phase 1; review before visual GREEN | — |
+| UX-DEC-008 | Font hosting/licensing/subsetting/delivery — BLOCKED | Typography source names stacks only; no approved production asset decision. | Fonts; product owner | Before production font change | — |
+| UX-DEC-009 | Portrait/logo/favicon/OG asset standards — BLOCKED | Plan requires approved assets; no assets evidenced. | Brand assets; product owner | Before page/SEO GREEN | — |
+| UX-DEC-010 | Icon family — UNRESOLVED | Foundations require one vector family; no family approval/evidence. | Public components; design reviewer | Before new icon control | — |
+| UX-DEC-011 | Markdown/rich-content sanitizer — BLOCKED | SSR rules prohibit raw HTML; no approved sanitizer/dependency. | CMS content; security + frontend owner | Before Markdown HTML rendering | — |
+| UX-DEC-012 | Detail canonical/hreflang alignment — UNRESOLVED | Fixture resource paths and UI blog paths differ; no rendered integration evidence. | SEO route integration; frontend + backend owner | Phase 3/5 before indexing | — |
+| UX-DEC-013 | Route-specific `alternatePath` propagation — PLANNED | API-provided `alternatePath` is authoritative; shared header is not route-specific. | Detail locale switch; frontend owner | Phase 1/3 | — |
+| UX-DEC-014 | Admin language strategy / SEO / translation components — FUTURE | Admin frontend outside M1; backend support is not a UI decision. | Admin frontend; product owner | Separate admin plan | — |
+| UX-DEC-015 | Unsupported admin detail behaviour — FUTURE | No admin detail UI specification or evidence. | Admin frontend; product owner | Separate admin plan | — |
+| UX-DEC-016 | Real CMS content availability — BLOCKED | Placeholder routes must not invent facts/content. | Content owner | Before each content route GREEN | — |
+| UX-DEC-017 | Visual regression and broader automated a11y coverage — PLANNED | Shell specs exist; full route/browser matrix absent. | QA; frontend owner | Phase 5 | — |
