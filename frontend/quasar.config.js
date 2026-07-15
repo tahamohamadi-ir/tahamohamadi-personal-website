@@ -1,7 +1,7 @@
 import { configure } from 'quasar/wrappers'
 
 export default configure(() => ({
-  boot: ['i18n', 'pinia'],
+  boot: ['i18n', 'pinia', 'api'],
   css: ['app.scss'],
   extras: ['material-icons'],
   build: {
