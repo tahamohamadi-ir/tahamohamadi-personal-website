@@ -1,0 +1,46 @@
+html,
+body {
+  font-size: 16px;
+}
+
+[lang='en'] {
+  font-family: 'Source Sans 3', 'Segoe UI', Arial, sans-serif;
+  line-height: 1.65;
+}
+
+[lang='fa'] {
+  font-family: Vazirmatn, Tahoma, Arial, sans-serif;
+  line-height: 1.9;
+}
+
+[lang='fa'] p {
+  text-align: start;
+}
+
+.tm-page-title {
+  max-inline-size: var(--tm-prose-max-width);
+  margin: 0;
+  color: var(--tm-text-primary);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+[lang='fa'] .tm-page-title {
+  letter-spacing: normal;
+  line-height: 1.45;
+}
+
+.tm-page-copy {
+  max-inline-size: var(--tm-prose-max-width);
+  margin: var(--tm-space-4) 0 0;
+  color: var(--tm-text-secondary);
+  font-size: 1.0625rem;
+}
+
+@media (min-width: 600px) {
+  .tm-page-title {
+    font-size: 2.625rem;
+  }
+}

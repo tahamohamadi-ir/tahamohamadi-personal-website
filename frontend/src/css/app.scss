@@ -1,13 +1,112 @@
+@use './tokens.scss';
+@use './typography.scss';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html,
 body,
 #q-app {
-  min-height: 100%;
+  min-block-size: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--tm-canvas);
+  color: var(--tm-text-primary);
 }
 
 body {
-  margin: 0;
+  min-inline-size: 320px;
 }
 
-html[dir='rtl'] {
-  text-align: right;
+:focus-visible {
+  outline: 3px solid var(--tm-focus-ring);
+  outline-offset: 3px;
+}
+
+.tm-container {
+  inline-size: min(100%, var(--tm-page-max-width));
+  margin-inline: auto;
+  padding-inline: var(--tm-gutter);
+}
+
+.public-shell {
+  min-block-size: 100dvh;
+  background: var(--tm-canvas);
+}
+
+.public-main {
+  min-block-size: 1px;
+}
+
+.tm-editorial-page {
+  min-block-size: min(58dvh, 620px);
+  padding-block: var(--tm-content-block-start) var(--tm-content-block-end);
+}
+
+.tm-editorial-page__content {
+  max-inline-size: var(--tm-prose-max-width);
+}
+
+.tm-editorial-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tm-space-3);
+  margin-block-start: var(--tm-space-6);
+}
+
+.tm-text-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tm-control-min-size);
+  padding-inline: var(--tm-space-3);
+  border: 1px solid var(--tm-border-subtle);
+  border-radius: var(--tm-radius-control);
+  color: var(--tm-link);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tm-text-link:hover {
+  border-color: var(--tm-link);
+  color: var(--tm-text-primary);
+}
+
+.public-shell .tm-interactive,
+.public-shell .q-btn {
+  min-inline-size: var(--tm-control-min-size);
+  min-block-size: var(--tm-control-min-size);
+  touch-action: manipulation;
+}
+
+.public-shell :where(p, li) {
+  max-inline-size: var(--tm-prose-max-width);
+}
+
+@media (min-width: 600px) {
+  .tm-container {
+    padding-inline: var(--tm-gutter-tablet);
+  }
+}
+
+@media (min-width: 1024px) {
+  .tm-container {
+    padding-inline: var(--tm-gutter-desktop);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto;
+    transition-duration: 0ms;
+    animation-duration: 0ms;
+  }
 }

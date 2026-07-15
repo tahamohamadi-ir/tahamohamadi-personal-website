@@ -1,33 +1,28 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
+const { t } = useI18n()
 
-const locale = computed(() =>
-  String(route.meta.locale ?? 'en')
-)
+const pageKey = computed(() => String(route.meta.pageKey ?? ''))
+const navigationKeys = new Set([
+  'about', 'research', 'skills', 'resume', 'blog', 'portfolio', 'publications', 'contact'
+])
 
-const direction = computed(() =>
-  String(route.meta.direction ?? 'ltr')
-)
-
-const pageKey = computed(() =>
-  String(route.meta.pageKey ?? 'public-page')
-)
+const pageTitle = computed(() => (
+  navigationKeys.has(pageKey.value)
+    ? t(`shell.navigation.${pageKey.value}`)
+    : t('public.temporaryPage')
+))
 </script>
 
 <template>
-  <main
-    class="q-pa-lg"
-    :lang="locale"
-    :dir="direction"
-  >
-    <h1>{{ pageKey }}</h1>
-
-    <p>
-      This temporary route shell will be replaced by
-      CMS-backed public content.
-    </p>
-  </main>
+  <section class="tm-editorial-page tm-container" aria-labelledby="placeholder-title">
+    <div class="tm-editorial-page__content">
+      <h1 id="placeholder-title" class="tm-page-title">{{ pageTitle }}</h1>
+      <p class="tm-page-copy">{{ t('public.temporaryDescription') }}</p>
+    </div>
+  </section>
 </template>

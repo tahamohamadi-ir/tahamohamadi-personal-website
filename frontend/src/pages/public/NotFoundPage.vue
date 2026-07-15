@@ -1,38 +1,23 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-
-const locale = computed(() =>
-  String(route.meta.locale ?? 'en')
-)
-
-const direction = computed(() =>
-  String(route.meta.direction ?? 'ltr')
-)
-
-const heading = computed(() =>
-  locale.value === 'fa'
-    ? '\u0635\u0641\u062d\u0647\u0020\u067e\u06cc\u062f\u0627\u0020\u0646\u0634\u062f'
-    : 'Page not found'
-)
-
-const description = computed(() =>
-  locale.value === 'fa'
-    ? '\u0646\u0634\u0627\u0646\u06cc\u0020\u062f\u0631\u062e\u0648\u0627\u0633\u062a\u200c\u0634\u062f\u0647\u0020\u062f\u0631\u0020\u0627\u06cc\u0646\u0020\u0632\u0628\u0627\u0646\u0020\u0648\u062c\u0648\u062f\u0020\u0646\u062f\u0627\u0631\u062f\u002e'
-    : 'The requested localized page does not exist.'
-)
+const { t } = useI18n()
+const homePath = computed(() => `/${route.meta.locale ?? 'en'}`)
 </script>
 
 <template>
-  <main
-    class="q-pa-lg"
-    :lang="locale"
-    :dir="direction"
-  >
-    <h1>{{ heading }}</h1>
-
-    <p>{{ description }}</p>
-  </main>
+  <section class="tm-editorial-page tm-container" aria-labelledby="not-found-title">
+    <div class="tm-editorial-page__content">
+      <h1 id="not-found-title" class="tm-page-title">{{ t('public.notFound') }}</h1>
+      <p class="tm-page-copy">{{ t('public.notFoundDescription') }}</p>
+      <div class="tm-editorial-page__actions">
+        <router-link class="tm-text-link tm-interactive" :to="homePath">
+          {{ t('public.returnHome') }}
+        </router-link>
+      </div>
+    </div>
+  </section>
 </template>

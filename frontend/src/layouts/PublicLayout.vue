@@ -1,7 +1,10 @@
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+import SiteFooter from 'src/components/public/SiteFooter.vue'
+import SiteHeader from 'src/components/public/SiteHeader.vue'
+import SkipLink from 'src/components/public/SkipLink.vue'
 
 const route = useRoute()
 const { locale } = useI18n()
@@ -27,14 +30,45 @@ watch(
   },
   { immediate: true }
 )
+
+watch(
+  () => route.fullPath,
+  () => {
+    if (typeof document === 'undefined') {
+      return
+    }
+
+    void nextTick(() => {
+      document.getElementById('main-content')?.focus()
+    })
+  }
+)
 </script>
 
 <template>
-  <q-layout view="hHh lpR fFf">
+  <q-layout
+    class="public-shell"
+    view="hHh lpR fFf"
+  >
+    <SkipLink />
+    <SiteHeader
+      :locale="language"
+      :direction="direction"
+    />
     <q-page-container>
-      <main :dir="direction" :lang="language">
+      <main
+        id="main-content"
+        class="public-main"
+        :dir="direction"
+        :lang="language"
+        tabindex="-1"
+      >
         <router-view />
       </main>
     </q-page-container>
+    <SiteFooter
+      :locale="language"
+      :direction="direction"
+    />
   </q-layout>
 </template>
