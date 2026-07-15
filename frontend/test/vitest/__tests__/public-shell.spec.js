@@ -254,4 +254,20 @@ describe('localized public application shell source contracts', () => {
       expect(readProjectFile(filePath)).not.toMatch(/#[0-9a-fA-F]{3,6}(?![0-9a-fA-F])/)
     }
   })
+
+  it('prevents PublicLayout child pages from creating runtime main landmarks', () => {
+    const publicLayoutChildPages = [
+      'frontend/src/pages/public/PublicHomePage.vue',
+      'frontend/src/pages/public/PublicRoutePlaceholderPage.vue',
+      'frontend/src/pages/public/TranslationUnavailablePage.vue',
+      'frontend/src/pages/public/NotFoundPage.vue'
+    ]
+
+    for (const pagePath of publicLayoutChildPages) {
+      const pageSource = readProjectFile(pagePath)
+
+      expect(pageSource).not.toMatch(/<main\b/)
+      expect(pageSource).not.toMatch(/<q-page\b/)
+    }
+  })
 })
