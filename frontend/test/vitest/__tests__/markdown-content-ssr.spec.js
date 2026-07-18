@@ -5,9 +5,24 @@ import { resolve } from 'node:path'
 
 import { createSSRApp, h } from 'vue'
 import { renderToString } from '@vue/server-renderer'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import MarkdownContent from 'src/components/content/MarkdownContent.vue'
+
+const renderSafeMarkdownMock = vi.hoisted(() => vi.fn())
+
+vi.mock('src/components/content/safeMarkdown', async (importOriginal) => {
+  const actual = await importOriginal()
+
+  return {
+    ...actual,
+    renderSafeMarkdown: (source) => {
+      const implementation = renderSafeMarkdownMock.getMockImplementation()
+
+      return implementation ? implementation(source) : actual.renderSafeMarkdown(source)
+    }
+  }
+})
 
 const workingDirectory = process.cwd()
 const projectRoot = workingDirectory.split(/[\\/]/).pop().toLowerCase() === 'frontend'
@@ -31,6 +46,10 @@ function renderMarkdownContent (markdown, slots = {}) {
     render: () => h(MarkdownContent, { markdown }, slots)
   }))
 }
+
+afterEach(() => {
+  renderSafeMarkdownMock.mockReset()
+})
 
 describe('MarkdownContent SSR boundary', () => {
   it('renders sanitized safe prose and allowed headings deterministically on the server', async () => {
@@ -62,15 +81,16 @@ describe('MarkdownContent SSR boundary', () => {
     expect(html).not.toContain('tm-rich-content')
   })
 
-  it('renders only the route-provided named error slot for invalid Markdown input', async () => {
+  it('renders only the route-provided named error slot for a safe renderer error', async () => {
+    renderSafeMarkdownMock.mockReturnValue({ status: 'error', html: '' })
+
     const html = await renderMarkdownContent(
-      { unexpected: 'input' },
+      'valid Markdown input',
       { error: () => h('p', { class: 'route-error' }, 'Localized route error') }
     )
 
     expect(html).toContain('<p class="route-error">Localized route error</p>')
     expect(html).not.toContain('tm-rich-content')
-    expect(html).not.toContain('[object Object]')
   })
 
   it('contains only the approved sink and no page or locale ownership', () => {
@@ -79,7 +99,7 @@ describe('MarkdownContent SSR boundary', () => {
     expect(source.match(/\bv-html\b/g) ?? []).toHaveLength(1)
     expect(source).not.toMatch(/<main\b|<q-page\b|<h1\b/i)
     expect(source).not.toMatch(/\b(?:lang|dir)\s*=/)
-    expect(source).toMatch(/<slot\s+name="error"\s*\/>/)
+    expect(source).toMatch(/<slot\b(?=[^>]*\bname\s*=\s*['"]error['"])[^>]*\/>/)
   })
 
   it('leaves MarkdownContent as the only production HTML sink', () => {

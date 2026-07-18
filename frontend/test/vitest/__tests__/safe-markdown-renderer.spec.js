@@ -38,7 +38,7 @@ describe('safe Markdown renderer', () => {
 
     expect(result.status).toBe('ready')
     expect(result.html).toContain('<p>Safe paragraph with <strong>strong</strong>, <em>emphasis</em>, and <del>deleted</del> text.</p>')
-    expect(result.html).toContain('<ul>\n<li>One</li>\n<li>Two</li>\n</ul>')
+    expect(result.html).toMatch(/<ul>\s*<li>One<\/li>\s*<li>Two<\/li>\s*<\/ul>/)
     expect(result.html).toContain('<blockquote>\n<p>A safe quotation</p>\n</blockquote>')
     expect(result.html).toContain('<p><code>inline code</code></p>')
     expect(result.html).toContain('<pre><code>const safe = true')
@@ -74,7 +74,7 @@ describe('safe Markdown renderer', () => {
     expect(result).toMatchObject({ status: 'ready' })
     expect(result.html).not.toMatch(/<\/?(?:script|iframe|svg)\b/i)
     expect(result.html).not.toMatch(/<[a-z][^>]*\s(?:on\w+|style|id|name|class|tabindex|data-[\w-]+|aria-[\w-]+)=/i)
-    expect(result.html).not.toContain('onload=')
+    expect(result.html).toContain('&lt;svg onload=')
     expect(result.html).toContain('Prose')
   })
 

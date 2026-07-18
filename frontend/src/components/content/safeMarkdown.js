@@ -18,6 +18,8 @@ const forbiddenAttributes = Object.freeze([
 ])
 
 const allowedUriPattern = Object.freeze(/^(?:(?:https?):|\/(?!\/))/i)
+const absoluteHttpUrlPattern = /^https?:\/\/[^\s/]+(?:[/?#]|$)/i
+const rootRelativeUrlPattern = /^\/(?!\/)\S*$/
 
 const sanitizerOptions = Object.freeze({
   ALLOWED_TAGS: allowedTags,
@@ -30,6 +32,18 @@ const sanitizerOptions = Object.freeze({
   RETURN_TRUSTED_TYPE: false
 })
 
+function isAllowedMarkdownLink (href) {
+  if (typeof href !== 'string') {
+    return false
+  }
+
+  const value = href.trim()
+
+  return value !== '' && (
+    absoluteHttpUrlPattern.test(value) || rootRelativeUrlPattern.test(value)
+  )
+}
+
 function createParser () {
   const parser = new MarkdownIt({
     html: false,
@@ -38,6 +52,9 @@ function createParser () {
   })
 
   parser.disable(['table', 'image'])
+  parser.validateLink = isAllowedMarkdownLink
+  parser.renderer.rules.s_open = () => '<del>'
+  parser.renderer.rules.s_close = () => '</del>'
   parser.core.ruler.after('block', 'normalize-route-owned-h1', (state) => {
     for (const token of state.tokens) {
       if (token.tag === 'h1') {
