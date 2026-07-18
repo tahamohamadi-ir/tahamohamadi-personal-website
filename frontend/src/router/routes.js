@@ -7,6 +7,8 @@ const PublicHomePage = () =>
 const PublicRoutePlaceholderPage = () =>
   import('pages/public/PublicRoutePlaceholderPage.vue')
 
+const ResumePage = () => import('pages/public/ResumePage.vue')
+
 const TranslationUnavailablePage = () =>
   import('pages/public/TranslationUnavailablePage.vue')
 
@@ -93,7 +95,9 @@ function createLocaleRoute(locale, direction) {
   const normalChildren = normalPublicRoutes.map((definition) => ({
     path: definition.path,
     name: createRouteName(locale, definition.pageKey),
-    component: PublicRoutePlaceholderPage,
+    component: definition.pageKey === 'resume'
+      ? ResumePage
+      : PublicRoutePlaceholderPage,
     meta: createRouteMeta(
       locale,
       direction,

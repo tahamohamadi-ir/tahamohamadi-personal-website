@@ -30,6 +30,17 @@ export default {
     viewAvailableTranslation: 'View available translation',
     returnToLocaleHome: 'Return to the home page'
   },
+  resume: {
+    current: 'Current',
+    fileAction: 'Open resume document',
+    entryTypes: {
+      EDUCATION: 'Education',
+      EXPERIENCE: 'Experience',
+      RESEARCH: 'Research',
+      AWARD: 'Award',
+      CERTIFICATION: 'Certification'
+    }
+  },
   shell: {
     skipToContent: 'Skip to main content',
     primaryNavigation: 'Primary navigation',
