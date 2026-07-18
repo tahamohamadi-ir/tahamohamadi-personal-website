@@ -4,10 +4,10 @@
 
 **Status: foundation approved for documentation; runtime implementation is partial.** This document consolidates the current design direction and implementation rules for TahaMohamadi.ir. It is a foundation for public M1 work and a bounded reference for a future admin interface; it is not a page redesign, a theme rebuild, or an admin-UI specification.
 
-- **Approved now:** Modern Clean + Academic Editorial direction; light-first public presentation; semantic token consumption; bilingual RTL/LTR parity; accessible, responsive, SSR-safe public UI; restrained feedback and motion.
+- **Approved now:** Modern Clean + Academic Editorial direction; light-first public presentation; semantic token consumption; bilingual RTL/LTR parity; accessible, responsive, SSR-safe public UI; restrained feedback and motion; locally bundled Vazirmatn for Persian content.
 - **Current implementation observations:** `tokens.scss` supplies a compact light token set; `PublicLayout` owns the sole public `main#main-content`; the public shell, collections, and page-state components already express several of these conventions.
 - **Pending implementation:** complete semantic token coverage, contrast acceptance, route-level content/data integration, full state integration, and browser/assistive-technology evidence.
-- **Deferred visual-polish decisions:** final assets, font delivery, icon family, page-specific composition, motion details, and admin workflows.
+- **Deferred visual-polish decisions:** final assets, English font delivery, icon family, page-specific composition, motion details, and admin workflows.
 
 This document does not claim that planned work is implemented or verified. It defines the foundation needed to deliver it without premature redesign.
 
@@ -68,7 +68,7 @@ Final contrast acceptance remains provisional (UX-DEC-007). No dark-mode token s
 
 ## 7. Typography
 
-Current implementation uses `Vazirmatn, Tahoma, Arial, sans-serif` for Persian and `'Source Sans 3', 'Segoe UI', Arial, sans-serif` for English, with browser fallbacks. Font hosting, licensing, subsetting, and production delivery are blocked decisions; do not assume locally available fonts are production-ready.
+Current implementation uses `Vazirmatn, Tahoma, Arial, sans-serif` for Persian and `'Source Sans 3', 'Segoe UI', Arial, sans-serif` for English, with browser fallbacks. Persian font selection and delivery are approved: the official `vazirmatn` npm package is pinned to `33.0.3`, its Variable WOFF2 stylesheet is bundled through the frontend build, and its supplied `font-display: swap` behavior is used. This is self-hosted/local-build delivery; runtime Google Fonts or other third-party font CDNs are not used. Vazirmatn remains licensed under SIL OFL 1.1. English font delivery remains deferred; do not infer a change to its current stack from the Persian decision.
 
 - Body text uses the current readable base and deliberately looser Persian line-height. Runtime font metrics and scale remain implementation-owned.
 - Headings express document hierarchy, not promotional scale. Route pages own one visible H1; shared child components do not add another H1.
@@ -231,7 +231,7 @@ Document a necessary exception with its scope, rationale, owner, review trigger,
 ## 25. Known Gaps and Deferred Decisions
 
 - Final Markdown/rich-content sanitizer decision and implementation are blocked (UX-DEC-011).
-- Production font hosting, licensing, subsetting, and delivery are blocked (UX-DEC-008).
+- Persian font selection, licensing, and local-build delivery are resolved with Vazirmatn `33.0.3` under SIL OFL 1.1; English font delivery remains deferred.
 - Approved portrait, logo, favicon, project/publication, and Open Graph assets are blocked (UX-DEC-009).
 - Final semantic state contrast acceptance is provisional (UX-DEC-007); runtime hover, active, informational, and disabled roles are incomplete.
 - Icon family is unresolved (UX-DEC-010).

@@ -1,6 +1,8 @@
 @use './tokens.scss';
 @use './typography.scss';
 
+@import 'vazirmatn/Vazirmatn-Variable-font-face.css';
+
 *,
 *::before,
 *::after {
@@ -43,6 +45,10 @@ body {
 
 .public-main {
   min-block-size: 1px;
+}
+
+#main-content[tabindex='-1']:focus {
+  outline: none;
 }
 
 .tm-editorial-page {

@@ -98,6 +98,30 @@ describe('localized public application shell source contracts', () => {
     expect(appStyles).toMatch(/@(use|import)\s+['\"][^'\"]*typography(?:\.scss)?['\"]/)
   })
 
+  it('loads the pinned official Persian variable font locally without a duplicate font-face', () => {
+    const packageManifest = readProjectFile('frontend/package.json')
+    const packageLock = readProjectFile('frontend/package-lock.json')
+    const appStyles = readProjectFile('frontend/src/css/app.scss')
+    const typography = readProjectFile('frontend/src/css/typography.scss')
+    const fontSources = [packageManifest, packageLock, appStyles, typography].join('\n')
+
+    expect(packageManifest).toMatch(/"vazirmatn"\s*:\s*"33\.0\.3"/)
+    expect(packageLock).toMatch(/node_modules\/vazirmatn[\s\S]*?"version"\s*:\s*"33\.0\.3"/)
+    expect(appStyles).toMatch(/@import\s+['\"]vazirmatn\/Vazirmatn-Variable-font-face\.css['\"]\s*;/)
+    expect(fontSources).not.toMatch(/(?:fonts\.googleapis|fonts\.gstatic|cdn\.jsdelivr|unpkg)\.com/i)
+    expect([appStyles, typography].join('\n')).not.toMatch(/@font-face\s*\{/)
+  })
+
+  it('keeps Persian and English typography under separate locale contracts', () => {
+    const typography = readProjectFile('frontend/src/css/typography.scss')
+    const englishRule = typography.match(/\[lang=['\"]en['\"]\]\s*\{([\s\S]*?)\}/)?.[1]
+    const persianRule = typography.match(/\[lang=['\"]fa['\"]\]\s*\{([\s\S]*?)\}/)?.[1]
+
+    expect(persianRule).toMatch(/font-family\s*:\s*Vazirmatn,\s*Tahoma,\s*Arial,\s*sans-serif\s*;/)
+    expect(englishRule).toMatch(/font-family\s*:\s*'Source Sans 3',\s*'Segoe UI',\s*Arial,\s*sans-serif\s*;/)
+    expect(englishRule).not.toContain('Vazirmatn')
+  })
+
   it('defines complete semantic tokens for the public design system', () => {
     const tokens = readProjectFile('frontend/src/css/tokens.scss')
 
@@ -256,14 +280,20 @@ describe('localized public application shell source contracts', () => {
   })
 
   it('requires focus, motion, responsive, target-size and logical-spacing safeguards', () => {
+    const appStyles = readProjectFile('frontend/src/css/app.scss')
     const globalStyles = [
-      readProjectFile('frontend/src/css/app.scss'),
+      appStyles,
       readProjectFile('frontend/src/css/tokens.scss'),
       readProjectFile('frontend/src/css/typography.scss')
     ].join('\n')
 
     expect(globalStyles).toMatch(/:focus-visible\s*\{/)
-    expect(globalStyles).not.toMatch(/outline\s*:\s*none\b/)
+    expect(appStyles).toMatch(
+      /#main-content\[tabindex=['\"]-1['\"]\]:focus\s*\{[^}]*outline\s*:\s*none\s*;/
+    )
+    expect(appStyles).not.toMatch(
+      /(?:\*|main|\.public-main|\.public-shell)\s*(?::focus)?\s*\{[^}]*outline\s*:\s*none\s*;/
+    )
     expect(globalStyles).toMatch(/@media\s*\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)/)
     expect(globalStyles).toMatch(/1200px/)
 
@@ -273,6 +303,13 @@ describe('localized public application shell source contracts', () => {
 
     expect(globalStyles).toMatch(/44px/)
     expect(globalStyles).toMatch(/(?:margin|padding|inset|border)-(?:inline|block)(?:-start|-end)?\s*:/)
+  })
+
+  it('keeps route-change focus on the sole main target without JavaScript font loading', () => {
+    const layout = readProjectFile('frontend/src/layouts/PublicLayout.vue')
+
+    expect(layout).toMatch(/document\.getElementById\(['\"]main-content['\"]\)\?\.focus\(\)/)
+    expect(layout).not.toMatch(/(?:document\.fonts|FontFace|fonts\.load)/)
   })
 
   it('forbids raw hexadecimal colors in public-shell components', () => {
