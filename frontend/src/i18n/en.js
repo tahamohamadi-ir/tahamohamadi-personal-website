@@ -6,10 +6,25 @@ export default {
     en: 'English'
   },
   public: {
-    placeholder: 'Public profile',
     temporaryPage: 'Public page',
-    temporaryDescription: 'This section is being prepared for CMS-backed public content.',
-    homeDescription: 'This public profile is being prepared for CMS-backed content.',
+    home: {
+      lead: 'A personal site for academic, professional, and research work.'
+    },
+    pageIntroduction: {
+      about: {
+        pending: 'Biography and background content is being prepared.'
+      },
+      research: {
+        pending: 'Research content is being prepared.'
+      },
+      skills: {
+        pending: 'Structured skills data is not available yet.'
+      },
+      contact: {
+        pending: 'The contact workflow is not available yet.'
+      },
+      unavailable: 'This page introduction is not available.'
+    },
     translationUnavailable: 'Translation unavailable',
     translationUnavailableDescription: 'This content is not available in the requested language.',
     notFound: 'Page not found',

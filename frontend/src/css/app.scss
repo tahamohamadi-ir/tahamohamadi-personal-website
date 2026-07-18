@@ -56,6 +56,10 @@ body {
   padding-block: var(--tm-content-block-start) var(--tm-content-block-end);
 }
 
+.tm-editorial-page--introduction {
+  min-block-size: 0;
+}
+
 .tm-editorial-page__content {
   max-inline-size: var(--tm-prose-max-width);
 }

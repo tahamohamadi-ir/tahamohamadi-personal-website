@@ -1,5 +1,14 @@
-import { describe, expect, it, vi } from 'vitest'
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
+import { mount } from '@vue/test-utils'
+import { Quasar } from 'quasar'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+
+import { i18n } from 'src/boot/i18n'
+import PublicHomePage from 'src/pages/public/PublicHomePage.vue'
+import PublicRoutePlaceholderPage from 'src/pages/public/PublicRoutePlaceholderPage.vue'
 import {
   createHttpClient,
   normalizeApiError,
@@ -21,6 +30,60 @@ import {
   publicationDetailResponse,
   translationUnavailableError
 } from '../../fixtures/public-api'
+
+const workingDirectory = process.cwd()
+const projectRoot = (
+  workingDirectory.split(/[\\/]/).pop().toLowerCase() === 'frontend'
+)
+  ? resolve(workingDirectory, '..')
+  : workingDirectory
+
+const HOME_PAGE_PATH = 'frontend/src/pages/public/PublicHomePage.vue'
+const PLACEHOLDER_PAGE_PATH = (
+  'frontend/src/pages/public/PublicRoutePlaceholderPage.vue'
+)
+const INTRODUCTION_PAGE_KEYS = ['about', 'research', 'skills', 'contact']
+
+function readProjectFile(projectRelativePath) {
+  const filePath = resolve(projectRoot, projectRelativePath)
+
+  if (!existsSync(filePath)) {
+    throw new Error(`NOT_IMPLEMENTED:${projectRelativePath}`)
+  }
+
+  return readFileSync(filePath, 'utf8')
+}
+
+async function mountPublicPage(component, { locale = 'en', pageKey = 'home' } = {}) {
+  i18n.global.locale.value = locale
+
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{
+      path: '/page',
+      component,
+      meta: { pageKey }
+    }]
+  })
+
+  await router.push('/page')
+  await router.isReady()
+
+  return mount(component, {
+    global: {
+      plugins: [Quasar, router, i18n]
+    }
+  })
+}
+
+function expectPageDoesNotOwnShellLandmarks(wrapper) {
+  expect(wrapper.findAll('main, .q-page')).toHaveLength(0)
+  expect(wrapper.findAll('[lang], [dir]')).toHaveLength(0)
+}
+
+afterEach(() => {
+  i18n.global.locale.value = 'en'
+})
 
 function createFakeHttpClient() {
   return {
@@ -371,5 +434,83 @@ describe('safe API error normalization', () => {
       availableLocales: [],
       alternatePaths: []
     })
+  })
+})
+
+describe('public page introduction contract', () => {
+  it('renders a localized personal-site identity and concise lead for Home', async () => {
+    const wrapper = await mountPublicPage(PublicHomePage)
+
+    expectPageDoesNotOwnShellLandmarks(wrapper)
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe(i18n.global.t('shell.siteName'))
+    expect(wrapper.get('.tm-page-copy').text()).toBe(i18n.global.t('public.home.lead'))
+  })
+
+  it('renders distinct localized introductions for every supported placeholder route', async () => {
+    const messages = []
+
+    for (const pageKey of INTRODUCTION_PAGE_KEYS) {
+      const wrapper = await mountPublicPage(PublicRoutePlaceholderPage, { pageKey })
+      const messageKey = `public.pageIntroduction.${pageKey}.pending`
+
+      expectPageDoesNotOwnShellLandmarks(wrapper)
+      expect(wrapper.findAll('h1')).toHaveLength(1)
+      expect(wrapper.get('h1').text()).toBe(
+        i18n.global.t(`shell.navigation.${pageKey}`)
+      )
+      expect(wrapper.get('.tm-page-copy').text()).toBe(i18n.global.t(messageKey))
+
+      messages.push(wrapper.get('.tm-page-copy').text())
+    }
+
+    expect(new Set(messages).size).toBe(INTRODUCTION_PAGE_KEYS.length)
+  })
+
+  it('keeps Persian and English introduction keys non-empty and locale-specific', () => {
+    const introductionKeys = [
+      'public.home.lead',
+      ...INTRODUCTION_PAGE_KEYS.map(
+        (pageKey) => `public.pageIntroduction.${pageKey}.pending`
+      )
+    ]
+
+    for (const locale of ['en', 'fa']) {
+      i18n.global.locale.value = locale
+
+      for (const key of introductionKeys) {
+        const localizedValue = i18n.global.t(key)
+
+        expect(localizedValue).toBeTypeOf('string')
+        expect(localizedValue.trim()).not.toBe('')
+        expect(localizedValue).not.toBe(key)
+      }
+    }
+  })
+
+  it('keeps introductions local, escaped, token-driven, and outside shell ownership', () => {
+    const homeSource = readProjectFile(HOME_PAGE_PATH)
+    const placeholderSource = readProjectFile(PLACEHOLDER_PAGE_PATH)
+
+    expect(homeSource.match(/<h1\b/g) ?? []).toHaveLength(1)
+    expect(homeSource).toMatch(/t\(['\"]shell\.siteName['\"]\)/)
+    expect(homeSource).toMatch(/t\(['\"]public\.home\.lead['\"]\)/)
+    expect(homeSource).not.toMatch(/public\.placeholder|Public profile/i)
+    expect(placeholderSource).toMatch(/public\.pageIntroduction\.about\.pending/)
+    expect(placeholderSource).toMatch(/public\.pageIntroduction\.research\.pending/)
+    expect(placeholderSource).toMatch(/public\.pageIntroduction\.skills\.pending/)
+    expect(placeholderSource).toMatch(/public\.pageIntroduction\.contact\.pending/)
+
+    for (const source of [homeSource, placeholderSource]) {
+      expect(source).not.toMatch(/<main\b|<q-page\b/i)
+      expect(source).not.toMatch(/\b(?:lang|dir)\s*=/)
+      expect(source).not.toMatch(/v-html|innerHTML|markdown|sanitizer/i)
+      expect(source).not.toMatch(/#[0-9a-f]{3,8}\b/i)
+    }
+
+    expect(existsSync(resolve(
+      projectRoot,
+      'frontend/src/components/public/PageIntro.vue'
+    ))).toBe(false)
   })
 })

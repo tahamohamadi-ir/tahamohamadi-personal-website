@@ -15,6 +15,13 @@ const M1_CHILDREN = [
   'contact'
 ]
 
+const INTRODUCTION_PLACEHOLDER_ROUTES = [
+  'about',
+  'research',
+  'skills',
+  'contact'
+]
+
 function getLocaleRoute(locale) {
   return routes.find((route) => route.path === `/${locale}`)
 }
@@ -134,5 +141,26 @@ describe('public routing contract', () => {
       expect(enRoute.meta?.locale).toBe('en')
       expect(enRoute.meta?.direction).toBe('ltr')
     })
+  })
+
+  it('preserves placeholder route ownership for the four introduction foundations', async () => {
+    for (const locale of ['fa', 'en']) {
+      const localeRoute = getLocaleRoute(locale)
+      const introductionRoutes = INTRODUCTION_PLACEHOLDER_ROUTES.map((pageKey) => (
+        localeRoute.children.find((route) => route.name === `${locale}-${pageKey}`)
+      ))
+
+      for (const [index, route] of introductionRoutes.entries()) {
+        expect(route).toBeDefined()
+        expect(route.path).toBe(INTRODUCTION_PLACEHOLDER_ROUTES[index])
+        expect(route.meta?.pageKey).toBe(INTRODUCTION_PLACEHOLDER_ROUTES[index])
+      }
+
+      const loadedPages = await Promise.all(
+        introductionRoutes.map((route) => route.component())
+      )
+
+      expect(new Set(loadedPages.map((page) => page.default)).size).toBe(1)
+    }
   })
 })
