@@ -20,6 +20,26 @@ const RESUME_PAGE_PATH = 'frontend/src/pages/public/ResumePage.vue'
 const RESUME_TIMELINE_PATH = (
   'frontend/src/components/public/ResumeTimeline.vue'
 )
+const IMPLEMENTED_COLLECTION_ROUTES = [
+  {
+    pageKey: 'blog',
+    path: 'blog',
+    contentType: 'post-list',
+    componentPath: 'frontend/src/pages/public/BlogPage.vue'
+  },
+  {
+    pageKey: 'portfolio',
+    path: 'portfolio',
+    contentType: 'project-list',
+    componentPath: 'frontend/src/pages/public/PortfolioPage.vue'
+  },
+  {
+    pageKey: 'publications',
+    path: 'publications',
+    contentType: 'publication-list',
+    componentPath: 'frontend/src/pages/public/PublicationsPage.vue'
+  }
+]
 
 const RESUME_RESPONSE = {
   locale: 'en',
@@ -219,12 +239,18 @@ function expectResumeShape(value) {
 }
 
 describe('localized public Resume route contract', () => {
-  it('assigns only /fa/resume and /en/resume to ResumePage while preserving locale ownership and other placeholders', async () => {
+  it('assigns implemented public routes while preserving locale ownership and remaining placeholders', async () => {
     const ResumePage = await loadResumePage()
     const { default: routes } = await import('src/router/routes')
     const PlaceholderPage = await loadContractComponent(
       'frontend/src/pages/public/PublicRoutePlaceholderPage.vue'
     )
+    const collectionPages = new Map(await Promise.all(
+      IMPLEMENTED_COLLECTION_ROUTES.map(async (definition) => [
+        definition.pageKey,
+        await loadContractComponent(definition.componentPath)
+      ])
+    ))
 
     for (const [locale, direction] of [
       ['fa', 'rtl'],
@@ -246,9 +272,35 @@ describe('localized public Resume route contract', () => {
       const routeComponent = await resumeRoute.component()
       expect(routeComponent.default ?? routeComponent).toBe(ResumePage)
 
+      const expectedComponents = new Map([
+        [`${locale}-resume`, ResumePage]
+      ])
+
+      for (const definition of IMPLEMENTED_COLLECTION_ROUTES) {
+        const collectionRoute = localeRoute.children.find(
+          (route) => route.name === `${locale}-${definition.pageKey}`
+        )
+        const CollectionPage = collectionPages.get(definition.pageKey)
+
+        expect(collectionRoute).toMatchObject({
+          path: definition.path,
+          name: `${locale}-${definition.pageKey}`,
+          meta: {
+            locale,
+            direction,
+            pageKey: definition.pageKey,
+            contentType: definition.contentType
+          }
+        })
+
+        const collectionComponent = await collectionRoute.component()
+        expect(collectionComponent.default ?? collectionComponent)
+          .toBe(CollectionPage)
+        expectedComponents.set(collectionRoute.name, CollectionPage)
+      }
+
       for (const route of localeRoute.children) {
         if (
-          route.name.endsWith('-resume') ||
           route.name.endsWith('-home') ||
           route.name.endsWith('-not-found') ||
           route.name.endsWith('-translation-unavailable')
@@ -257,7 +309,9 @@ describe('localized public Resume route contract', () => {
         }
 
         const component = await route.component()
-        expect(component.default ?? component).toBe(PlaceholderPage)
+        expect(component.default ?? component).toBe(
+          expectedComponents.get(route.name) ?? PlaceholderPage
+        )
       }
     }
   })

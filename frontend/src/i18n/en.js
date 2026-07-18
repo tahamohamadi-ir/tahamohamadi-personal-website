@@ -41,6 +41,23 @@ export default {
       CERTIFICATION: 'Certification'
     }
   },
+  collections: {
+    pagination: {
+      navigationLabel: 'Collection pagination',
+      previous: 'Previous page',
+      next: 'Next page',
+      position: 'Page {current} of {total}'
+    },
+    publications: {
+      authors: 'Authors',
+      venue: 'Venue',
+      publishedOn: 'Published',
+      year: 'Year',
+      stage: 'Stage',
+      doi: 'DOI',
+      externalLink: 'Open publication'
+    }
+  },
   shell: {
     skipToContent: 'Skip to main content',
     primaryNavigation: 'Primary navigation',
