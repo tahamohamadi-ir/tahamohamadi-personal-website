@@ -29,6 +29,11 @@ const expectSemanticTokens = (source) => {
     '--tm-border-subtle',
     '--tm-action-primary',
     '--tm-link',
+    '--tm-interactive-hover',
+    '--tm-interactive-active',
+    '--tm-interactive-surface-hover',
+    '--tm-navigation-current-indicator',
+    '--tm-shell-boundary',
     '--tm-success',
     '--tm-warning',
     '--tm-danger',
@@ -128,6 +133,8 @@ describe('localized public application shell source contracts', () => {
 
     expect(mainEnd).toBeGreaterThan(mainStart)
     expect(layout.slice(mainStart, mainEnd)).toMatch(/<router-view\b/)
+    expect(layout).toMatch(/<SiteHeader\b/)
+    expect(layout).toMatch(/<SiteFooter\b/)
 
     for (const pagePath of [
       'frontend/src/pages/public/PublicRoutePlaceholderPage.vue',
@@ -156,6 +163,8 @@ describe('localized public application shell source contracts', () => {
     expect(header).toMatch(/openNavigation|closeNavigation/)
     expect(header).toMatch(/LanguageSwitch/)
     expect(header).toMatch(/navigation\.contact/)
+    expect(header).toMatch(/:aria-label="t\('shell\.openNavigation'\)"/)
+    expect(header).toMatch(/:aria-label="t\('shell\.closeNavigation'\)"/)
   })
 
   it('requires a localized semantic footer without hard-coded social URLs', () => {
@@ -175,6 +184,31 @@ describe('localized public application shell source contracts', () => {
     expect(languageSwitch).toMatch(/\balternatePath\b/)
     expect(languageSwitch).not.toMatch(/\.replace(?:All)?\s*\(/)
     expect(languageSwitch).toMatch(/(?:aria-label|:aria-label)\s*=\s*['\"][^'\"]*t\(/)
+  })
+
+  it('requires token-driven shell interaction states and a non-color current route affordance', () => {
+    const header = readProjectFile('frontend/src/components/public/SiteHeader.vue')
+    const footer = readProjectFile('frontend/src/components/public/SiteFooter.vue')
+    const languageSwitch = readProjectFile(
+      'frontend/src/components/public/LanguageSwitch.vue'
+    )
+
+    expect(header).toMatch(/--tm-shell-boundary/)
+    expect(header).toMatch(/--tm-interactive-hover/)
+    expect(header).toMatch(/--tm-interactive-active/)
+    expect(header).toMatch(/--tm-interactive-surface-hover/)
+    expect(header).toMatch(/--tm-navigation-current-indicator/)
+    expect(header).toMatch(
+      /router-link-exact-active[\s\S]*?text-decoration\s*:\s*underline/
+    )
+    expect(header).toMatch(/border-inline-start-color\s*:/)
+    expect(header).toMatch(/:side="drawerSide"/)
+    expect(header).toMatch(/border-block-end\s*:/)
+    expect(footer).toMatch(/--tm-shell-boundary/)
+    expect(footer).toMatch(/border-block-start\s*:/)
+    expect(footer).toMatch(/--tm-interactive-(?:hover|active)/)
+    expect(languageSwitch).toMatch(/--tm-interactive-(?:hover|active)/)
+    expect(languageSwitch).toMatch(/--tm-interactive-surface-hover/)
   })
 
   it('keeps matching, non-empty English and Persian shell dictionary keys', () => {
@@ -252,6 +286,12 @@ describe('localized public application shell source contracts', () => {
 
     for (const filePath of publicShellFiles) {
       expect(readProjectFile(filePath)).not.toMatch(/#[0-9a-fA-F]{3,6}(?![0-9a-fA-F])/)
+    }
+  })
+
+  it('forbids competing public-shell design-system artifacts', () => {
+    for (const projectRelativePath of ['tokens.css', '.hallmark']) {
+      expect(existsSync(path.resolve(projectRoot, projectRelativePath))).toBe(false)
     }
   })
 

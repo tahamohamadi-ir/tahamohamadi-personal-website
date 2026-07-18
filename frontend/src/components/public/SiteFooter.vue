@@ -41,7 +41,7 @@ const localizedNavigationItems = computed(() => navigationItems.map((item) => ({
 
 <style scoped lang="scss">
 .site-footer {
-  border-block-start: 1px solid var(--tm-border-subtle);
+  border-block-start: 1px solid var(--tm-shell-boundary);
   background: var(--tm-surface);
 }
 
@@ -66,7 +66,11 @@ const localizedNavigationItems = computed(() => navigationItems.map((item) => ({
 }
 
 .site-footer__link:hover {
-  color: var(--tm-link);
+  color: var(--tm-interactive-hover);
+}
+
+.site-footer__link:active {
+  color: var(--tm-interactive-active);
 }
 
 .site-footer__rights {

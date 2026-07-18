@@ -121,7 +121,7 @@ function restoreMobileTriggerFocus () {
 
 <style scoped lang="scss">
 .site-header {
-  border-block-end: 1px solid var(--tm-border-subtle);
+  border-block-end: 1px solid var(--tm-shell-boundary);
   background: var(--tm-surface);
 }
 
@@ -146,6 +146,7 @@ function restoreMobileTriggerFocus () {
   align-items: center;
   flex: 0 0 auto;
   min-block-size: var(--tm-control-min-size);
+  font-size: 1.0625rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -160,7 +161,7 @@ function restoreMobileTriggerFocus () {
 .site-header__close-trigger {
   min-inline-size: var(--tm-control-min-size);
   min-block-size: var(--tm-control-min-size);
-  border: 1px solid var(--tm-border-subtle);
+  border: 1px solid var(--tm-shell-boundary);
   border-radius: var(--tm-radius-control);
   color: var(--tm-text-primary);
 }
@@ -182,7 +183,7 @@ function restoreMobileTriggerFocus () {
   justify-content: space-between;
   gap: var(--tm-space-4);
   padding-block-end: var(--tm-space-4);
-  border-block-end: 1px solid var(--tm-border-subtle);
+  border-block-end: 1px solid var(--tm-shell-boundary);
 }
 
 .site-header__mobile-links {
@@ -196,7 +197,8 @@ function restoreMobileTriggerFocus () {
   align-items: center;
   min-block-size: var(--tm-control-min-size);
   padding-inline: var(--tm-space-2);
-  border-block-end: 1px solid var(--tm-border-subtle);
+  border-inline-start: 3px solid transparent;
+  border-block-end: 1px solid var(--tm-shell-boundary);
 }
 
 .site-header__mobile-language {
@@ -206,11 +208,35 @@ function restoreMobileTriggerFocus () {
 .site-header__brand:hover,
 .site-header__nav-link:hover,
 .site-header__mobile-link:hover {
-  color: var(--tm-action-primary);
+  color: var(--tm-interactive-hover);
 }
 
-.site-header__nav-link.router-link-exact-active,
+.site-header__mobile-trigger:hover,
+.site-header__close-trigger:hover {
+  border-color: var(--tm-interactive-hover);
+  background: var(--tm-interactive-surface-hover);
+  color: var(--tm-interactive-hover);
+}
+
+.site-header__mobile-trigger:active,
+.site-header__close-trigger:active {
+  background: var(--tm-interactive-surface-hover);
+  color: var(--tm-interactive-active);
+}
+
+.site-header__nav-link.router-link-exact-active {
+  background: var(--tm-interactive-surface-hover);
+  color: var(--tm-action-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--tm-navigation-current-indicator);
+  text-decoration-thickness: 2px;
+  text-underline-offset: var(--tm-space-2);
+}
+
 .site-header__mobile-link.router-link-exact-active {
+  border-inline-start-color: var(--tm-navigation-current-indicator);
+  background: var(--tm-interactive-surface-hover);
   color: var(--tm-action-primary);
   font-weight: 700;
 }

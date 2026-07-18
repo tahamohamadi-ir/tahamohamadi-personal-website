@@ -33,14 +33,20 @@ const targetPath = computed(() => props.alternatePath ?? `/${targetLocale.value}
   padding-inline: var(--tm-space-3);
   border: 1px solid var(--tm-border-subtle);
   border-radius: var(--tm-radius-control);
-  color: var(--tm-link);
+  color: var(--tm-text-secondary);
   font-size: 0.9375rem;
-  font-weight: 700;
+  font-weight: 600;
   text-decoration: none;
 }
 
 .language-switch:hover {
-  border-color: var(--tm-link);
-  color: var(--tm-text-primary);
+  border-color: var(--tm-interactive-hover);
+  background: var(--tm-interactive-surface-hover);
+  color: var(--tm-interactive-hover);
+}
+
+.language-switch:active {
+  background: var(--tm-interactive-surface-hover);
+  color: var(--tm-interactive-active);
 }
 </style>
