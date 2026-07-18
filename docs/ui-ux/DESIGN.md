@@ -228,9 +228,91 @@ Add a design decision when it changes public semantics, direction, token roles, 
 
 Document a necessary exception with its scope, rationale, owner, review trigger, and removal/revisit condition in the decision register. Hallmark is used only as an auditor for generic or incoherent visual risks; it does not redesign this product or create Hallmark artifacts. UI UX Pro Max recommendations are evaluated against repository evidence and applicable web constraints. YAGNI excludes speculative abstractions, dependencies, redesigns, and documentation sprawl, while preserving accessibility, locale parity, responsive behavior, states, and governance. Human/project decisions override generic skill guidance.
 
-## 25. Known Gaps and Deferred Decisions
+## 25. Rich Content Security Contract (UX-DEC-011)
 
-- Final Markdown/rich-content sanitizer decision and implementation are blocked (UX-DEC-011).
+**State: APPROVED.** This is the implementation contract for CMS-managed rich prose. It does not implement a renderer, change a backend contract, or authorize a dependency update.
+
+### 25.1 Evidence, trust boundary, and ownership
+
+| Concern | Repository evidence and decision |
+|---|---|
+| Stored and returned rich format | `body_markdown` is stored for managed-page, blog-post, and portfolio translations; the public API returns the same data as `bodyMarkdown` for pages, home, blog details, and portfolio details. It is Markdown source text, not trusted or pre-sanitized HTML. No `contentHtml` field or HTML rendering path is evidenced. |
+| Plain text and metadata | Titles, slugs, summaries, excerpts, publication abstracts, SEO title/description, media alt/caption, skill descriptions, resume fields, identifiers, URLs, and DOI values are plain text or structured metadata. They must not be routed through a Markdown renderer. Public publication responses expose an `abstract`, not Markdown. |
+| Authors | CMS authors use authenticated, CSRF-protected ADMIN/SUPER_ADMIN mutation APIs with audit events. That authorization boundary reduces who can submit content; it does not make content trusted for browser execution. |
+| Untrusted boundary | Every CMS string, including Markdown and any URL/metadata subsequently used in an HTML attribute, crosses from database/API into the public SSR DOM as untrusted content. The parsing library, sanitizer configuration, SSR renderer, Vue `v-html` sink, browser hydration, and external resource fetch are separate boundaries. |
+
+### 25.2 Selected architecture and rejected alternatives
+
+**Selected: Option A — render Markdown safely in the frontend SSR application.** The future `MarkdownContent` boundary receives Markdown source, configures an SSR-safe deterministic parser, sanitizes the resulting HTML with an explicit allowlist, and only then may pass the value to one contained HTML-rendering sink. The exact existing candidates are `markdown-it` `14.3.0` and `isomorphic-dompurify` `3.18.0`, already locked in `frontend/package-lock.json` but not yet used. RC-001 must prove their supported Node/Quasar SSR/ESM behavior, license approval, and configuration API before implementation; no package installation or version change is authorized.
+
+| Option | Decision | Reason |
+|---|---|---|
+| A. Frontend SSR parse then sanitize | **Selected** | Fits the current Quasar SSR boundary and already locked candidates without changing accepted backend DTOs. A single shared, request-safe renderer can make SSR and hydration use the same deterministic configuration. |
+| B. Backend render and sanitize | Rejected for M1 | Could centralize output, but would change the accepted backend public contract, add Java parser/sanitizer and migration/versioning decisions, and couple frontend presentation to backend generated HTML. Reconsider only in a separately scoped backend decision. |
+| C. Store Markdown and generated HTML | Rejected | Adds stale-output invalidation, parser/sanitizer-version migration, cache consistency, and audit ambiguity without a current requirement. |
+| D. Plain text only | Valid temporary fallback, not the selected architecture | If RC-001 cannot approve the existing candidates, public routes must render body text as escaped plain text or remain in their safe state. It is a safe M1 stop condition, but does not satisfy the already supported Markdown content contract. |
+
+### 25.3 Parsing, sanitization, and SSR rules
+
+- Parse only in the shared frontend rich-content boundary, on both the SSR and client path, with the same pinned parser/sanitizer configuration and input. Parsing is not sanitization.
+- The parser must disable raw HTML (`html: false`). Raw HTML is neither required nor approved. Existing stored raw-HTML-looking source is escaped as text; new authoring validation must reject it rather than normalize it into executable markup.
+- Sanitization occurs **after** Markdown-to-HTML conversion, immediately before the sole HTML-rendering sink. `v-html` must never receive source Markdown, parser-only output, or a sanitizer-error fallback.
+- The backend must preserve the Markdown source contract and validate authoring input: retain the existing length validation, reject raw HTML under this policy, and validate any future structured rich-content fields. It does not replace frontend output sanitization with a claimed "trusted HTML" flag.
+- SSR must use server-capable dependencies only, no browser globals, one immutable configuration, and no mutable request-shared cache of sanitized output. If caching is later measured as necessary, cache keys must include the source content, locale/direction-relevant configuration, parser version, sanitizer policy version, and content update version; invalidation is required on any of those changes.
+- Client hydration must render the same sanitized string as SSR. A markup mismatch, request-data leak, or server-only/client-only divergence is a release blocker.
+
+### 25.4 Minimum HTML and URL allowlist
+
+The sanitizer starts deny-by-default. Unknown tags and attributes are removed; event-handler attributes, `style`, `id`, `name`, every `data-*`, and every `aria-*` attribute are forbidden. User-controlled IDs and anchors are never emitted, preventing DOM-clobbering names and document collisions. The parser must not generate an H1; the Vue route remains the single H1 owner.
+
+| Tag/category | Status | Allowed attributes / constraints |
+|---|---|---|
+| `p`, `br`, `strong`, `em`, `del`, `ul`, `ol`, `li`, `blockquote`, `pre`, `code`, `hr` | Allowed | No attributes. `pre`/`code` remain plain code; no syntax-highlight classes until a separately approved feature needs them. |
+| `h2`–`h6` | Allowed | No attributes. Markdown H1 is removed or rejected before output; headings must begin at H2 and be sequentially reviewed. |
+| `a` | Allowed only with a safe `href` | Allow same-origin root-relative paths and absolute `https:`/`http:` URLs; reject protocol-relative, `javascript:`, encoded or whitespace-obscured script schemes, `data:`, `vbscript:`, `file:`, and unknown schemes. An unsafe URL renders only its text, not a link. External links open in a new context only when the renderer deliberately adds `target="_blank"` and `rel="noopener noreferrer"`; internal links stay in the same context. No author-supplied `target` or `rel` survives. |
+| `table`, `thead`, `tbody`, `tr`, `th`, `td` | Not allowed in M1 | Repository evidence does not require Markdown tables. Enabling them later requires table semantics, responsive/keyboard review, and header-scope contract. |
+| `img`, `figure`, `figcaption` | Not allowed in M1 | Markdown images have no evidenced media/alt metadata contract. Use the existing structured media response and future `MediaImage` component instead. A later approval must allow only authenticated/public media URLs or HTTPS, require meaningful localized alt text, block `data:`/SVG active content, and define dimensions/loading behavior. |
+| `h1`, `script`, `style`, `iframe`, `object`, `embed`, `form`, `input`, `svg`, and all other tags | Forbidden | Removed; no raw-HTML escape hatch, inline styles, embeds, forms, or active SVG. |
+
+No class attributes are allowed in M1. This preserves a minimal prose contract and avoids CSS/selector coupling. The page wrapper supplies locale `lang`/`dir`; Persian and English Markdown inherit that context without locale fallback. Code blocks and technical strings are rendered as literal text, kept copyable, and use LTR isolation/styling where implementation evidence requires it. Footnotes are not required or enabled. Lists and blockquotes are enabled; tables and images are explicitly deferred.
+
+### 25.5 Failure, performance, and CSP behavior
+
+| Condition | Required safe behavior |
+|---|---|
+| Empty body | Omit the prose region or render the route’s applicable empty state; do not invent filler. |
+| Invalid or malformed Markdown | Render deterministic escaped/plain Markdown text where the parser permits; do not throw raw source into HTML. |
+| Raw or unsupported HTML | Parser disables it; content is escaped as text. New CMS authoring rejects raw HTML. |
+| Sanitizer failure or SSR processing failure | Fail closed to a localized safe error state/response; log only safe operational context. Never emit parser output or unsanitized source as HTML. |
+| Unsafe URL | Do not emit an active link or image request; preserve safe visible link text when possible. |
+| Missing image metadata | Markdown images are disabled; structured media follows its own explicit missing-media state. |
+| Partially valid content | Render only the sanitized allowed portion; no unsafe fallback. |
+| Translation unavailable | Use the existing localized unavailable-translation recovery and API-provided alternate path rules; never borrow another locale’s content. |
+| Unexpected size/complexity | Existing backend length limits remain enforced. Before release, RC-003 must measure and approve limits for input/output length, nesting depth, table size if later enabled, code-block length, image/link counts, and parsing time; no arbitrary values are set here. |
+
+The decision assumes production CSP remains a defence in depth, not a sanitizer substitute: no inline script/style authorization for CMS output; no broad `data:` scheme; no unsafe script execution; and image/link directives remain least-privilege. CSP header ownership and final deployment values stay with the security/release configuration and must be verified before launch.
+
+### 25.6 Mandatory implementation and acceptance tests
+
+The rich-content batch must add deterministic unit/component fixtures for script elements, image `onerror`, SVG payloads, `javascript:` and encoded `javascript:` links, `data:` URLs, iframe/object/embed, form/input, inline styles, event attributes, malformed nesting, DOM-clobbering `id`/`name`, dangerous targets, and raw HTML in Markdown. Assertions must prove that unsafe nodes and attributes are absent from both server HTML and hydrated DOM.
+
+Functional fixtures must cover H2–H6, paragraphs, emphasis, lists, blockquotes, inline and block code, safe links, Persian prose, English prose, mixed-direction technical strings, empty content, and malformed Markdown. Tables and images remain negative fixtures until their separate approval.
+
+SSR acceptance requires sanitized server output, byte/DOM-equivalent hydration without warnings, deterministic output across equivalent requests, request isolation, no browser-only sanitizer dependency on the server, and no unsafe source present in HTML. Accessibility acceptance requires one route-owned H1, CMS headings from H2, sequential heading review, accessible/safe link labels, keyboard-scrollable code blocks, readable bidi content, and future structured-media alt/table semantics before those features are enabled. Human browser QA follows the existing 375/768/1024/1440 and fa/en/reduced-motion/keyboard review matrix after automated contracts pass.
+
+### 25.7 Bounded implementation backlog
+
+| ID | Objective | Likely files | Dependency | Acceptance and security criteria | Non-goals |
+|---|---|---|---|---|---|
+| RC-001 | Approve the already locked parser/sanitizer configuration. | `frontend/package.json`, lockfile review only; future renderer test spike | Security + dependency/license owner | Prove `markdown-it` `html:false`, `isomorphic-dompurify` SSR/ESM compatibility, maintenance/license acceptability, and no browser-only server dependency; retain current pins unless separately approved. | Installing, upgrading, or adding packages. |
+| RC-002 | Create the smallest shared safe Markdown renderer boundary. | Future `frontend/src/components/content/MarkdownContent.vue` and focused utility/tests | RC-001 | Parser then sanitizer; sole contained HTML sink; exact allowlist; no H1/raw HTML/unsafe URL/event/style/ID/data/aria output. | Generic CMS renderer, syntax highlighting, images, tables, or backend DTO changes. |
+| RC-003 | Establish SSR, hydration, security, and abuse tests. | Future focused Vitest/SSR fixtures | RC-002 | All §25.6 fixtures pass; safe failure path, request isolation, deterministic SSR/client output, measured complexity limits approved. | Broad browser or full-route regression replacement. |
+| RC-004 | Integrate only routes that return `bodyMarkdown`. | Future home/about/research/blog-detail/portfolio-detail pages and tests | RC-002–003; real CMS content | Route H1 stays Vue-owned; only `bodyMarkdown` uses renderer; plain fields remain text; no translation fallback. | Publication/resume/summary rendering as Markdown. |
+| RC-005 | Run browser and accessibility release QA. | Existing/new public-page tests and human evidence | RC-004 | Keyboard, heading, bidi, safe external link, code overflow, SSR/hydration, fa/en and viewport matrix pass. | New visual system or unrelated UX decisions. |
+
+## 26. Known Gaps and Deferred Decisions
+
+- Markdown/rich-content architecture and contract are approved (UX-DEC-011); renderer implementation remains gated by RC-001 through RC-005.
 - Persian font selection, licensing, and local-build delivery are resolved with Vazirmatn `33.0.3` under SIL OFL 1.1; English font delivery remains deferred.
 - Approved portrait, logo, favicon, project/publication, and Open Graph assets are blocked (UX-DEC-009).
 - Final semantic state contrast acceptance is provisional (UX-DEC-007); runtime hover, active, informational, and disabled roles are incomplete.
@@ -241,7 +323,7 @@ Document a necessary exception with its scope, rationale, owner, review trigger,
 - Realistic local seed data, final page-specific composition, final motion/asset direction, visual regression coverage, and broader automated accessibility evidence remain planned.
 - Admin workflow, language, SEO, and detail behavior require a separate approved scope.
 
-## 26. Foundation Implementation Backlog
+## 27. Foundation Implementation Backlog
 
 **Documentation completed in this task:** DF-001. **Immediate foundation implementation:** DF-002 through DF-006. **QA work:** DF-003 and DF-008. **Deferred final visual polish and admin workflow work:** DF-006 and DF-007; neither authorizes a redesign.
 
@@ -252,11 +334,11 @@ Document a necessary exception with its scope, rationale, owner, review trigger,
 | DF-003 | Verify shell interaction | Establish browser evidence for mobile drawer, focus lifecycle, active navigation, and both locales. | Existing shell components and focused tests | Keyboard, Escape, focus restoration, 44px targets, and no overflow pass. | Human-run browser/test environment. | Shell redesign. |
 | DF-004 | Integrate canonical states | Connect applicable API-backed routes to loading, empty, failure, offline, stale, unavailable-translation, and not-found behavior. | Public pages, loaders, `PageState.vue`, `TranslationUnavailable.vue`, tests | State priority and recovery match canonical taxonomy in both locales. | Frozen API fixtures/contracts. | Invented content or broad page redesign. |
 | DF-005 | Establish page introductions | Apply the compact H1/lead/metadata contract to contract-backed routes as they are implemented. | Relevant public page components and tests | One H1, semantic introduction, locale parity, no decorative hero requirement. | Route content integration. | Marketing landing redesign. |
-| DF-006 | Resolve content-safety and assets | Obtain approved sanitizer and real review assets before content/media green work. | Approved dependency/configuration and content/media components | No unsafe raw HTML; meaningful localized alt; stable media areas. | UX-DEC-009 and UX-DEC-011; owner approval. | Placeholder assets or unapproved dependency. |
+| DF-006 | Resolve content-safety and assets | Execute the approved rich-content contract and obtain real review assets before content/media green work. | Approved configuration and content/media components | No unsafe raw HTML; meaningful localized alt; stable media areas. | UX-DEC-009 and RC-001 through RC-005. | Placeholder assets or unapproved dependency. |
 | DF-007 | Admin foundations review | Apply forms/tables/dialogs rules only under a separate admin plan. | Future admin frontend scope | Approved workflow and role/CSRF contract precede implementation. | Separate admin specification. | Building admin UI in M1. |
 | DF-008 | Final visual QA | Run responsive, RTL/LTR, accessibility, SSR/hydration, and contrast review before release. | Affected frontend routes/tests and evidence records | Required viewport/locale matrix and human-run evidence are recorded. | Implemented route content and test environment. | New visual direction. |
 
-## 27. Acceptance Checklist
+## 28. Acceptance Checklist
 
 - [ ] `DESIGN.md` is the single human-readable foundation and does not create a competing design-system artifact.
 - [ ] `tokens.scss` remains the sole executable token authority.
