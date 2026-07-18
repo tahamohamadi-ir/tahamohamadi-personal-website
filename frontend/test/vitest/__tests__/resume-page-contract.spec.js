@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+﻿import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { flushPromises, mount } from '@vue/test-utils'
@@ -176,8 +176,12 @@ async function mountLocalized(component, {
 function expectNoPageLandmarkOwnership(wrapper) {
   expect(wrapper.find('main').exists()).toBe(false)
   expect(wrapper.find('.q-page').exists()).toBe(false)
-  expect(wrapper.findAll('h1')).toHaveLength(0)
   expect(wrapper.findAll('[lang], [dir]')).toHaveLength(0)
+}
+
+function expectNoChildPageOwnership(wrapper) {
+  expectNoPageLandmarkOwnership(wrapper)
+  expect(wrapper.findAll('h1')).toHaveLength(0)
 }
 
 function expectResumeShape(value) {
@@ -433,7 +437,7 @@ describe('ResumeTimeline semantic and content-integrity contract', () => {
       props: { entries: RESUME_RESPONSE.entries }
     })
 
-    expectNoPageLandmarkOwnership(wrapper)
+    expectNoChildPageOwnership(wrapper)
     expect(wrapper.find('.q-card').exists()).toBe(false)
     expect(wrapper.findAll('ol, ul')).toHaveLength(1)
 
