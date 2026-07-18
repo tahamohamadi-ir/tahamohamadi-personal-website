@@ -16,6 +16,20 @@ export default {
     notFoundDescription: 'The requested localized page does not exist.',
     returnHome: 'Return to the home page'
   },
+  pageState: {
+    loading: 'Loading content.',
+    empty: 'No content is available yet.',
+    recoverableFailure: 'Unable to load this content. Please try again.',
+    offline: 'You are offline. Check your connection, then try again.',
+    stale: 'This content may be outdated. Refresh to check for changes.',
+    translationUnavailable: 'Translation unavailable.',
+    retry: 'Retry',
+    refresh: 'Refresh'
+  },
+  translationUnavailable: {
+    viewAvailableTranslation: 'View available translation',
+    returnToLocaleHome: 'Return to the home page'
+  },
   shell: {
     skipToContent: 'Skip to main content',
     primaryNavigation: 'Primary navigation',
