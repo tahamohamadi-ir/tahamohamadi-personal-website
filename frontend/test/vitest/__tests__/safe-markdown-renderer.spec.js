@@ -49,7 +49,7 @@ describe('safe Markdown renderer', () => {
     expect(listItems[1][1]).toContain('Two')
     expect(result.html).toContain('<blockquote>\n<p>A safe quotation</p>\n</blockquote>')
     expect(result.html).toContain('<p><code>inline code</code></p>')
-    expect(result.html).toContain('<pre><code>const safe = true')
+    expect(result.html).toMatch(/<pre><code>\s*const safe = true\s*<\/code><\/pre>/)
   })
 
   it('retains H2 through H6 but normalizes Markdown H1 to paragraph semantics', () => {
