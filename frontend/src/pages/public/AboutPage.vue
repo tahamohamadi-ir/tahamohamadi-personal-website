@@ -19,6 +19,7 @@ const api = inject(PUBLIC_API_KEY)
 const route = useRoute()
 const { t } = useI18n()
 const locale = computed(() => route.meta.locale)
+const ssrKey = computed(() => `public:${locale.value}:page:about`)
 
 function isEmptyPage(value) {
   return ![
@@ -32,12 +33,14 @@ const {
   state,
   error,
   load,
-  refresh
+  refresh,
+  hasInitialState
 } = useAsyncPage({
   api,
   load: (currentApi) => currentApi.getPage(locale.value, 'about'),
   isEmpty: isEmptyPage,
-  initialData: props.initialData
+  initialData: props.initialData,
+  ssrKey: () => ssrKey.value
 })
 
 const showsContent = computed(() => (
@@ -50,7 +53,7 @@ function retry() {
 }
 
 onMounted(() => {
-  if (props.initialData === undefined) {
+  if (!hasInitialState) {
     void load()
   }
 })

@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { Quasar } from 'quasar'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -78,7 +79,7 @@ async function mountPublicPage(component, {
   return mount(component, {
     props,
     global: {
-      plugins: [Quasar, router, i18n],
+      plugins: [Quasar, createPinia(), router, i18n],
       provide: { [PUBLIC_API_KEY]: api }
     }
   })

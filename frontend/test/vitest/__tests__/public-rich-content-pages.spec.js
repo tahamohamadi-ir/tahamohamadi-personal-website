@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { Quasar } from 'quasar'
 import { createSSRApp, h } from 'vue'
 import { renderToString } from '@vue/server-renderer'
@@ -112,7 +113,7 @@ async function mountPage(page, component, api, {
   return mount(component, {
     props,
     global: {
-      plugins: [Quasar, router, i18n],
+      plugins: [Quasar, createPinia(), router, i18n],
       provide: { [apiKey]: api }
     }
   })
@@ -138,6 +139,7 @@ async function renderPageOnServer(page, component, data, {
   const app = createSSRApp({
     render: () => h(component, { initialData: data })
   })
+  app.use(createPinia())
   app.use(router)
   app.use(i18n)
   app.provide(PUBLIC_API_KEY, {})

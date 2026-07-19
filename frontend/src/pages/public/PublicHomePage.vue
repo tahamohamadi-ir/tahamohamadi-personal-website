@@ -19,6 +19,7 @@ const api = inject(PUBLIC_API_KEY, null)
 const route = useRoute()
 const { t } = useI18n()
 const locale = computed(() => route.meta.locale)
+const ssrKey = computed(() => `public:${locale.value}:home:home`)
 
 function isEmptyHome(value) {
   const page = value?.page
@@ -34,12 +35,14 @@ const {
   state,
   error,
   load,
-  refresh
+  refresh,
+  hasInitialState
 } = useAsyncPage({
   api,
   load: (currentApi) => currentApi.getHome(locale.value),
   isEmpty: isEmptyHome,
-  initialData: props.initialData
+  initialData: props.initialData,
+  ssrKey: () => ssrKey.value
 })
 
 const page = computed(() => data.value?.page ?? null)
@@ -53,7 +56,7 @@ function retry() {
 }
 
 onMounted(() => {
-  if (props.initialData === undefined) {
+  if (!hasInitialState) {
     void load()
   }
 })

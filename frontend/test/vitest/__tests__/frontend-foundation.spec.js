@@ -1,5 +1,6 @@
 import { Quasar } from 'quasar'
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it } from 'vitest'
 
@@ -22,7 +23,7 @@ async function mountPublicLayoutAt(path) {
 
   return mount(PublicLayout, {
     global: {
-      plugins: [Quasar, router, i18n]
+      plugins: [Quasar, createPinia(), router, i18n]
     }
   })
 }
