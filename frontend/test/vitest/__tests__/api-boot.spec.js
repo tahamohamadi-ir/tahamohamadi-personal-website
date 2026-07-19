@@ -33,9 +33,10 @@ describe('Quasar API boot contract', () => {
       'utf8'
     )
 
-    expect(configSource).toContain(
-      "boot: ['i18n', 'pinia', 'api']"
-    )
+    expect(configSource).toContain("boot: ['i18n', 'api']")
+    expect(
+      readFileSync(resolve(process.cwd(), 'src/stores/index.js'), 'utf8')
+    ).toMatch(/createPinia/)
   })
 
   it('recognizes server execution even when Quasar does not expose an SSR request context', () => {
