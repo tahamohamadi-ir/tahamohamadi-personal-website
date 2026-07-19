@@ -25,6 +25,26 @@ Source: `docs/master-plan.md` v2.0 and `.codex/seo-rules.md`/architecture rules 
 - ADR-007: Use Spring Security with secure session/cookie strategy for MVP.
 - Admin and Super Admin actions must be audited when sensitive.
 
+## Verified Pack B Admin Enforcement
+
+The Spring Security chain applies `hasAnyRole("ADMIN", "SUPER_ADMIN")` to
+`/api/v1/admin/**`. Anonymous requests receive the JSON `401` contract and
+authenticated users without either role receive the JSON `403` contract. CSRF
+remains enabled for every state-changing admin request; a missing token is
+rejected with `403`.
+
+Admin services obtain an audit actor only through `AuthenticatedAuditActor`,
+which resolves the current authenticated principal against the persisted user
+repository. Request bodies cannot supply or override an actor. Create, update,
+lifecycle, deactivation, and deletion actions write stable `ADMIN_*` audit
+actions with sanitized details; passwords, email addresses, markdown bodies,
+media storage keys, session values, and CSRF values are excluded.
+
+Validation, missing resources, optimistic-lock conflicts, invalid lifecycle
+transitions, and publish validation use the common safe JSON error contract:
+`400 VALIDATION_ERROR`, `404 RESOURCE_NOT_FOUND`, `409 OPTIMISTIC_LOCK_CONFLICT`
+or `STATE_CONFLICT`, and `422 PUBLISH_VALIDATION_FAILED` where applicable.
+
 ## Authentication Foundation Boundary
 
 The session-security foundation establishes the Spring Security filter chain,
@@ -99,6 +119,11 @@ tokens, or raw credential input.
 - Do not render unsanitized direct HTML.
 - Public APIs return only Published content.
 - Draft and Archived content must not appear in public responses or sitemaps.
+- Public sitemap data is bounded and derives routes only from published, nondeleted, locale-available content; nonproduction `/robots.txt` returns an explicit no-index policy.
+- Publication, resume entry, and resume document mutations require the existing
+  ADMIN/SUPER_ADMIN and CSRF boundary. Successful lifecycle and CRUD operations
+  append sanitized `ADMIN_PUBLICATION_*`, `ADMIN_RESUME_ENTRY_*`, and
+  `ADMIN_RESUME_DOCUMENT_*` audit events using the authenticated persisted actor.
 
 ## Privacy
 

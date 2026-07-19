@@ -24,6 +24,11 @@ export default defineConfig({
     environment: 'happy-dom',
     include: ['test/vitest/__tests__/**/*.{test,spec}.js'],
     clearMocks: true,
-    restoreMocks: true
+    restoreMocks: true,
+    poolOptions: {
+      threads: {
+        singleThread: true
+      }
+    }
   }
 })

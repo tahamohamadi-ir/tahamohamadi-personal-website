@@ -1,0 +1,206 @@
+# Backend Completion Execution Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: use `superpowers:executing-plans` task-by-task. Mark a checkbox only after the listed verification succeeds.
+
+**Goal:** Deliver a DTO-only, PostgreSQL 17-tested backend gate before any frontend task starts.
+
+**Architecture:** Modular Spring Boot monolith; feature-local controllers/services/mappers/repositories; session/CSRF security; Flyway V1-V8 immutable. Public API contracts are language-prefixed, published-only, bounded, and SEO-shaped.
+
+**Tech stack:** Java 21, Spring Boot, Spring Security, JPA, Flyway, PostgreSQL 17 Testcontainers, Maven.
+
+## Status
+
+| Field | Value |
+|---|---|
+| Current branch | `feat/backend-completion` |
+| Baseline commit | `2741a53 feat(backend): add authenticated admin audit actor` |
+| Last completed task | L1: Run immutable backend gate |
+| Next task | M1: Execute Plan 008 after L1 only |
+| Known blockers | None |
+| Last verification date | 2026-07-14 - L1 full backend suite, Flyway V1-V8 upgrade gate, compile, diff checks, and manual backend audit passed |
+| Backend readiness | `BACKEND_READY_FOR_FRONTEND` - immutable backend acceptance gate passed; M1 may begin |
+
+## Global constraints
+
+- Never edit `backend/src/main/resources/db/migration/V1__*` through `V8__*`; add a forward-only migration only when schema requires it.
+- Use `mvn`, never `mvnw.cmd`; focused tests after each task; full suite only gates F, K, L.
+- Controllers return records/DTOs only; every growing collection has validated pagination and allow-listed deterministic sort.
+- Admin mutations require ADMIN/SUPER_ADMIN and CSRF; audits use `AuthenticatedAuditActor`, never request actor input.
+- Do not begin M or N until L reports `BACKEND_READY_FOR_FRONTEND`; do not push, merge, rebase, reset, restore, clean, or automatically commit.
+
+## A. Stabilize existing Blog CRUD
+
+### A1: Compile and complete Blog draft CRUD
+**Files:** Modify `backend/src/main/java/ir/tahamohamadi/blog/post/{BlogPost.java,BlogPostTranslation.java,BlogPostRepository.java,BlogPostTranslationRepository.java}`; modify/create `backend/src/main/java/ir/tahamohamadi/blog/post/api/admin/{AdminBlogController.java,AdminBlogService.java,AdminBlogMapper.java,AdminBlogPostRequest.java,AdminBlogPostResponse.java,AdminBlogPostSummary.java}`; create `backend/src/test/java/ir/tahamohamadi/admin/AdminBlogCrudIntegrationTest.java`.
+**Interfaces:** Produces `GET/POST/GET{id}/PUT /api/v1/admin/blog/posts`; consumes `PageResponse`, `AuthenticatedAuditActor`, `BlogCategoryRepository`.
+- [x] Write Testcontainers MockMvc RED cases for anonymous 401 with CSRF, user 403, admin 201 draft, safe DTO, max size 100, invalid body 400, stale version 409.
+- [x] Run `mvn "-Dtest=AdminBlogCrudIntegrationTest" test`; observed and fixed controller import and aggregate-version failures.
+- [x] Implement explicit mapper and repository projection/entity-graph query that retrieves each post/category and both translations without per-row lookups; reject inactive/deleted category, duplicate slugs, and missing fa/en translations.
+- [x] Run `mvn "-Dtest=AdminBlogCrudIntegrationTest" test`; PostgreSQL 17 BUILD SUCCESS, zero failures/errors/skips in 25.670 seconds.
+- [x] Run `git diff --check`; no output. Checkpoint message: `feat(blog): add admin draft CRUD`.
+**Acceptance:** Draft create/update is transactional, localized, versioned, paged/sorted, DTO-only. **Rollback-safe:** no migration. **Maximum:** 45 minutes. **Do not change:** public APIs, media/contact/pages.
+
+## B. Blog lifecycle
+
+### B1: Categories, tags, post references, lifecycle, audit
+**Files:** Create `backend/src/main/java/ir/tahamohamadi/blog/{category,tag}/api/admin/*`; modify post tag/media repositories and blog services; create `backend/src/test/java/ir/tahamohamadi/admin/{AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest}.java`.
+**Interfaces:** Produces CRUD `/blog/categories`, `/blog/tags`, `POST /blog/posts/{id}/{publish,archive}`, `DELETE /blog/posts/{id}`.
+- [x] Write RED tests for active localized category/tag CRUD, ordered tags/media, CSRF, ADMIN/SUPER_ADMIN, publish SEO/reference rule 422, stale 409, and actor-attributed sanitized `ADMIN_BLOG_*` audits.
+- [x] Run `mvn -f backend/pom.xml -Dtest=AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest test`; RED failures observed for missing taxonomy/lifecycle routes (2 failures, 36.398s).
+- [x] Implement bounded repository projections, translation batch mapping, lifecycle invariants, soft delete, ordered safe media references, deleted-category publish validation, and same-transaction audit actions `ADMIN_BLOG_CATEGORY_*`, `ADMIN_TAG_*`, `ADMIN_BLOG_POST_{CREATED,UPDATED,PUBLISHED,ARCHIVED,DELETED}`.
+- [x] Run the same command; PostgreSQL 17 `BUILD SUCCESS` after review fixes (3 tests, zero failures/errors/skips, 37.844s measured).
+- [x] Run `mvn -f backend/pom.xml -DskipTests compile` and `git diff --check`; `BUILD SUCCESS` (3.811s measured) and no diff errors. Checkpoint follow-up after review fixes.
+**Acceptance:** all Plan 005 blog routes are secured/audited/locked. **Rollback-safe:** no migration. **Maximum:** 75 minutes. **Do not change:** skills, portfolio, public APIs.
+
+## C. Admin Skills
+
+### C1: Categories and skills
+**Files:** Create `backend/src/main/java/ir/tahamohamadi/skill/api/admin/*`; modify skill repositories/entities only for bounded projection/update methods; create `backend/src/test/java/ir/tahamohamadi/admin/AdminSkillIntegrationTest.java`.
+- [x] Write RED CRUD/deactivate/order/locale/CSRF/role/version/audit tests.
+- [x] Run `mvn -f backend/pom.xml -Dtest=AdminSkillIntegrationTest test`; RED observed for missing routes (2 expected failures).
+- [x] Implement DTO mapper/services/controllers with size 1..100, sort allow-list, translation batch query, `ADMIN_SKILL_CATEGORY_*` and `ADMIN_SKILL_*` audits.
+- [x] Run the same command; PostgreSQL 17 `BUILD SUCCESS` (2 tests, zero failures/errors/skips, final verification 23.032 seconds).
+- [x] Run `git diff --check`; no output. Checkpoint commit: `fd22ddd feat(skills): add admin CRUD`.
+**Acceptance:** DTO-only ordered deactivate semantics. **Rollback-safe:** no migration. **Maximum:** 60 minutes. **Do not change:** portfolio/public APIs.
+
+## D. Admin Portfolio
+
+### D1: Localized projects
+**Files:** Create `backend/src/main/java/ir/tahamohamadi/portfolio/project/api/admin/*`; modify project repositories/junction entities; create `backend/src/test/java/ir/tahamohamadi/admin/AdminProjectIntegrationTest.java`.
+- [x] Write RED localized CRUD/media/skill order/publish/archive/CSRF/role/version/audit tests.
+- [x] Run `mvn -f backend/pom.xml -Dtest=AdminProjectIntegrationTest test`; expected RED observed: missing admin route returned 404 where validated request expected 400 (PostgreSQL 17, 27.494s).
+- [x] Implement bounded projections, active reference validation, lifecycle, mapper, and `ADMIN_PROJECT_*` audits.
+- [x] Run the same command; PostgreSQL 17 `BUILD SUCCESS`: 1 test, zero failures/errors/skips, 33.784s; independent-review invariant proof rerun: 1 test, zero failures/errors/skips, 28.730s.
+- [x] Run `git diff --check`; no output. Checkpoint commits: `deeabc4 feat(portfolio): add admin projects`; `0e832b2 test(portfolio): cover project admin invariants`.
+**Acceptance:** localized DTO-only projects with no N+1. **Rollback-safe:** no migration. **Maximum:** 75 minutes. **Do not change:** public APIs.
+
+## E. Admin Pages corrections
+
+### E1: Page query and audit regression
+**Files:** Modify `content/page/{ContentPageRepository.java,ContentPageTranslationRepository.java,api/admin/AdminPageService.java}`; modify `AdminPageApiIntegrationTest`; create `AdminPageAuditAndConcurrencyIntegrationTest.java`.
+- [x] Write RED query-count, persisted actor, stale update, CSRF/role/paging, deterministic-order, and DTO-boundary tests.
+- [x] Run `mvn -f backend/pom.xml '-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest' test`; RED confirmed: list query count was 8 for 3 pages, exceeding the maximum 3 (36.361s).
+- [x] Replace per-page translation lookups with one repository batch query; preserve response shape, deterministic order, persisted actor, and 409 mapping.
+- [x] Run the same command; PostgreSQL 17 `BUILD SUCCESS`, 4 tests, zero failures/errors/skips (41.371s).
+- [x] Run `mvn -f backend/pom.xml -DskipTests compile`; `BUILD SUCCESS` (2.198s). Run `git diff --check`, `git diff --stat`, and `git status --short`; no whitespace errors and only E1 files changed. Checkpoint message: `fix(pages): remove translation n plus one`.
+**Acceptance:** no per-row translation queries; audit actor stored. **Maximum:** 35 minutes.
+
+## F. Pack B acceptance gate
+
+### F1: Verify all admin contracts
+**Files:** Modify `docs/api/api-design.md`, `docs/architecture/security.md`; modify `backend/src/test/java/ir/tahamohamadi/admin/{AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest,AdminBlogCrudIntegrationTest,AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest,AdminSkillIntegrationTest,AdminProjectIntegrationTest}.java`.
+- [x] Run `mvn -f backend/pom.xml "-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest,AdminBlogCrudIntegrationTest,AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest,AdminSkillIntegrationTest,AdminProjectIntegrationTest" test`; PostgreSQL 17.10 `BUILD SUCCESS`, 11 tests, zero failures/errors/skips (61 seconds Maven time).
+- [x] Run `mvn -f backend/pom.xml -DskipTests compile` and `git diff --check`; `BUILD SUCCESS` (1.823 seconds) and no whitespace errors.
+- [x] Inspect `git diff --stat`, all Pack B admin controller return signatures, bounded/paged deterministic list paths, batch translation/reference queries, and Admin service `findAll()` calls; no entity exposure, unbounded list path, or Admin `findAll()` use found. Confirm V1-V7 migration blobs unchanged from `1a7d230`; focused Testcontainers runs validated all seven migrations.
+- [x] Record verified routes, role/CSRF enforcement, principal-only audit actors, safe error contracts, optimistic-lock preservation, and sanitized audit evidence in `docs/api/api-design.md` and `docs/architecture/security.md`. Checkpoint message: `test(admin): verify pack b gate`.
+**Acceptance:** Plan 005 complete. **Maximum:** 45 minutes. **Do not change:** frontend.
+
+## G. Publications and Resume admin/public slices
+### G1: Implement publication/resume DTO workflows
+**Files:** Create `publication/api/{admin,publicsite}/*`, `resume/api/{admin,publicsite}/*`; create `backend/src/test/java/ir/tahamohamadi/{admin,publicapi}/PublicationResumeIntegrationTest.java`.
+- [x] Write RED admin/public published-only locale/version/audit tests.
+- [x] Run `mvn -f backend/pom.xml "-Dtest=PublicationResumeIntegrationTest" test`; PostgreSQL 17.10 RED: absent admin publication/resume routes returned 404 (2 failures, 31.178s).
+- [x] Implement bounded DTO services/controllers, publish/archive, current-document policy, and audit actions.
+- [x] Run the same command; PostgreSQL 17.10 `BUILD SUCCESS` (2 tests, zero failures/errors/skips, 32.735s).
+- [x] Run `git diff --check`; no output. Checkpoint message: `feat(content): add publications and resume`.
+**Acceptance:** Plan 005/006 publication/resume routes. **Maximum:** 90 minutes.
+
+## H. Featured Content and Social Links
+### H1: Implement featured/social admin/public contracts
+**Files:** Create `content/{featured,social}/api/{admin,publicsite}/*`; create `backend/src/test/java/ir/tahamohamadi/{admin,publicapi}/FeaturedSocialIntegrationTest.java`.
+- [x] Write RED active-window/published-target/order/CSRF/version/audit/public filtering tests.
+- [x] Run `mvn -f backend/pom.xml "-Dtest=FeaturedSocialIntegrationTest" test`; RED: absent admin featured/social routes returned 404.
+- [x] Implement bounded DTO workflows and `ADMIN_FEATURED_ITEM_*`, `ADMIN_SOCIAL_LINK_*` audits.
+- [x] Run the same command; PostgreSQL 17.10 `BUILD SUCCESS` (2 tests, zero failures/errors/skips, 32.749s Maven time).
+- [x] Run `git diff --check`; no output. Checkpoint message: `feat(content): add featured and social`.
+**Acceptance:** no inactive/private target public leak. **Maximum:** 60 minutes.
+
+## I. Public content APIs
+### I1: Implement all published localized read endpoints
+**Files:** Replace `publicsite/api/*` with exact paths listed in Plan 006; create `content/api/publicsite/*`, `blog/api/publicsite/*`, `skill/api/publicsite/*`, `portfolio/project/api/publicsite/*`; create `backend/src/test/java/ir/tahamohamadi/publicapi/PublicContentIntegrationTest.java`.
+- [x] Write RED fa/en/missing-locale/draft/future/deleted/page-size/filter/sort tests.
+- [x] Run `mvn -f backend/pom.xml '-Dtest=PublicContentIntegrationTest#resolvesHomeByStablePageKeyInTheRequestedLocale,PublicContentIntegrationTest#countsOnlyEligiblePostsInTheRequestedTaxonomyLocale,PublicContentIntegrationTest#fetchesMultipleFeaturedTargetsInABoundedNumberOfQueries' test`; expected RED failures observed for locale-slug home lookup, absent taxonomy counts, and featured N+1/future leakage.
+- [x] Implement DTO-only projections with size <=50, canonical/locale metadata and no fallback.
+- [x] Run `mvn -f backend/pom.xml '-Dtest=PublicContentIntegrationTest,PublicationResumeIntegrationTest,FeaturedSocialIntegrationTest' test`; PostgreSQL 17.10 `BUILD SUCCESS`, 20 tests, zero failures/errors/skips (28.071 seconds Maven time).
+- [x] Run `mvn -f backend/pom.xml -DskipTests compile` and `git diff --check`; `BUILD SUCCESS` (1.479 seconds) and no diff errors. Independent review: zero remaining P1/P2 findings. Checkpoint commit: `fbb226e fix(public): close I1 content review findings`.
+**Acceptance:** all Plan 006 content endpoints bounded/published-only. **Maximum:** 120 minutes.
+
+## J. Search, localization, SEO, hreflang, sitemap-data
+### J1: Implement public discoverability contracts
+**Files:** Create `common/i18n/{LocaleNormalizer.java,TranslationUnavailableException.java}`, `seo/{SeoMetadataResponse.java,HreflangResponse.java,SitemapDataController.java,SitemapDataService.java,SitemapEntryResponse.java,RobotsController.java}`; create `PublicBlogSearchIntegrationTest.java`, `PublicSeoContractIntegrationTest.java`, `LocaleNormalizerUnitTest.java`.
+- [x] Write RED bounded FTS/injection/locale/empty query, canonical/hreflang/OG/sitemap/robots tests.
+- [x] Run `mvn "-Dtest=LocaleNormalizerUnitTest,PublicBlogSearchIntegrationTest,PublicSeoContractIntegrationTest" test`; expect RED.
+- [x] Implement parameterized PG FTS, Persian normalizer, DTO SEO metadata, published sitemap entries and no-index nonproduction robots.
+- [x] Run the same command; expect PG17 `BUILD SUCCESS`.
+- [x] Run `git diff --check`; expect no output. Checkpoint message: `feat(seo): add public discovery contracts`.
+**Acceptance:** Plan 006 SEO/i18n complete. **Maximum:** 90 minutes.
+
+## K. Pack C acceptance gate
+### K1: Verify Pack C
+**Files:** Modify `docs/api/api-design.md`, `docs/architecture/{architecture.md,security.md}`; tests from G-I.
+- [x] Run `mvn "-Dtest=PublicContentIntegrationTest,PublicBlogSearchIntegrationTest,PublicContactIntegrationTest,PublicSeoContractIntegrationTest" test`; expect green PG17.
+- [x] Run `mvn -DskipTests compile` and `git diff --check`; expect success.
+- [x] Inspect public entity exposure, locale fallback, page limits, FTS plan, media URLs. Checkpoint message: `test(public): verify pack c gate`.
+**Acceptance:** Plan 006 complete. **Maximum:** 45 minutes.
+
+## L. Full backend acceptance gate
+### L1: Run immutable backend gate
+**Files:** Create/modify only acceptance evidence in `docs/testing/mvp-acceptance.md`.
+- [x] Run `mvn -DskipTests compile`; observed `BUILD SUCCESS` in 10.18 seconds.
+- [x] Run `mvn test`; observed 120 tests across 31 classes with zero failures/errors/skips on PostgreSQL 17.10 Testcontainers in 185.85 seconds.
+- [x] Run `mvn "-Dtest=FlywayUpgradeIntegrationTest,FlywayWaveAIntegrationTest,FlywayWaveBIntegrationTest" test`; observed 3 tests with zero failures/errors/skips and explicit V7-to-V8 upgrade coverage in 28.60 seconds.
+- [x] Run `git diff --check; git status --short; git diff --stat`; observed clean checkpoint state and no frontend, documentation, plan, or migration scope violation during audit corrections.
+- [x] Inspect CSRF/RBAC/audit/version/entity exposure/N+1/unbounded repositories; closed actor attribution, contact/media concurrency, DTO-boundary, page deletion actor, and batched lookup findings; verdict `BACKEND_READY_FOR_FRONTEND`. Checkpoint message: `test(backend): pass acceptance gate`.
+**Acceptance:** backend ready. **Maximum:** 90 minutes. **Do not change:** frontend.
+
+## M. Public frontend
+### M1: Execute Plan 008 after L1 only
+**Files:** Exact Plan 008 files; tests `frontend/test/e2e/*public*`.
+- [ ] Verify L1 verdict is `BACKEND_READY_FOR_FRONTEND`.
+- [ ] Execute Plan 008 RED/GREEN/REFACTOR and `npm run test:unit; npm run build; npm run test:e2e`; expect zero failures.
+**Acceptance:** Plan 008. **Maximum:** 180 minutes. **Do not change:** backend contracts without a backend task.
+
+## N. Admin frontend
+### N1: Execute Plan 009 after M1 only
+**Files:** Exact Plan 009 files; tests `frontend/test/e2e/admin-*`.
+- [ ] Verify M1 green and frozen admin contract.
+- [ ] Execute Plan 009 and `npm run test:unit; npm run build; npm run test:e2e`; expect zero failures.
+**Acceptance:** Plan 009. **Maximum:** 180 minutes.
+
+## O. Integration, hardening, delivery
+### O1: Execute Plan 010 release gate
+**Files:** Exact runtime, CI, runbook, smoke, backup and test paths in Plan 010.
+- [ ] Write RED delivery tests and run them; expect missing-config failures.
+- [ ] Implement containers, production profile, proxy, CI, runbooks, smoke/backup/restore scripts.
+- [ ] Run exact Plan 010 backend/frontend/Compose/restore commands; expect green deployment rehearsal.
+- [ ] Inspect secrets, headers, logs, restore evidence and release checklist. Checkpoint message: `feat(delivery): complete mvp release gate`.
+**Acceptance:** Plan 010 release sign-off. **Maximum:** 240 minutes.
+
+## Self-review
+
+- [x] Plans 005-007 are represented by A-L; Plan 008 starts only after L; Plan 009 starts only after M; Plan 010 is O.
+- [x] Current dirty Blog foundation is explicitly stabilized first.
+- [x] No task edits applied migrations, returns entities, or permits unbounded collections.
+- [x] Full Maven suite appears only at L; every implementation task has focused Maven verification.
+
+## Progress log
+
+| Task | Status | Commit | Verification | Duration | Notes |
+|---|---|---|---|---|---|
+| B1 Blog lifecycle | [x] | `9b790e9` | `mvn -f backend/pom.xml -Dtest=AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest test` (PostgreSQL 17); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check` | 37.844s test + 3.811s compile | Ordered safe media, deleted-category 422, draft archive 409, delete actor, taxonomy negative auth/version |
+| Pack A media/contact | [x] | `2741a53` ancestry | Focused PG17 media tests | recorded | Preserve |
+| Admin Pages foundation | [x] | working tree | `AdminPageApiIntegrationTest` | recorded | Needs E1 correction |
+| A1 Blog draft CRUD | [x] | `af57ef7` | AdminBlogCrudIntegrationTest; compile; diff check | 25.670s test + 1.682s compile | Category entity graph and aggregate version verified |
+| C1 Skills | [x] | `fd22ddd` | `mvn -f backend/pom.xml -Dtest=AdminSkillIntegrationTest test` (PostgreSQL 17); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; independent review | 23.032s test + 1.988s compile | B1 Blog taxonomy reused unchanged; Skills categories/skills are DTO-only, paged/sorted, locked, CSRF/RBAC protected, actor-audited, and batch-mapped |
+| D1 Portfolio | [x] | `deeabc4`, `0e832b2` | `mvn -f backend/pom.xml -Dtest=AdminProjectIntegrationTest test` (PostgreSQL 17); `git diff --check`; independent re-review | 27.494s RED + 33.784s GREEN + 28.730s invariant proof | Localized DTO-only project CRUD, ordered active references, lifecycle, CSRF/RBAC, optimistic locking, audit actions, and query-count proof verified |
+| E1 Pages correction | [x] | `71e9616` | `mvn -f backend/pom.xml '-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest' test` (PostgreSQL 17); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; `git diff --stat`; `git status --short` | 36.361s RED + 41.371s GREEN + 2.198s compile | Batch translations remove list N+1; actor audit, safe stale 409, CSRF/RBAC, paging, deterministic order, and DTO response boundaries verified |
+| F1 Pack B gate | [x] | `1f43bcd` | `mvn -f backend/pom.xml "-Dtest=AdminPageApiIntegrationTest,AdminPageAuditAndConcurrencyIntegrationTest,AdminBlogCrudIntegrationTest,AdminBlogLifecycleIntegrationTest,AdminBlogAuditIntegrationTest,AdminSkillIntegrationTest,AdminProjectIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check` | 61s test + 1.823s compile | 11 tests, zero failures/errors/skips; stale Page/Skill/Project requests now explicitly prove newer state is preserved; V1-V7 unchanged |
+| G1 Publication/resume | [x] | pending | `mvn -f backend/pom.xml "-Dtest=PublicationResumeIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check` | 31.178s RED + 32.735s GREEN + 1.916s compile | DTO-only localized admin/public workflows, deterministic bounds, audit actors, stale-write protection, and V8 DOI constraint correction |
+| H1 Featured/social | [x] | pending | `mvn -f backend/pom.xml "-Dtest=FeaturedSocialIntegrationTest" test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; `git status --short`; `git diff --stat` | 32.749s test + 1.953s compile | 2 tests, DTO-only bounded admin/public contracts; active-window, published-target, order, CSRF/RBAC, optimistic locking, principal audit, and public filtering verified |
+| I1 Public content | [x] | `fbb226e` | `mvn -f backend/pom.xml '-Dtest=PublicContentIntegrationTest,PublicationResumeIntegrationTest,FeaturedSocialIntegrationTest' test` (PostgreSQL 17.10); `mvn -f backend/pom.xml -DskipTests compile`; `git diff --check`; independent review | 28.071s test + 1.479s compile | 20 tests, zero failures/errors/skips; stable-key localized home, safe public metadata/DTOs, grouped eligible taxonomy counts, and bounded featured batching verified |
+| J1 SEO/search | [x] | `0184472` | 27 focused PostgreSQL 17.10 tests; compile; diff check; manual review of reported P1 findings | 34.53s test + 6.52s compile | FTS normalization, canonical/hreflang, safe OG media, sitemap-data, robots policy, home canonical fallback, and bounded locale alternate metadata verified |
+| K1 Pack C gate | [x] | 88bb9bd | PublicContentIntegrationTest, PublicBlogSearchIntegrationTest, PublicContactIntegrationTest, PublicSeoContractIntegrationTest; compile; diff check | 29 tests, PostgreSQL 17.10; 50.07s test + 9.05s compile | zero failures/errors/skips; safe Contact receipt, validation, CSRF, duplicate submission, PII protection, localized content, FTS, sitemap, canonical metadata and robots contracts verified |
+| L1 Backend gate | [x] | `9a67348`, `e33005e` | focused V7-to-V8 upgrade; Flyway gate; focused backend audit suite; full backend suite; compile; diff/scope checks; manual CSRF/RBAC/audit/version/DTO/query review | 21.91s upgrade + 28.60s Flyway + 46.91s focused audit + 185.85s full suite + 10.18s compile | 120 tests across 31 classes, zero failures/errors/skips on PostgreSQL 17.10; audit findings closed; `BACKEND_READY_FOR_FRONTEND` |
+| M1 Public frontend | [ ] | - | - | - | unblocked; execute Plan 008 |
+| N1 Admin frontend | [ ] | - | - | - | blocked by M1 |
+| O1 Delivery | [ ] | - | - | - | blocked by N1 |

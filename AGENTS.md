@@ -13,6 +13,9 @@ Before planning or implementing, read:
 - .codex/project-context.md
 - relevant .codex/*-rules.md files
 - relevant docs/* files
+- the controlling execution plan for the current phase
+
+For M1 public frontend work, `plans/008-public-frontend-mvp.md` is the controlling implementation plan and `docs/testing/mvp-acceptance.md` records the accepted backend baseline.
 
 ## Core Stack
 
@@ -38,6 +41,10 @@ Before planning or implementing, read:
 12. Use DTOs; do not expose JPA entities directly.
 13. Add tests for implemented behavior.
 14. Update docs when behavior changes.
+15. During M1, do not change accepted backend contracts, backend implementation, or migrations.
+16. Admin frontend implementation is outside M1 scope.
+17. Public frontend implementation must remain SSR-compatible.
+18. Never silently fall back to another locale when translated content is unavailable.
 
 ## Token Efficiency Rules
 
@@ -47,6 +54,7 @@ Before planning or implementing, read:
 4. Do not paste large files into prompts.
 5. Do not modify unrelated files.
 6. Keep each task small and reviewable.
+7. Load UI/UX skills only for visual, interaction, accessibility, responsive, or design-system tasks.
 
 ## Development Workflow
 
@@ -57,15 +65,21 @@ For each task:
 3. List files to inspect.
 4. Propose a short plan.
 5. Make minimal focused changes.
-6. Run or describe tests.
+6. Describe the verification commands for the human to run.
 7. Summarize changed files.
 8. Mention risks or follow-up tasks.
 
+The human operator runs tests, builds, browser checks, Git commands, and commits unless a task explicitly states otherwise.
+
 ## Current Phase
 
-Documentation and project setup.
+L1 backend acceptance is complete.
 
-Do not create application implementation code until the operational docs are split from docs/master-plan.md.
+Backend status: `BACKEND_READY_FOR_FRONTEND`.
+
+Current phase: M1 Public Frontend under `plans/008-public-frontend-mvp.md`.
+
+Implement only the explicitly assigned M1 microtask. Preserve the accepted backend contracts and keep admin frontend work out of scope.
 
 ## Java and Lombok
 

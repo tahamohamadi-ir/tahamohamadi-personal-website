@@ -1,0 +1,12 @@
+spring:
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:qa-data.sql
+
+server:
+  forward-headers-strategy: framework
+
+taha:
+  security:
+    secure-cookies: false

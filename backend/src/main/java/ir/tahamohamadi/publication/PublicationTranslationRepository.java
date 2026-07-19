@@ -1,1 +1,29 @@
-package ir.tahamohamadi.publication; import ir.tahamohamadi.common.domain.LanguageCode; import org.springframework.data.jpa.repository.*; import org.springframework.data.repository.query.Param; import java.util.*; public interface PublicationTranslationRepository extends JpaRepository<PublicationTranslation,UUID>{ @Query("select t from PublicationTranslation t join t.publication p where t.languageCode=:language and t.deletedAt is null and p.deletedAt is null and p.contentStatus='PUBLISHED' order by p.year desc,p.sortOrder,p.id") List<PublicationTranslation> findPublishedByLanguage(@Param("language") LanguageCode language); @Query("select t from PublicationTranslation t join t.publication p where t.languageCode=:language and lower(t.slug)=lower(:slug) and t.deletedAt is null and p.deletedAt is null and p.contentStatus='PUBLISHED'") Optional<PublicationTranslation> findPublishedByLanguageAndSlug(@Param("language") LanguageCode language,@Param("slug") String slug); }
+package ir.tahamohamadi.publication;
+
+import ir.tahamohamadi.common.domain.LanguageCode;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface PublicationTranslationRepository extends JpaRepository<PublicationTranslation, UUID> {
+    List<PublicationTranslation> findByPublicationIdAndDeletedAtIsNull(UUID publicationId);
+    List<PublicationTranslation> findByPublicationIdInAndDeletedAtIsNull(Collection<UUID> publicationIds);
+    List<PublicationTranslation> findByPublicationIdInAndLanguageCodeAndDeletedAtIsNull(Collection<UUID> publicationIds, LanguageCode language);
+    boolean existsByLanguageCodeAndSlugIgnoreCase(LanguageCode language, String slug);
+
+    @Query(value = "select t from PublicationTranslation t join fetch t.publication p where t.languageCode=:language and t.deletedAt is null and p.deletedAt is null and p.contentStatus='PUBLISHED' and (:stage is null or p.publicationStage=:stage)", countQuery = "select count(t) from PublicationTranslation t join t.publication p where t.languageCode=:language and t.deletedAt is null and p.deletedAt is null and p.contentStatus='PUBLISHED' and (:stage is null or p.publicationStage=:stage)")
+    Page<PublicationTranslation> findPublishedByLanguage(@Param("language") LanguageCode language, @Param("stage") PublicationStage stage, Pageable page);
+
+    @Query("select t from PublicationTranslation t join fetch t.publication p where t.languageCode=:language and lower(t.slug)=lower(:slug) and t.deletedAt is null and p.deletedAt is null and p.contentStatus='PUBLISHED'")
+    Optional<PublicationTranslation> findPublishedByLanguageAndSlug(@Param("language") LanguageCode language, @Param("slug") String slug);
+
+    @Query("select t from PublicationTranslation t join fetch t.publication p where lower(t.slug)=lower(:slug) and t.deletedAt is null and p.deletedAt is null and p.contentStatus='PUBLISHED'")
+    Optional<PublicationTranslation> findPublishedBySlug(@Param("slug") String slug);
+}

@@ -10,7 +10,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -27,13 +26,14 @@ class FlywayUpgradeIntegrationTest {
             .withPassword("taha_test");
 
     @Test
-    void upgradesV4DatabaseToV7WithoutLosingExistingDataAndThenIsANoOp() throws Exception {
+    void upgradesV4DatabaseThroughV7ToV8WithoutLosingExistingDataAndThenIsANoOp() throws Exception {
         Flyway v1 = configuredFlyway().target("1").load();
         v1.migrate();
         Integer v1Checksum = checksumFor("1");
 
         Flyway current = configuredFlyway().target("4").load();
         assertThat(current.migrate().migrationsExecuted).isEqualTo(3);
+
         UUID pageId = UUID.randomUUID();
         try (Connection connection = POSTGRES.createConnection("");
              Statement statement = connection.createStatement()) {
@@ -46,14 +46,19 @@ class FlywayUpgradeIntegrationTest {
 
         Flyway waveB = configuredFlyway().target("7").load();
         assertThat(waveB.migrate().migrationsExecuted).isEqualTo(3);
+        assertThat(waveB.info().current().getVersion().getVersion()).isEqualTo("7");
+
+        Flyway v8 = configuredFlyway().target("8").load();
+        assertThat(v8.migrate().migrationsExecuted).isEqualTo(1);
 
         assertThat(checksumFor("1")).isEqualTo(v1Checksum);
-        assertThat(waveB.info().current().getVersion().getVersion()).isEqualTo("7");
+        assertThat(v8.info().current().getVersion().getVersion()).isEqualTo("8");
         assertThat(tableExists("portfolio_project")).isTrue();
         assertThat(tableExists("publication")).isTrue();
         assertThat(tableExists("featured_item")).isTrue();
-        assertThat(waveB.migrate().migrationsExecuted).isZero();
-        assertThatCode(waveB::validate).doesNotThrowAnyException();
+        assertThat(rowExists("content_page", pageId)).isTrue();
+        assertThat(v8.migrate().migrationsExecuted).isZero();
+        assertThatCode(v8::validate).doesNotThrowAnyException();
     }
 
     private FluentConfiguration configuredFlyway() {
@@ -80,6 +85,16 @@ class FlywayUpgradeIntegrationTest {
              Statement statement = connection.createStatement();
              ResultSet result = statement.executeQuery("SELECT to_regclass('public.%s')".formatted(table))) {
             return result.next() && result.getString(1) != null;
+        }
+    }
+
+    private boolean rowExists(String table, UUID id) throws Exception {
+        try (Connection connection = POSTGRES.createConnection("");
+             var statement = connection.prepareStatement("SELECT 1 FROM " + table + " WHERE id = ?")) {
+            statement.setObject(1, id);
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next();
+            }
         }
     }
 }

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vue Quasar SSR Engineer"
+  short_description: "Build reliable Vue Quasar SSR frontend work"
+  default_prompt: "Use $vue-quasar-ssr-engineer to implement a scoped public SSR frontend microtask."

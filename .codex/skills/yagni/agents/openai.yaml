@@ -1,0 +1,4 @@
+interface:
+  display_name: "Algotic YAGNI"
+  short_description: "Smallest safe change without over-engineering"
+  default_prompt: "Use $yagni to implement this coding task with the smallest safe change."

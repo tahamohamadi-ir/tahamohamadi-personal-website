@@ -45,7 +45,8 @@ Only nondeleted PUBLISHED content with `published_at <= now` and the requested
 translation is exposed. Missing translation is never silently substituted:
 detail returns `404 TRANSLATION_UNAVAILABLE` with safe `availableLocales` and
 alternate paths; collections omit the item in that locale. Invalid locale is
-400. Lists use bounded size <= 50 and stable ordering.
+400. Lists use bounded size <= 50, zero-based page <= 42,949,672 (the largest
+value that cannot overflow an `int` offset at size 50), and stable ordering.
 
 - `GET /api/v1/public/{lang}/home`: page copy, active time-window featured
   items, latest posts, selected projects/publications, skills summary, socials.

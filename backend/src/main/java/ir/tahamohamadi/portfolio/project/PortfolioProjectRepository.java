@@ -1,1 +1,11 @@
-package ir.tahamohamadi.portfolio.project; import org.springframework.data.domain.*; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface PortfolioProjectRepository extends JpaRepository<PortfolioProject,UUID>{ Page<PortfolioProject> findByDeletedAtIsNullOrderByUpdatedAtDescIdDesc(Pageable page); }
+package ir.tahamohamadi.portfolio.project;
+
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.*;
+
+public interface PortfolioProjectRepository extends JpaRepository<PortfolioProject, UUID> {
+    Page<PortfolioProject> findByDeletedAtIsNull(Pageable page);
+    Page<PortfolioProject> findByDeletedAtIsNullOrderByUpdatedAtDescIdDesc(Pageable page);
+}
