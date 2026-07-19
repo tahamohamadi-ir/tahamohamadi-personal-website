@@ -38,7 +38,15 @@ describe('safe Markdown renderer', () => {
 
     expect(result.status).toBe('ready')
     expect(result.html).toContain('<p>Safe paragraph with <strong>strong</strong>, <em>emphasis</em>, and <del>deleted</del> text.</p>')
-    expect(result.html).toMatch(/<ul>\s*<li>One<\/li>\s*<li>Two<\/li>\s*<\/ul>/)
+    const listBlock = result.html.match(/<ul>\s*([\s\S]*?)\s*<\/ul>/)
+    const listItems = [
+      ...(listBlock?.[1].matchAll(/<li>\s*(?:<p>\s*)?([\s\S]*?)(?:\s*<\/p>)?\s*<\/li>/g) ?? [])
+    ]
+
+    expect(listBlock).not.toBeNull()
+    expect(listItems).toHaveLength(2)
+    expect(listItems[0][1]).toContain('One')
+    expect(listItems[1][1]).toContain('Two')
     expect(result.html).toContain('<blockquote>\n<p>A safe quotation</p>\n</blockquote>')
     expect(result.html).toContain('<p><code>inline code</code></p>')
     expect(result.html).toContain('<pre><code>const safe = true')
