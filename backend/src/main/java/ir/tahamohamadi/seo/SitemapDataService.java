@@ -23,7 +23,7 @@ public class SitemapDataService {
                     from content_page_translation t join content_page p on p.id = t.content_page_id
                     where t.deleted_at is null and p.deleted_at is null and p.status = 'PUBLISHED' and p.published_at <= current_timestamp
                     union all
-                    select t.language_code, '/' || t.language_code || '/posts/' || t.slug, greatest(p.updated_at, t.updated_at)
+                    select t.language_code, '/' || t.language_code || '/blog/' || t.slug, greatest(p.updated_at, t.updated_at)
                     from blog_post_translation t join blog_post p on p.id = t.blog_post_id
                     where t.deleted_at is null and p.deleted_at is null and p.status = 'PUBLISHED' and p.published_at <= current_timestamp
                     union all

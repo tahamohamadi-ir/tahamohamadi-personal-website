@@ -78,7 +78,7 @@ class PublicBlogSearchIntegrationTest {
                 .andExpect(jsonPath("$.items[0].availableLocales.length()").value(2))
                 .andExpect(jsonPath("$.items[0].availableLocales[0]").value("en"))
                 .andExpect(jsonPath("$.items[0].availableLocales[1]").value("fa"))
-                .andExpect(jsonPath("$.items[0].hreflang[?(@.locale == 'fa')].path").value("/fa/posts/bilingual-search-fa"));
+                .andExpect(jsonPath("$.items[0].hreflang[?(@.locale == 'fa')].path").value("/fa/blog/bilingual-search-fa"));
     }
 
     @Test

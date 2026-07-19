@@ -277,7 +277,7 @@ class PublicContentIntegrationTest {
         mvc.perform(get("/api/v1/public/en/posts/bilingual-post"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.availableLocales.length()").value(2))
-                .andExpect(jsonPath("$.hreflang[?(@.locale == 'fa')].path").value("/fa/posts/fa-post"));
+                .andExpect(jsonPath("$.hreflang[?(@.locale == 'fa')].path").value("/fa/blog/fa-post"));
         mvc.perform(get("/api/v1/public/en/portfolio/bilingual-project"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.availableLocales.length()").value(2))

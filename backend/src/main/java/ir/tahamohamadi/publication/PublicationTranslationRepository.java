@@ -22,4 +22,7 @@ public interface PublicationTranslationRepository extends JpaRepository<Publicat
 
     @Query("select t from PublicationTranslation t join fetch t.publication p where t.languageCode=:language and lower(t.slug)=lower(:slug) and t.deletedAt is null and p.deletedAt is null and p.contentStatus='PUBLISHED'")
     Optional<PublicationTranslation> findPublishedByLanguageAndSlug(@Param("language") LanguageCode language, @Param("slug") String slug);
+
+    @Query("select t from PublicationTranslation t join fetch t.publication p where lower(t.slug)=lower(:slug) and t.deletedAt is null and p.deletedAt is null and p.contentStatus='PUBLISHED'")
+    Optional<PublicationTranslation> findPublishedBySlug(@Param("slug") String slug);
 }

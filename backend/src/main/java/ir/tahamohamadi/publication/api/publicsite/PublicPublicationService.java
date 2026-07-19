@@ -1,6 +1,7 @@
 package ir.tahamohamadi.publication.api.publicsite;
 
 import ir.tahamohamadi.common.domain.LanguageCode;
+import ir.tahamohamadi.common.i18n.TranslationUnavailableException;
 import ir.tahamohamadi.publication.PublicationStage;
 import ir.tahamohamadi.publication.PublicationTranslation;
 import ir.tahamohamadi.publication.PublicationTranslationRepository;
@@ -35,8 +36,15 @@ public class PublicPublicationService {
     }
 
     public PublicPublicationResponse get(LanguageCode locale, String slug) {
-        PublicationTranslation value = translations.findPublishedByLanguageAndSlug(locale, slug).orElseThrow(() -> new NoSuchElementException("Publication not found"));
+        PublicationTranslation value = translations.findPublishedByLanguageAndSlug(locale, slug).orElseThrow(() -> missingTranslation(slug));
         return dto(value, translations.findByPublicationIdAndDeletedAtIsNull(value.getPublication().getId()));
+    }
+
+    private TranslationUnavailableException missingTranslation(String slug) {
+        PublicationTranslation available = translations.findPublishedBySlug(slug)
+                .orElseThrow(() -> new NoSuchElementException("Publication not found"));
+        List<PublicLink> links = links(translations.findByPublicationIdAndDeletedAtIsNull(available.getPublication().getId()));
+        return new TranslationUnavailableException(links.stream().map(PublicLink::locale).toList(), links.stream().map(PublicLink::path).toList());
     }
 
     private Map<UUID, List<PublicationTranslation>> alternatives(List<PublicationTranslation> values) {
@@ -45,9 +53,13 @@ public class PublicPublicationService {
     }
 
     private PublicPublicationResponse dto(PublicationTranslation translation, List<PublicationTranslation> alternatives) {
-        List<PublicLink> links = alternatives.stream().map(value -> new PublicLink(value.getLanguageCode().name(), "/" + value.getLanguageCode() + "/publications/" + value.getSlug())).sorted(java.util.Comparator.comparing(PublicLink::locale)).toList();
+        List<PublicLink> links = links(alternatives);
         var publication = translation.getPublication();
         return new PublicPublicationResponse(translation.getLanguageCode().name(), links.stream().map(PublicLink::locale).toList(), "/" + translation.getLanguageCode() + "/publications/" + translation.getSlug(), links, new PublicSeo(translation.getSeoTitle(), translation.getSeoDescription()), null, translation.getUpdatedAt(), translation.getSlug(), translation.getTitle(), translation.getAbstractText(), translation.getAuthorsDisplay(), translation.getVenueDisplay(), publication.getPublicationStage(), publication.getYear(), publication.getPublishedOn(), publication.getDoi(), publication.getExternalUrl());
+    }
+
+    private static List<PublicLink> links(List<PublicationTranslation> translations) {
+        return translations.stream().map(value -> new PublicLink(value.getLanguageCode().name(), "/" + value.getLanguageCode() + "/publications/" + value.getSlug())).sorted(java.util.Comparator.comparing(PublicLink::locale)).toList();
     }
 }
 
