@@ -229,11 +229,27 @@ function localizedResponse(collection, locale) {
 }
 
 describe('localized public collection route contract', () => {
-  it('moves only the six collection routes from placeholder ownership', async () => {
+  it('keeps collection routes and their supported details under dedicated ownership', async () => {
     const { default: routes } = await import('src/router/routes')
-    const PlaceholderPage = await loadComponent(
-      'frontend/src/pages/public/PublicRoutePlaceholderPage.vue'
-    )
+    const ownedPages = {
+      skills: await loadComponent(
+        'frontend/src/pages/public/SkillsPage.vue'
+      ),
+      contact: await loadComponent(
+        'frontend/src/pages/public/ContactPage.vue'
+      )
+    }
+    const detailPages = {
+      'blog-detail': await loadComponent(
+        'frontend/src/pages/public/BlogPostPage.vue'
+      ),
+      'portfolio-detail': await loadComponent(
+        'frontend/src/pages/public/PortfolioProjectPage.vue'
+      ),
+      'publication-detail': await loadComponent(
+        'frontend/src/pages/public/PublicationDetailPage.vue'
+      )
+    }
 
     for (const [locale, direction] of [['en', 'ltr'], ['fa', 'rtl']]) {
       for (const collection of COLLECTIONS) {
@@ -257,10 +273,16 @@ describe('localized public collection route contract', () => {
         expect(routeComponent.default ?? routeComponent).toBe(Page)
       }
 
-      for (const name of ['skills', 'blog-detail', 'portfolio-detail', 'publication-detail', 'contact']) {
+      for (const [name, Page] of Object.entries(detailPages)) {
         const route = findNamedRoute(routes, locale, name)
         const routeComponent = await route.component()
-        expect(routeComponent.default ?? routeComponent).toBe(PlaceholderPage)
+        expect(routeComponent.default ?? routeComponent).toBe(Page)
+      }
+
+      for (const [name, Page] of Object.entries(ownedPages)) {
+        const route = findNamedRoute(routes, locale, name)
+        const routeComponent = await route.component()
+        expect(routeComponent.default ?? routeComponent).toBe(Page)
       }
     }
   })

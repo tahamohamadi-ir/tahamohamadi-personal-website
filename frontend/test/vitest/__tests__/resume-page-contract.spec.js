@@ -41,6 +41,21 @@ const IMPLEMENTED_COLLECTION_ROUTES = [
   }
 ]
 
+const IMPLEMENTED_DETAIL_ROUTES = [
+  {
+    pageKey: 'blog-detail',
+    componentPath: 'frontend/src/pages/public/BlogPostPage.vue'
+  },
+  {
+    pageKey: 'portfolio-detail',
+    componentPath: 'frontend/src/pages/public/PortfolioProjectPage.vue'
+  },
+  {
+    pageKey: 'publication-detail',
+    componentPath: 'frontend/src/pages/public/PublicationDetailPage.vue'
+  }
+]
+
 const RESUME_RESPONSE = {
   locale: 'en',
   availableLocales: ['en'],
@@ -239,7 +254,7 @@ function expectResumeShape(value) {
 }
 
 describe('localized public Resume route contract', () => {
-  it('assigns implemented public routes while preserving locale ownership and remaining placeholders', async () => {
+  it('assigns implemented public routes while preserving locale ownership', async () => {
     const ResumePage = await loadResumePage()
     const { default: routes } = await import('src/router/routes')
     const PlaceholderPage = await loadContractComponent(
@@ -255,6 +270,21 @@ describe('localized public Resume route contract', () => {
       [
         ['about', 'frontend/src/pages/public/AboutPage.vue'],
         ['research', 'frontend/src/pages/public/ResearchPage.vue']
+      ].map(async ([pageKey, componentPath]) => [
+        pageKey,
+        await loadContractComponent(componentPath)
+      ])
+    ))
+    const detailPages = new Map(await Promise.all(
+      IMPLEMENTED_DETAIL_ROUTES.map(async (definition) => [
+        definition.pageKey,
+        await loadContractComponent(definition.componentPath)
+      ])
+    ))
+    const ownedPages = new Map(await Promise.all(
+      [
+        ['skills', 'frontend/src/pages/public/SkillsPage.vue'],
+        ['contact', 'frontend/src/pages/public/ContactPage.vue']
       ].map(async ([pageKey, componentPath]) => [
         pageKey,
         await loadContractComponent(componentPath)
@@ -284,7 +314,9 @@ describe('localized public Resume route contract', () => {
       const expectedComponents = new Map([
         [`${locale}-resume`, ResumePage],
         [`${locale}-about`, richContentPages.get('about')],
-        [`${locale}-research`, richContentPages.get('research')]
+        [`${locale}-research`, richContentPages.get('research')],
+        [`${locale}-skills`, ownedPages.get('skills')],
+        [`${locale}-contact`, ownedPages.get('contact')]
       ])
 
       for (const definition of IMPLEMENTED_COLLECTION_ROUTES) {
@@ -308,6 +340,13 @@ describe('localized public Resume route contract', () => {
         expect(collectionComponent.default ?? collectionComponent)
           .toBe(CollectionPage)
         expectedComponents.set(collectionRoute.name, CollectionPage)
+      }
+
+      for (const definition of IMPLEMENTED_DETAIL_ROUTES) {
+        expectedComponents.set(
+          `${locale}-${definition.pageKey}`,
+          detailPages.get(definition.pageKey)
+        )
       }
 
       for (const route of localeRoute.children) {

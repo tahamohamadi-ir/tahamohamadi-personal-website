@@ -13,6 +13,16 @@ export default {
     richContent: {
       renderingFailure: 'This content cannot be displayed safely right now.'
     },
+    detail: {
+      published: 'Published',
+      updated: 'Updated',
+      authors: 'Authors',
+      venue: 'Venue',
+      year: 'Year',
+      stage: 'Stage',
+      doi: 'DOI',
+      externalLink: 'Open publication'
+    },
     pageIntroduction: {
       about: {
         pending: 'Biography and background content is being prepared.'
@@ -57,6 +67,30 @@ export default {
       RESEARCH: 'Research',
       AWARD: 'Award',
       CERTIFICATION: 'Certification'
+    }
+  },
+  contact: {
+    introduction: 'Use this form to send a message.',
+    fields: {
+      name: 'Name',
+      email: 'Email address',
+      message: 'Message'
+    },
+    submit: 'Send message',
+    pending: 'Sending message…',
+    success: 'Your message has been received.',
+    failure: 'Your message could not be sent. Please try again.',
+    validation: {
+      summary: 'Please correct the highlighted fields.',
+      nameRequired: 'Enter your name.',
+      nameTooLong: 'Name must be 200 characters or fewer.',
+      nameInvalid: 'Enter a valid name.',
+      emailRequired: 'Enter your email address.',
+      emailTooLong: 'Email address must be 320 characters or fewer.',
+      emailInvalid: 'Enter a valid email address.',
+      messageRequired: 'Enter a message.',
+      messageTooLong: 'Message must be 10,000 characters or fewer.',
+      messageInvalid: 'Enter a valid message.'
     }
   },
   collections: {

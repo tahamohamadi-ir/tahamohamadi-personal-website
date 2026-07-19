@@ -6,6 +6,8 @@ const PublicHomePage = () =>
 
 const AboutPage = () => import('pages/public/AboutPage.vue')
 const ResearchPage = () => import('pages/public/ResearchPage.vue')
+const SkillsPage = () => import('pages/public/SkillsPage.vue')
+const ContactPage = () => import('pages/public/ContactPage.vue')
 
 const PublicRoutePlaceholderPage = () =>
   import('pages/public/PublicRoutePlaceholderPage.vue')
@@ -14,6 +16,9 @@ const ResumePage = () => import('pages/public/ResumePage.vue')
 const BlogPage = () => import('pages/public/BlogPage.vue')
 const PortfolioPage = () => import('pages/public/PortfolioPage.vue')
 const PublicationsPage = () => import('pages/public/PublicationsPage.vue')
+const BlogPostPage = () => import('pages/public/BlogPostPage.vue')
+const PortfolioProjectPage = () => import('pages/public/PortfolioProjectPage.vue')
+const PublicationDetailPage = () => import('pages/public/PublicationDetailPage.vue')
 
 const TranslationUnavailablePage = () =>
   import('pages/public/TranslationUnavailablePage.vue')
@@ -104,10 +109,15 @@ function createLocaleRoute(locale, direction) {
     component: {
       about: AboutPage,
       research: ResearchPage,
+      skills: SkillsPage,
       resume: ResumePage,
       blog: BlogPage,
       portfolio: PortfolioPage,
-      publications: PublicationsPage
+      publications: PublicationsPage,
+      'blog-detail': BlogPostPage,
+      'portfolio-detail': PortfolioProjectPage,
+      'publication-detail': PublicationDetailPage,
+      contact: ContactPage
     }[definition.pageKey] ?? PublicRoutePlaceholderPage,
     meta: createRouteMeta(
       locale,
