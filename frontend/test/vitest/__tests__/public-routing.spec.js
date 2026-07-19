@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import routes from 'src/router/routes'
+import ContactPage from 'src/pages/public/ContactPage.vue'
+import PublicRoutePlaceholderPage from 'src/pages/public/PublicRoutePlaceholderPage.vue'
+import SkillsPage from 'src/pages/public/SkillsPage.vue'
 
 const M1_CHILDREN = [
   'about',
@@ -15,10 +18,10 @@ const M1_CHILDREN = [
   'contact'
 ]
 
-const DEDICATED_PAGE_ROUTES = {
-  skills: 'SkillsPage',
-  contact: 'ContactPage'
-}
+const DEDICATED_PAGE_ROUTES = [
+  { pageKey: 'skills', component: SkillsPage },
+  { pageKey: 'contact', component: ContactPage }
+]
 
 function getLocaleRoute(locale) {
   return routes.find((route) => route.path === `/${locale}`)
@@ -142,26 +145,30 @@ describe('public routing contract', () => {
   })
 
   it('assigns dedicated ownership to Skills and Contact', async () => {
-    for (const locale of ['fa', 'en']) {
+    for (const [locale, direction] of [
+      ['fa', 'rtl'],
+      ['en', 'ltr']
+    ]) {
       const localeRoute = getLocaleRoute(locale)
-      const ownedRoutes = Object.keys(DEDICATED_PAGE_ROUTES).map((pageKey) => (
-        localeRoute.children.find((route) => route.name === `${locale}-${pageKey}`)
-      ))
 
-      for (const [index, route] of ownedRoutes.entries()) {
-        const pageKey = Object.keys(DEDICATED_PAGE_ROUTES)[index]
+      for (const { pageKey, component: expectedComponent } of DEDICATED_PAGE_ROUTES) {
+        const route = localeRoute.children.find(
+          (candidate) => candidate.name === `${locale}-${pageKey}`
+        )
+
         expect(route).toBeDefined()
         expect(route.path).toBe(pageKey)
-        expect(route.meta?.pageKey).toBe(pageKey)
-      }
+        expect(route.meta).toMatchObject({
+          locale,
+          direction,
+          pageKey
+        })
 
-      const loadedPages = await Promise.all(
-        ownedRoutes.map((route) => route.component())
-      )
+        const loadedModule = await route.component()
+        const loadedComponent = loadedModule.default ?? loadedModule
 
-      for (const [index, page] of loadedPages.entries()) {
-        const pageKey = Object.keys(DEDICATED_PAGE_ROUTES)[index]
-        expect(page.default.name).toBe(DEDICATED_PAGE_ROUTES[pageKey])
+        expect(loadedComponent).toBe(expectedComponent)
+        expect(loadedComponent).not.toBe(PublicRoutePlaceholderPage)
       }
     }
   })
