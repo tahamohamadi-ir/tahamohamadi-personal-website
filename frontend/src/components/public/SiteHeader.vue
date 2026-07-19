@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitch from './LanguageSwitch.vue'
 
@@ -40,8 +40,24 @@ function closeNavigation () {
 }
 
 function restoreMobileTriggerFocus () {
-  void nextTick(() => mobileTrigger.value?.focus?.())
+  void nextTick(() => mobileTrigger.value?.$el?.focus?.())
 }
+
+function handleEscape (event) {
+  if (event.key !== 'Escape' || !mobileNavigationOpen.value) {
+    return
+  }
+
+  closeNavigation()
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleEscape)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleEscape)
+})
 </script>
 
 <template>

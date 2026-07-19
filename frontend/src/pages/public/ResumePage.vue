@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import PageState from 'src/components/public/PageState.vue'
 import ResumeTimeline from 'src/components/public/ResumeTimeline.vue'
 import { useAsyncPage } from 'src/composables/useAsyncPage'
+import { usePublicSeoMeta } from 'src/composables/usePublicSeoMeta'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'
 
 const props = defineProps({
@@ -42,6 +43,7 @@ const {
 
 const entries = computed(() => data.value?.entries ?? [])
 const resumeFile = computed(() => data.value?.[resumeFileKey] ?? null)
+usePublicSeoMeta({ data, state })
 const showsContent = computed(() => (
   data.value !== null && state.value !== 'empty'
 ))

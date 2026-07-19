@@ -6,6 +6,7 @@ import BlogPostList from 'src/components/public/BlogPostList.vue'
 import CollectionPagination from 'src/components/public/CollectionPagination.vue'
 import PageState from 'src/components/public/PageState.vue'
 import { useAsyncPage } from 'src/composables/useAsyncPage'
+import { usePublicSeoMeta } from 'src/composables/usePublicSeoMeta'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'
 
 const props = defineProps({
@@ -45,6 +46,7 @@ const {
 })
 
 const posts = computed(() => data.value?.items ?? [])
+usePublicSeoMeta({ data, state })
 const showsContent = computed(() => (
   data.value !== null && state.value !== 'empty'
 ))

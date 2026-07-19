@@ -16,7 +16,7 @@ export default configure((ctx) => {
       vueRouterMode: 'history'
     },
     framework: {
-      plugins: []
+      plugins: ['Meta']
     },
     devServer: {
       strictPort: true,

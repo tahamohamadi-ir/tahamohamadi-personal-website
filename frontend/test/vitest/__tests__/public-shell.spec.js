@@ -191,6 +191,18 @@ describe('localized public application shell source contracts', () => {
     expect(header).toMatch(/:aria-label="t\('shell\.closeNavigation'\)"/)
   })
 
+  it('closes the mobile drawer with Escape through a client-only keyboard listener', () => {
+    const header = readProjectFile('frontend/src/components/public/SiteHeader.vue')
+
+    expect(header).toMatch(/onMounted/)
+    expect(header).toMatch(/onBeforeUnmount/)
+    expect(header).toMatch(/addEventListener\(['"]keydown['"],\s*handleEscape\)/)
+    expect(header).toMatch(/removeEventListener\(['"]keydown['"],\s*handleEscape\)/)
+    expect(header).toMatch(/event\.key\s*!==\s*['"]Escape['"]/)
+    expect(header).toMatch(/closeNavigation\(\)/)
+    expect(header).toMatch(/mobileTrigger\.value\?\.\$el\?\.focus\?\./)
+  })
+
   it('requires a localized semantic footer without hard-coded social URLs', () => {
     const footer = readProjectFile('frontend/src/components/public/SiteFooter.vue')
 
@@ -303,6 +315,13 @@ describe('localized public application shell source contracts', () => {
 
     expect(globalStyles).toMatch(/44px/)
     expect(globalStyles).toMatch(/(?:margin|padding|inset|border)-(?:inline|block)(?:-start|-end)?\s*:/)
+  })
+
+  it('uses overflow clipping without suppressing focus indicators at the document edge', () => {
+    const appStyles = readProjectFile('frontend/src/css/app.scss')
+
+    expect(appStyles).toMatch(/html,\s*\nbody\s*\{[\s\S]*?overflow-x\s*:\s*clip\s*;/)
+    expect(appStyles).not.toMatch(/overflow-x\s*:\s*hidden\s*;/)
   })
 
   it('keeps route-change focus on the sole main target without JavaScript font loading', () => {

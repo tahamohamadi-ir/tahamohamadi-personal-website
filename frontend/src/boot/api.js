@@ -6,7 +6,7 @@ export default boot(({ app, ssrContext }) => {
   return installApiContext({
     app,
     ssrContext,
-    isServer: Boolean(process.env.SERVER),
+    isServer: Boolean(ssrContext) || typeof window === 'undefined',
     env: process.env
   })
 })

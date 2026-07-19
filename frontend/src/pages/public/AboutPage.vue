@@ -6,6 +6,7 @@ import MarkdownContent from 'src/components/content/MarkdownContent.vue'
 import PageState from 'src/components/public/PageState.vue'
 import TranslationUnavailable from 'src/components/public/TranslationUnavailable.vue'
 import { useAsyncPage } from 'src/composables/useAsyncPage'
+import { usePublicSeoMeta } from 'src/composables/usePublicSeoMeta'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'
 
 const props = defineProps({
@@ -46,6 +47,7 @@ const {
 const showsContent = computed(() => (
   data.value !== null && state.value !== 'empty'
 ))
+usePublicSeoMeta({ data, state })
 const alternatePath = computed(() => error.value?.alternatePaths?.[0] ?? null)
 
 function retry() {

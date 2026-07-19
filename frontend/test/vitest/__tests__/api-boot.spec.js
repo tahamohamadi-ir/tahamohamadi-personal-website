@@ -38,6 +38,16 @@ describe('Quasar API boot contract', () => {
     )
   })
 
+  it('recognizes server execution even when Quasar does not expose an SSR request context', () => {
+    const bootSource = readFileSync(
+      resolve(process.cwd(), 'src/boot/api.js'),
+      'utf8'
+    )
+
+    expect(bootSource).toMatch(/typeof\s+window\s*===\s*['"]undefined['"]/)
+    expect(bootSource).not.toMatch(/Boolean\(process\.env\.SERVER\)/)
+  })
+
   it('uses same-origin relative URLs in the browser', () => {
     expect(
       resolveApiClientOptions({
