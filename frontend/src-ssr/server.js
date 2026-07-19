@@ -20,6 +20,44 @@ import {
   defineSsrRenderPreloadTag
 } from '#q-app/wrappers'
 
+const SITEMAP_DATA_PATH = '/api/v1/public/sitemap-data'
+
+function xmlEscape(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;')
+}
+
+function publicOrigin(request) {
+  const protocol = (request.get('x-forwarded-proto') || request.protocol)
+    .split(',')[0]
+    .trim()
+  const host = (request.get('x-forwarded-host') || request.get('host'))
+    .split(',')[0]
+    .trim()
+
+  return `${protocol}://${host}`
+}
+
+function sitemapXml(origin, items) {
+  const entries = items
+    .filter((item) => /^\/(?:fa|en)(?:\/|$)/.test(item.canonicalPath))
+    .map((item) => {
+      const loc = xmlEscape(new URL(item.canonicalPath, origin).toString())
+      const lastModified = item.lastModified
+        ? `<lastmod>${xmlEscape(item.lastModified)}</lastmod>`
+        : ''
+
+      return `<url><loc>${loc}</loc>${lastModified}</url>`
+    })
+    .join('')
+
+  return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${entries}</urlset>`
+}
+
 /**
  * Create your webserver and return its instance.
  * If needed, prepare your webserver to receive
@@ -33,6 +71,31 @@ export const create = defineSsrCreate((/* { ... } */) => {
   // attackers can use this header to detect apps running Express
   // and then launch specifically-targeted attacks
   app.disable('x-powered-by')
+
+  app.get('/sitemap.xml', async (request, response) => {
+    const backendOrigin = process.env.TAHA_BACKEND_ORIGIN
+
+    if (!backendOrigin) {
+      response.status(503).type('text/plain').send('Sitemap is unavailable.')
+      return
+    }
+
+    try {
+      const backendResponse = await fetch(`${backendOrigin}${SITEMAP_DATA_PATH}`)
+
+      if (!backendResponse.ok) {
+        throw new Error(`Sitemap data request failed with ${backendResponse.status}`)
+      }
+
+      const data = await backendResponse.json()
+      response
+        .type('application/xml')
+        .set('Cache-Control', 'public, max-age=300')
+        .send(sitemapXml(publicOrigin(request), Array.isArray(data.items) ? data.items : []))
+    } catch (error) {
+      response.status(502).type('text/plain').send('Sitemap is unavailable.')
+    }
+  })
 
   // place here any middlewares that
   // absolutely need to run before anything else

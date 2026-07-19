@@ -9,7 +9,7 @@ export default configure((ctx) => {
   }
 
   return {
-    boot: ['i18n', 'pinia', 'api'],
+    boot: ['i18n', 'api'],
     css: ['app.scss'],
     extras: ['material-icons'],
     build: {

@@ -1,0 +1,6 @@
+node_modules
+dist
+.quasar
+.vite
+coverage
+npm-debug.log*
