@@ -18,8 +18,10 @@ const forbiddenAttributes = Object.freeze([
 ])
 
 const allowedUriPattern = Object.freeze(/^(?:(?:https?):|\/(?!\/))/i)
-const absoluteHttpUrlPattern = /^https?:\/\/[^\s/]+(?:[/?#]|$)/i
+const absoluteHttpUrlPattern = /^https?:\/\/[^/]+/i
 const rootRelativeUrlPattern = /^\/(?!\/)\S*$/
+const disallowedHrefCharacterPattern = /[\u0000-\u0020\u007F\uFFFD]/
+const normalizedNullCharacterPattern = /%EF%BF%BD/i
 
 const sanitizerOptions = Object.freeze({
   ALLOWED_TAGS: allowedTags,
@@ -33,15 +35,55 @@ const sanitizerOptions = Object.freeze({
 })
 
 function isAllowedMarkdownLink (href) {
-  if (typeof href !== 'string') {
+  if (
+    typeof href !== 'string' ||
+    disallowedHrefCharacterPattern.test(href) ||
+    normalizedNullCharacterPattern.test(href)
+  ) {
     return false
   }
 
-  const value = href.trim()
+  if (rootRelativeUrlPattern.test(href)) {
+    return true
+  }
 
-  return value !== '' && (
-    absoluteHttpUrlPattern.test(value) || rootRelativeUrlPattern.test(value)
-  )
+  if (!absoluteHttpUrlPattern.test(href)) {
+    return false
+  }
+
+  try {
+    const url = new URL(href)
+
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname !== ''
+  } catch {
+    return false
+  }
+}
+
+function suppressUnsafeMarkdownLinks (state) {
+  for (const token of state.tokens) {
+    const unsafeLinkNesting = []
+
+    for (const child of token.children ?? []) {
+      if (child.type === 'link_open') {
+        const unsafe = !isAllowedMarkdownLink(child.attrGet('href'))
+
+        unsafeLinkNesting.push(unsafe)
+        if (unsafe) {
+          child.type = 'text'
+          child.tag = ''
+          child.nesting = 0
+          child.content = ''
+          child.attrs = null
+        }
+      } else if (child.type === 'link_close' && unsafeLinkNesting.pop()) {
+        child.type = 'text'
+        child.tag = ''
+        child.nesting = 0
+        child.content = ''
+      }
+    }
+  }
 }
 
 function createParser () {
@@ -53,6 +95,7 @@ function createParser () {
 
   parser.disable(['table', 'image'])
   parser.validateLink = isAllowedMarkdownLink
+  parser.core.ruler.after('inline', 'suppress-unsafe-markdown-links', suppressUnsafeMarkdownLinks)
   parser.renderer.rules.s_open = () => '<del>'
   parser.renderer.rules.s_close = () => '</del>'
   parser.core.ruler.after('block', 'normalize-route-owned-h1', (state) => {

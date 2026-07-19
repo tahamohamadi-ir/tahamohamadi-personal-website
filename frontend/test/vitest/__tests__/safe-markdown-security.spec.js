@@ -18,12 +18,18 @@ function expectNoForbiddenActiveMarkup (html) {
   expect(html).not.toMatch(activeForbiddenAttributePattern)
 }
 
-function expectNoUnsafeActiveHref (html) {
+function expectNoUnsafeActiveHref (html, diagnostic = {}) {
   for (const match of html.matchAll(activeAnchorPattern)) {
     const href = match[1]
 
     expect(
-      validAbsoluteHttpUrlPattern.test(href) || validRootRelativeUrlPattern.test(href)
+      validAbsoluteHttpUrlPattern.test(href) || validRootRelativeUrlPattern.test(href),
+      JSON.stringify({
+        fixture: diagnostic.label,
+        sourceHref: diagnostic.href,
+        renderedHtml: html,
+        activeHref: href
+      })
     ).toBe(true)
   }
 }
@@ -132,14 +138,22 @@ describe('safe Markdown security regression gate', () => {
       const html = renderReadyMarkdown(`[allowed ${label}](${href})`)
 
       expect(html).toContain(`href="${href}"`)
-      expectNoUnsafeActiveHref(html)
+      expectNoUnsafeActiveHref(html, { label, href })
     }
 
     for (const [label, href] of rejectedCases) {
       const html = renderReadyMarkdown(`[rejected ${label}](${href})`)
 
-      expectNoUnsafeActiveHref(html)
-      expect(html).not.toMatch(/<a\b[^>]*\shref=/i)
+      const activeHrefs = [...html.matchAll(activeAnchorPattern)].map((match) => match[1])
+      const diagnostic = JSON.stringify({
+        fixture: label,
+        sourceHref: href,
+        renderedHtml: html,
+        activeHrefs
+      })
+
+      expectNoUnsafeActiveHref(html, { label, href })
+      expect(html, diagnostic).not.toMatch(/<a\b[^>]*\shref=/i)
       expect(html).not.toMatch(/<a\b[^>]*\shref="(?:javascript|data|vbscript|file|mailto):/i)
     }
   })
