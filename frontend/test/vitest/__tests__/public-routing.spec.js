@@ -15,10 +15,10 @@ const M1_CHILDREN = [
   'contact'
 ]
 
-const INTRODUCTION_PLACEHOLDER_ROUTES = [
-  'skills',
-  'contact'
-]
+const DEDICATED_PAGE_ROUTES = {
+  skills: 'SkillsPage',
+  contact: 'ContactPage'
+}
 
 function getLocaleRoute(locale) {
   return routes.find((route) => route.path === `/${locale}`)
@@ -141,24 +141,28 @@ describe('public routing contract', () => {
     })
   })
 
-  it('preserves placeholder route ownership only for Skills and Contact', async () => {
+  it('assigns dedicated ownership to Skills and Contact', async () => {
     for (const locale of ['fa', 'en']) {
       const localeRoute = getLocaleRoute(locale)
-      const introductionRoutes = INTRODUCTION_PLACEHOLDER_ROUTES.map((pageKey) => (
+      const ownedRoutes = Object.keys(DEDICATED_PAGE_ROUTES).map((pageKey) => (
         localeRoute.children.find((route) => route.name === `${locale}-${pageKey}`)
       ))
 
-      for (const [index, route] of introductionRoutes.entries()) {
+      for (const [index, route] of ownedRoutes.entries()) {
+        const pageKey = Object.keys(DEDICATED_PAGE_ROUTES)[index]
         expect(route).toBeDefined()
-        expect(route.path).toBe(INTRODUCTION_PLACEHOLDER_ROUTES[index])
-        expect(route.meta?.pageKey).toBe(INTRODUCTION_PLACEHOLDER_ROUTES[index])
+        expect(route.path).toBe(pageKey)
+        expect(route.meta?.pageKey).toBe(pageKey)
       }
 
       const loadedPages = await Promise.all(
-        introductionRoutes.map((route) => route.component())
+        ownedRoutes.map((route) => route.component())
       )
 
-      expect(new Set(loadedPages.map((page) => page.default)).size).toBe(1)
+      for (const [index, page] of loadedPages.entries()) {
+        const pageKey = Object.keys(DEDICATED_PAGE_ROUTES)[index]
+        expect(page.default.name).toBe(DEDICATED_PAGE_ROUTES[pageKey])
+      }
     }
   })
 })

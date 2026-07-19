@@ -166,9 +166,14 @@ afterEach(() => {
 describe('public rich-content route integration', () => {
   it('assigns Home, About, and Research to dedicated route-owned components in both locales', async () => {
     const { default: routes } = await import('src/router/routes')
-    const PlaceholderPage = await loadComponent(
-      'frontend/src/pages/public/PublicRoutePlaceholderPage.vue'
-    )
+    const ownedPages = {
+      skills: await loadComponent(
+        'frontend/src/pages/public/SkillsPage.vue'
+      ),
+      contact: await loadComponent(
+        'frontend/src/pages/public/ContactPage.vue'
+      )
+    }
 
     for (const locale of ['en', 'fa']) {
       for (const page of PAGES) {
@@ -179,11 +184,11 @@ describe('public rich-content route integration', () => {
         expect(routeComponent.default ?? routeComponent).toBe(Page)
       }
 
-      for (const name of ['skills', 'contact']) {
+      for (const [name, Page] of Object.entries(ownedPages)) {
         const route = findNamedRoute(routes, locale, name)
         const routeComponent = await route.component()
 
-        expect(routeComponent.default ?? routeComponent).toBe(PlaceholderPage)
+        expect(routeComponent.default ?? routeComponent).toBe(Page)
       }
     }
   })
