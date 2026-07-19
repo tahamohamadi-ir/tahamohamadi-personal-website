@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { i18n } from 'src/boot/i18n'
 import PublicHomePage from 'src/pages/public/PublicHomePage.vue'
 import PublicRoutePlaceholderPage from 'src/pages/public/PublicRoutePlaceholderPage.vue'
+import { PUBLIC_API_KEY } from 'src/services/apiContext'
 import {
   createHttpClient,
   normalizeApiError,
@@ -42,7 +43,7 @@ const HOME_PAGE_PATH = 'frontend/src/pages/public/PublicHomePage.vue'
 const PLACEHOLDER_PAGE_PATH = (
   'frontend/src/pages/public/PublicRoutePlaceholderPage.vue'
 )
-const INTRODUCTION_PAGE_KEYS = ['about', 'research', 'skills', 'contact']
+const INTRODUCTION_PAGE_KEYS = ['skills', 'contact']
 
 function readProjectFile(projectRelativePath) {
   const filePath = resolve(projectRoot, projectRelativePath)
@@ -54,7 +55,12 @@ function readProjectFile(projectRelativePath) {
   return readFileSync(filePath, 'utf8')
 }
 
-async function mountPublicPage(component, { locale = 'en', pageKey = 'home' } = {}) {
+async function mountPublicPage(component, {
+  locale = 'en',
+  pageKey = 'home',
+  props = {},
+  api = {}
+} = {}) {
   i18n.global.locale.value = locale
 
   const router = createRouter({
@@ -70,8 +76,10 @@ async function mountPublicPage(component, { locale = 'en', pageKey = 'home' } = 
   await router.isReady()
 
   return mount(component, {
+    props,
     global: {
-      plugins: [Quasar, router, i18n]
+      plugins: [Quasar, router, i18n],
+      provide: { [PUBLIC_API_KEY]: api }
     }
   })
 }
@@ -438,13 +446,15 @@ describe('safe API error normalization', () => {
 })
 
 describe('public page introduction contract', () => {
-  it('renders a localized personal-site identity and concise lead for Home', async () => {
-    const wrapper = await mountPublicPage(PublicHomePage)
+  it('renders a localized personal-site identity and API-owned summary for Home', async () => {
+    const wrapper = await mountPublicPage(PublicHomePage, {
+      props: { initialData: homeResponse }
+    })
 
     expectPageDoesNotOwnShellLandmarks(wrapper)
     expect(wrapper.findAll('h1')).toHaveLength(1)
     expect(wrapper.get('h1').text()).toBe(i18n.global.t('shell.siteName'))
-    expect(wrapper.get('.tm-page-copy').text()).toBe(i18n.global.t('public.home.lead'))
+    expect(wrapper.get('.tm-page-copy').text()).toBe(homeResponse.page.summary)
   })
 
   it('renders distinct localized introductions for every supported placeholder route', async () => {
@@ -469,7 +479,6 @@ describe('public page introduction contract', () => {
 
   it('keeps Persian and English introduction keys non-empty and locale-specific', () => {
     const introductionKeys = [
-      'public.home.lead',
       ...INTRODUCTION_PAGE_KEYS.map(
         (pageKey) => `public.pageIntroduction.${pageKey}.pending`
       )
@@ -494,19 +503,20 @@ describe('public page introduction contract', () => {
 
     expect(homeSource.match(/<h1\b/g) ?? []).toHaveLength(1)
     expect(homeSource).toMatch(/t\(['\"]shell\.siteName['\"]\)/)
-    expect(homeSource).toMatch(/t\(['\"]public\.home\.lead['\"]\)/)
+    expect(homeSource).toMatch(/MarkdownContent/)
+    expect(homeSource).toMatch(/getHome\s*\(/)
     expect(homeSource).not.toMatch(/public\.placeholder|Public profile/i)
-    expect(placeholderSource).toMatch(/public\.pageIntroduction\.about\.pending/)
-    expect(placeholderSource).toMatch(/public\.pageIntroduction\.research\.pending/)
     expect(placeholderSource).toMatch(/public\.pageIntroduction\.skills\.pending/)
     expect(placeholderSource).toMatch(/public\.pageIntroduction\.contact\.pending/)
 
     for (const source of [homeSource, placeholderSource]) {
       expect(source).not.toMatch(/<main\b|<q-page\b/i)
       expect(source).not.toMatch(/\b(?:lang|dir)\s*=/)
-      expect(source).not.toMatch(/v-html|innerHTML|markdown|sanitizer/i)
+      expect(source).not.toMatch(/v-html|innerHTML|outerHTML|insertAdjacentHTML/i)
       expect(source).not.toMatch(/#[0-9a-f]{3,8}\b/i)
     }
+
+    expect(homeSource).not.toMatch(/markdown-it|isomorphic-dompurify|sanitizer/i)
 
     expect(existsSync(resolve(
       projectRoot,

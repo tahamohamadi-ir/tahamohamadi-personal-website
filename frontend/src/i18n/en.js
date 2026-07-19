@@ -10,6 +10,9 @@ export default {
     home: {
       lead: 'A personal site for academic, professional, and research work.'
     },
+    richContent: {
+      renderingFailure: 'This content cannot be displayed safely right now.'
+    },
     pageIntroduction: {
       about: {
         pending: 'Biography and background content is being prepared.'

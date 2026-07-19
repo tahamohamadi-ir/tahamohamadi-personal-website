@@ -257,7 +257,7 @@ describe('localized public collection route contract', () => {
         expect(routeComponent.default ?? routeComponent).toBe(Page)
       }
 
-      for (const name of ['about', 'research', 'skills', 'blog-detail', 'portfolio-detail', 'publication-detail', 'contact']) {
+      for (const name of ['skills', 'blog-detail', 'portfolio-detail', 'publication-detail', 'contact']) {
         const route = findNamedRoute(routes, locale, name)
         const routeComponent = await route.component()
         expect(routeComponent.default ?? routeComponent).toBe(PlaceholderPage)

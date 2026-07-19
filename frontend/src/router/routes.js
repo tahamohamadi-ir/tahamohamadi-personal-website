@@ -4,6 +4,9 @@ const AdminLayout = () => import('layouts/AdminLayout.vue')
 const PublicHomePage = () =>
   import('pages/public/PublicHomePage.vue')
 
+const AboutPage = () => import('pages/public/AboutPage.vue')
+const ResearchPage = () => import('pages/public/ResearchPage.vue')
+
 const PublicRoutePlaceholderPage = () =>
   import('pages/public/PublicRoutePlaceholderPage.vue')
 
@@ -99,6 +102,8 @@ function createLocaleRoute(locale, direction) {
     path: definition.path,
     name: createRouteName(locale, definition.pageKey),
     component: {
+      about: AboutPage,
+      research: ResearchPage,
       resume: ResumePage,
       blog: BlogPage,
       portfolio: PortfolioPage,

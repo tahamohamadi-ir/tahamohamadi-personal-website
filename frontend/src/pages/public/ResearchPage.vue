@@ -15,17 +15,15 @@ const props = defineProps({
   }
 })
 
-const api = inject(PUBLIC_API_KEY, null)
+const api = inject(PUBLIC_API_KEY)
 const route = useRoute()
 const { t } = useI18n()
 const locale = computed(() => route.meta.locale)
 
-function isEmptyHome(value) {
-  const page = value?.page
-
-  return !page || ![
-    page.summary,
-    page.bodyMarkdown
+function isEmptyPage(value) {
+  return ![
+    value?.summary,
+    value?.bodyMarkdown
   ].some((field) => typeof field === 'string' && field.trim().length > 0)
 }
 
@@ -37,12 +35,11 @@ const {
   refresh
 } = useAsyncPage({
   api,
-  load: (currentApi) => currentApi.getHome(locale.value),
-  isEmpty: isEmptyHome,
+  load: (currentApi) => currentApi.getPage(locale.value, 'research'),
+  isEmpty: isEmptyPage,
   initialData: props.initialData
 })
 
-const page = computed(() => data.value?.page ?? null)
 const showsContent = computed(() => (
   data.value !== null && state.value !== 'empty'
 ))
@@ -60,12 +57,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <section
-    class="tm-editorial-page tm-editorial-page--introduction tm-container"
-    aria-labelledby="home-title"
-  >
+  <section class="tm-editorial-page tm-editorial-page--introduction tm-container">
     <header class="tm-editorial-page__content">
-      <h1 id="home-title" class="tm-page-title">{{ t('shell.siteName') }}</h1>
+      <h1 class="tm-page-title">{{ t('shell.navigation.research') }}</h1>
     </header>
 
     <PageState
@@ -85,14 +79,14 @@ onMounted(() => {
       class="tm-editorial-page__content"
     >
       <p
-        v-if="page?.summary"
+        v-if="data?.summary"
         class="tm-page-copy"
       >
-        {{ page.summary }}
+        {{ data.summary }}
       </p>
       <MarkdownContent
-        v-if="page?.bodyMarkdown"
-        :markdown="page.bodyMarkdown"
+        v-if="data?.bodyMarkdown"
+        :markdown="data.bodyMarkdown"
       >
         <template #error>
           <p class="tm-page-copy" role="alert">

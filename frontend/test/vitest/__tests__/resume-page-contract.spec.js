@@ -251,6 +251,15 @@ describe('localized public Resume route contract', () => {
         await loadContractComponent(definition.componentPath)
       ])
     ))
+    const richContentPages = new Map(await Promise.all(
+      [
+        ['about', 'frontend/src/pages/public/AboutPage.vue'],
+        ['research', 'frontend/src/pages/public/ResearchPage.vue']
+      ].map(async ([pageKey, componentPath]) => [
+        pageKey,
+        await loadContractComponent(componentPath)
+      ])
+    ))
 
     for (const [locale, direction] of [
       ['fa', 'rtl'],
@@ -273,7 +282,9 @@ describe('localized public Resume route contract', () => {
       expect(routeComponent.default ?? routeComponent).toBe(ResumePage)
 
       const expectedComponents = new Map([
-        [`${locale}-resume`, ResumePage]
+        [`${locale}-resume`, ResumePage],
+        [`${locale}-about`, richContentPages.get('about')],
+        [`${locale}-research`, richContentPages.get('research')]
       ])
 
       for (const definition of IMPLEMENTED_COLLECTION_ROUTES) {

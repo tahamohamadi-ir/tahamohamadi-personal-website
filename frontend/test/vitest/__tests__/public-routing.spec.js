@@ -16,8 +16,6 @@ const M1_CHILDREN = [
 ]
 
 const INTRODUCTION_PLACEHOLDER_ROUTES = [
-  'about',
-  'research',
   'skills',
   'contact'
 ]
@@ -143,7 +141,7 @@ describe('public routing contract', () => {
     })
   })
 
-  it('preserves placeholder route ownership for the four introduction foundations', async () => {
+  it('preserves placeholder route ownership only for Skills and Contact', async () => {
     for (const locale of ['fa', 'en']) {
       const localeRoute = getLocaleRoute(locale)
       const introductionRoutes = INTRODUCTION_PLACEHOLDER_ROUTES.map((pageKey) => (
