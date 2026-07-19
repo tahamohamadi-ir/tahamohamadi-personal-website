@@ -36,11 +36,14 @@ public class PublicPublicationService {
     }
 
     public PublicPublicationResponse get(LanguageCode locale, String slug) {
-        PublicationTranslation value = translations.findPublishedByLanguageAndSlug(locale, slug).orElseThrow(() -> missingTranslation(slug));
+        PublicationTranslation value = translations.findPublishedByLanguageAndSlug(locale, slug).orElseThrow(() -> missingTranslation(locale, slug));
         return dto(value, translations.findByPublicationIdAndDeletedAtIsNull(value.getPublication().getId()));
     }
 
-    private TranslationUnavailableException missingTranslation(String slug) {
+    private TranslationUnavailableException missingTranslation(LanguageCode locale, String slug) {
+        if (translations.existsByLanguageCodeAndSlugIgnoreCase(locale, slug)) {
+            throw new NoSuchElementException("Publication not found");
+        }
         PublicationTranslation available = translations.findPublishedBySlug(slug)
                 .orElseThrow(() -> new NoSuchElementException("Publication not found"));
         List<PublicLink> links = links(translations.findByPublicationIdAndDeletedAtIsNull(available.getPublication().getId()));

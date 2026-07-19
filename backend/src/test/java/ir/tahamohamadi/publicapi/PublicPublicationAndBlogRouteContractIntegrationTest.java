@@ -78,6 +78,18 @@ class PublicPublicationAndBlogRouteContractIntegrationTest {
     }
 
     @Test
+    void keepsSameLocaleIneligiblePublicationSlugsAsResourceNotFound() throws Exception {
+        UUID draft = insertPublication("draft-shared-paper", "DRAFT");
+        insertPublicationTranslation(draft, "en", "shared-paper");
+        UUID published = insertPublication("published-shared-paper", "PUBLISHED");
+        insertPublicationTranslation(published, "fa", "shared-paper");
+
+        mvc.perform(get("/api/v1/public/en/publications/shared-paper"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
     void publishesBlogCanonicalAndHreflangPathsUsingTheBrowserBlogRoute() throws Exception {
         UUID category = insertCategory();
         UUID post = insertPost(category, "blog-en");

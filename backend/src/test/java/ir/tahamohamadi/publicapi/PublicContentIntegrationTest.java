@@ -82,6 +82,25 @@ class PublicContentIntegrationTest {
     }
 
     @Test
+    void keepsSameLocaleIneligibleSlugsAsResourceNotFound() throws Exception {
+        insertPage("draft-shared-page", "en", "shared-page", "Draft", "DRAFT", null, null);
+        insertPage("published-shared-page", "fa", "shared-page", "Published", "PUBLISHED", past, null);
+        UUID category = jdbc.queryForObject("SELECT id FROM blog_category WHERE category_key = 'engineering'", UUID.class);
+        UUID skill = jdbc.queryForObject("SELECT id FROM skill WHERE skill_key = 'java'", UUID.class);
+        insertPost(category, "en", "shared-post", "Draft", "body", "DRAFT", null, null);
+        insertPost(category, "fa", "shared-post", "Published", "body", "PUBLISHED", past, null);
+        insertProjectWithKey(skill, "draft-shared-project", "en", "shared-project", "Draft", "DRAFT", null);
+        insertProjectWithKey(skill, "published-shared-project", "fa", "shared-project", "Published", "PUBLISHED", null);
+
+        mvc.perform(get("/api/v1/public/en/pages/shared-page"))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+        mvc.perform(get("/api/v1/public/en/posts/shared-post"))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+        mvc.perform(get("/api/v1/public/en/portfolio/shared-project"))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+    }
+
+    @Test
     void exposesOnlyEligibleAlternateLocalesAndLocalizedCanonicalMetadata() throws Exception {
         insertTranslationForPage("about", "fa", "about-fa", "درباره", null);
         jdbc.update("UPDATE content_page_translation SET canonical_path = ? WHERE slug = ?", "/en/about-me", "about");
@@ -238,6 +257,14 @@ class PublicContentIntegrationTest {
     }
 
     @Test
+    void rejectsPagesWhoseOffsetsWouldOverflow() throws Exception {
+        mvc.perform(get("/api/v1/public/en/posts").param("page", "50000000").param("size", "50"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/v1/public/en/portfolio").param("page", "50000000").param("size", "50"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void reportsTrueTotalsForPostAndProjectPages() throws Exception {
         UUID category = jdbc.queryForObject("SELECT id FROM blog_category WHERE category_key = 'engineering'", UUID.class);
         UUID skill = jdbc.queryForObject("SELECT id FROM skill WHERE skill_key = 'java'", UUID.class);
@@ -302,7 +329,8 @@ class PublicContentIntegrationTest {
     private UUID insertPost(UUID category,String locale,String slug,String title,String body,String state,Instant publishedAt,Instant deletedAt) { UUID id=UUID.randomUUID(); jdbc.update("INSERT INTO blog_post (id,category_id,status,published_at,created_at,updated_at,deleted_at,version) VALUES (?,?,?,?,?,?,?,0)",id,category,state,time(publishedAt),time(past),time(past),time(deletedAt)); jdbc.update("INSERT INTO blog_post_translation (id,blog_post_id,language_code,title,slug,excerpt,body_markdown,seo_title,seo_description,created_at,updated_at,version) VALUES (?,?,?,?,?,?,?,?,?,?,?,0)",UUID.randomUUID(),id,locale,title,slug,"excerpt",body,title+" SEO","description",time(past),time(past)); return id; }
     private UUID insertSkill(String key,String locale,String name) { UUID category=UUID.randomUUID(); UUID id=UUID.randomUUID(); jdbc.update("INSERT INTO skill_category (id,category_key,sort_order,is_active,created_at,updated_at,version) VALUES (?,?,0,true,?,?,0)",category,"languages",time(past),time(past)); jdbc.update("INSERT INTO skill_category_translation (id,skill_category_id,language_code,name,created_at,updated_at,version) VALUES (?,?,?,?,?,?,0)",UUID.randomUUID(),category,locale,"Languages",time(past),time(past)); jdbc.update("INSERT INTO skill (id,skill_key,skill_category_id,sort_order,is_active,created_at,updated_at,version) VALUES (?,?,?,0,true,?,?,0)",id,key,category,time(past),time(past)); jdbc.update("INSERT INTO skill_translation (id,skill_id,language_code,name,description,created_at,updated_at,version) VALUES (?,?,?,?,?,?,?,0)",UUID.randomUUID(),id,locale,name,"description",time(past),time(past)); return id; }
     private void insertAdditionalSkill(String key,String name,int sortOrder) { UUID category = jdbc.queryForObject("SELECT id FROM skill_category WHERE category_key = 'languages'", UUID.class); UUID id=UUID.randomUUID(); jdbc.update("INSERT INTO skill (id,skill_key,skill_category_id,sort_order,is_active,created_at,updated_at,version) VALUES (?,?,?, ?,true,?,?,0)",id,key,category,sortOrder,time(past),time(past)); jdbc.update("INSERT INTO skill_translation (id,skill_id,language_code,name,description,created_at,updated_at,version) VALUES (?,?,?,?,?,?,?,0)",UUID.randomUUID(),id,"en",name,"description",time(past),time(past)); }
-    private void insertProject(UUID skill,String locale,String slug,String title,String state,Instant deletedAt) { UUID id=UUID.randomUUID(); jdbc.update("INSERT INTO portfolio_project (id,project_key,status,started_on,sort_order,created_at,updated_at,deleted_at,version) VALUES (?,?,?,'2025-01-01',0,?,?,?,0)",id,slug,state,time(past),time(past),time(deletedAt)); jdbc.update("INSERT INTO portfolio_project_translation (id,portfolio_project_id,language_code,title,slug,summary,body_markdown,seo_title,seo_description,created_at,updated_at,version) VALUES (?,?,?,?,?,?,?,?,?,?,?,0)",UUID.randomUUID(),id,locale,title,slug,"summary","body",title+" SEO","description",time(past),time(past)); jdbc.update("INSERT INTO portfolio_project_skill (portfolio_project_id,skill_id,sort_order) VALUES (?,?,0)",id,skill); }
+    private void insertProject(UUID skill,String locale,String slug,String title,String state,Instant deletedAt) { insertProjectWithKey(skill,slug,locale,slug,title,state,deletedAt); }
+    private void insertProjectWithKey(UUID skill,String key,String locale,String slug,String title,String state,Instant deletedAt) { UUID id=UUID.randomUUID(); jdbc.update("INSERT INTO portfolio_project (id,project_key,status,started_on,sort_order,created_at,updated_at,deleted_at,version) VALUES (?,?,?,'2025-01-01',0,?,?,?,0)",id,key,state,time(past),time(past),time(deletedAt)); jdbc.update("INSERT INTO portfolio_project_translation (id,portfolio_project_id,language_code,title,slug,summary,body_markdown,seo_title,seo_description,created_at,updated_at,version) VALUES (?,?,?,?,?,?,?,?,?,?,?,0)",UUID.randomUUID(),id,locale,title,slug,"summary","body",title+" SEO","description",time(past),time(past)); jdbc.update("INSERT INTO portfolio_project_skill (portfolio_project_id,skill_id,sort_order) VALUES (?,?,0)",id,skill); }
     private UUID insertProjectAndReturnId(UUID skill,String locale,String slug,String title,String state,Instant deletedAt) { UUID id=UUID.randomUUID(); jdbc.update("INSERT INTO portfolio_project (id,project_key,status,started_on,sort_order,created_at,updated_at,deleted_at,version) VALUES (?,?,?,'2025-01-01',0,?,?,?,0)",id,slug,state,time(past),time(past),time(deletedAt)); jdbc.update("INSERT INTO portfolio_project_translation (id,portfolio_project_id,language_code,title,slug,summary,body_markdown,seo_title,seo_description,created_at,updated_at,version) VALUES (?,?,?,?,?,?,?,?,?,?,?,0)",UUID.randomUUID(),id,locale,title,slug,"summary","body",title+" SEO","description",time(past),time(past)); jdbc.update("INSERT INTO portfolio_project_skill (portfolio_project_id,skill_id,sort_order) VALUES (?,?,0)",id,skill); return id; }
     private void insertPostTranslation(UUID post,String locale,String slug,String title) { jdbc.update("INSERT INTO blog_post_translation (id,blog_post_id,language_code,title,slug,excerpt,body_markdown,seo_title,seo_description,created_at,updated_at,version) VALUES (?,?,?,?,?,?,?,?,?,?,?,0)",UUID.randomUUID(),post,locale,title,slug,"excerpt","body",title+" SEO","description",time(past),time(past)); }
     private void insertProjectTranslation(UUID project,String locale,String slug,String title) { jdbc.update("INSERT INTO portfolio_project_translation (id,portfolio_project_id,language_code,title,slug,summary,body_markdown,seo_title,seo_description,created_at,updated_at,version) VALUES (?,?,?,?,?,?,?,?,?,?,?,0)",UUID.randomUUID(),project,locale,title,slug,"summary","body",title+" SEO","description",time(past),time(past)); }

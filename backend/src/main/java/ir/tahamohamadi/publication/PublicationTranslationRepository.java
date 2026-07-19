@@ -16,6 +16,7 @@ public interface PublicationTranslationRepository extends JpaRepository<Publicat
     List<PublicationTranslation> findByPublicationIdAndDeletedAtIsNull(UUID publicationId);
     List<PublicationTranslation> findByPublicationIdInAndDeletedAtIsNull(Collection<UUID> publicationIds);
     List<PublicationTranslation> findByPublicationIdInAndLanguageCodeAndDeletedAtIsNull(Collection<UUID> publicationIds, LanguageCode language);
+    boolean existsByLanguageCodeAndSlugIgnoreCase(LanguageCode language, String slug);
 
     @Query(value = "select t from PublicationTranslation t join fetch t.publication p where t.languageCode=:language and t.deletedAt is null and p.deletedAt is null and p.contentStatus='PUBLISHED' and (:stage is null or p.publicationStage=:stage)", countQuery = "select count(t) from PublicationTranslation t join t.publication p where t.languageCode=:language and t.deletedAt is null and p.deletedAt is null and p.contentStatus='PUBLISHED' and (:stage is null or p.publicationStage=:stage)")
     Page<PublicationTranslation> findPublishedByLanguage(@Param("language") LanguageCode language, @Param("stage") PublicationStage stage, Pageable page);
