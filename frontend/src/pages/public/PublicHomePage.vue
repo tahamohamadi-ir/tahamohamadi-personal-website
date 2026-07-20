@@ -47,6 +47,8 @@ const {
 })
 
 const page = computed(() => data.value?.page ?? null)
+const featuredItems = computed(() => data.value?.featured?.items ?? [])
+const socialLinks = computed(() => data.value?.socialLinks?.items ?? [])
 usePublicSeoMeta({ data, state })
 const showsContent = computed(() => (
   data.value !== null && state.value !== 'empty'
@@ -55,6 +57,18 @@ const alternatePath = computed(() => error.value?.alternatePaths?.[0] ?? null)
 
 function retry() {
   return state.value === 'stale' ? refresh() : load()
+}
+
+function featuredPath(item) {
+  if (item?.targetType === 'PORTFOLIO_PROJECT') {
+    return `/${locale.value}/portfolio/${item.slug}`
+  }
+
+  if (item?.targetType === 'PUBLICATION') {
+    return `/${locale.value}/publications/${item.slug}`
+  }
+
+  return null
 }
 
 onMounted(() => {
@@ -105,6 +119,24 @@ onMounted(() => {
           </p>
         </template>
       </MarkdownContent>
+
+      <section v-if="featuredItems.length" class="q-mt-xl" :aria-label="t('public.home.featured')">
+        <h2 class="text-h5">{{ t('public.home.featured') }}</h2>
+        <q-list bordered separator>
+          <template v-for="item in featuredItems" :key="`${item.targetType}:${item.slug}`">
+            <q-item v-if="featuredPath(item)" :to="featuredPath(item)">
+              <q-item-section><q-item-label>{{ item.title }}</q-item-label></q-item-section>
+            </q-item>
+          </template>
+        </q-list>
+      </section>
+
+      <nav v-if="socialLinks.length" class="q-mt-xl" :aria-label="t('public.home.socialLinks')">
+        <h2 class="text-h6">{{ t('public.home.socialLinks') }}</h2>
+        <div class="row q-gutter-sm">
+          <q-btn v-for="link in socialLinks" :key="`${link.platformCode}:${link.url}`" outline :href="link.url" target="_blank" rel="noopener noreferrer" :label="link.platformCode" />
+        </div>
+      </nav>
     </div>
   </section>
 </template>

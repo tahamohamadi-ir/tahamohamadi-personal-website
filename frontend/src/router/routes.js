@@ -268,6 +268,24 @@ const routes = [
         }
       },
       {
+        path: 'social-links',
+        name: 'admin-social-links',
+        component: () => import('pages/admin/AdminSocialLinksPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'featured',
+        name: 'admin-featured',
+        component: () => import('pages/admin/AdminFeaturedPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
         path: ':pathMatch(.*)*',
         name: 'admin-not-found',
         component: () => import('pages/admin/AdminNotFoundPage.vue'),

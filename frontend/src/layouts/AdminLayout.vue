@@ -21,7 +21,9 @@ const navigation = [
   { label: 'Publications', icon: 'menu_book', to: '/admin/publications' },
   { label: 'Portfolio', icon: 'folder_open', to: '/admin/portfolio' },
   { label: 'Skills', icon: 'psychology', to: '/admin/skills' },
-  { label: 'Media', icon: 'perm_media', to: '/admin/media' }
+  { label: 'Media', icon: 'perm_media', to: '/admin/media' },
+  { label: 'Social links', icon: 'share', to: '/admin/social-links' },
+  { label: 'Featured content', icon: 'star', to: '/admin/featured' }
 ]
 
 async function logout() {

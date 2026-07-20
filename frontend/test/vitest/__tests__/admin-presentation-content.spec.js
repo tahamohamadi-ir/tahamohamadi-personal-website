@@ -91,3 +91,75 @@ describe('admin presentation route loading', () => {
     expect(media.default).toBeDefined()
   })
 })
+
+describe('admin social links presentation', () => {
+  it('uses a protected dedicated route and only the supported social-link fields', () => {
+    expect(adminRoute('social-links')).toMatchObject({
+      name: 'admin-social-links',
+      meta: { requiresAdmin: true, noindex: true }
+    })
+
+    const socialLinks = source('src/pages/admin/AdminSocialLinksPage.vue')
+    expect(socialLinks).toContain("'/api/v1/admin/social-links'")
+    expect(socialLinks).toContain('platformCode')
+    expect(socialLinks).toContain('url')
+    expect(socialLinks).toContain('sortOrder')
+    expect(socialLinks).toContain('version')
+    expect(socialLinks).not.toContain('AdminLocaleTabs')
+  })
+
+  it('keeps social-link saves safe and reloads persisted results', () => {
+    const socialLinks = source('src/pages/admin/AdminSocialLinksPage.vue')
+
+    expect(socialLinks).toContain('type="url"')
+    expect(socialLinks).toContain('primeCsrfToken')
+    expect(socialLinks).toContain('isVersionConflict')
+    expect(socialLinks).toContain('createUnsavedChangesGuard')
+    expect(socialLinks).toContain("transition('deactivate')")
+    expect(socialLinks).toContain('await load(page.value)')
+    expect(socialLinks).toContain(':loading="saving"')
+  })
+})
+
+describe('admin featured content presentation', () => {
+  it('uses a protected dedicated route and the supported featured-item contract', () => {
+    expect(adminRoute('featured')).toMatchObject({
+      name: 'admin-featured',
+      meta: { requiresAdmin: true, noindex: true }
+    })
+
+    const featured = source('src/pages/admin/AdminFeaturedPage.vue')
+    expect(featured).toContain("'/api/v1/admin/featured-items'")
+    expect(featured).toContain('slotKey')
+    expect(featured).toContain('targetType')
+    expect(featured).toContain('targetId')
+    expect(featured).toContain('sortOrder')
+    expect(featured).toContain('version')
+  })
+
+  it('selects supported publication and portfolio targets, filters them, and protects saves', () => {
+    const featured = source('src/pages/admin/AdminFeaturedPage.vue')
+
+    expect(featured).toContain("'/api/v1/admin/publications'")
+    expect(featured).toContain("'/api/v1/admin/portfolio/projects'")
+    expect(featured).toContain('PUBLICATION')
+    expect(featured).toContain('PORTFOLIO_PROJECT')
+    expect(featured).toContain('targetOptions')
+    expect(featured).toContain('primeCsrfToken')
+    expect(featured).toContain('isVersionConflict')
+    expect(featured).toContain('createUnsavedChangesGuard')
+    expect(featured).toContain("transition('deactivate')")
+    expect(featured).toContain('await load(page.value)')
+  })
+})
+
+describe('public home presentation content', () => {
+  it('renders the supported featured and social payloads without inventing a preview API', () => {
+    const home = source('src/pages/public/PublicHomePage.vue')
+
+    expect(home).toContain('data.value?.featured')
+    expect(home).toContain('data.value?.socialLinks')
+    expect(home).toContain('item.slug')
+    expect(home).toContain('link.url')
+  })
+})
