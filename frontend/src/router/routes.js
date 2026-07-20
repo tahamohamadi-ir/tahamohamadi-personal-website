@@ -223,6 +223,24 @@ const routes = [
         }
       },
       {
+        path: 'resume',
+        name: 'admin-resume',
+        component: () => import('pages/admin/AdminResumePage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'publications',
+        name: 'admin-publications',
+        component: () => import('pages/admin/AdminPublicationsPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
         path: ':pathMatch(.*)*',
         name: 'admin-not-found',
         component: () => import('pages/admin/AdminNotFoundPage.vue'),

@@ -16,7 +16,9 @@ const auth = useAdminAuthStore()
 const drawerOpen = ref(false)
 const navigation = [
   { label: 'Dashboard', icon: 'dashboard', to: '/admin' },
-  { label: 'Pages', icon: 'article', to: '/admin/pages' }
+  { label: 'Pages', icon: 'article', to: '/admin/pages' },
+  { label: 'Resume', icon: 'work_history', to: '/admin/resume' },
+  { label: 'Publications', icon: 'menu_book', to: '/admin/publications' }
 ]
 
 async function logout() {
