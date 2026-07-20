@@ -1,9 +1,9 @@
-export function createAdminNavigationGuard(getAuthStore, isServer) {
+export function createAdminNavigationGuard(
+  getAuthStore,
+  isServer,
+  getServerHttpClient = null
+) {
   return async (to) => {
-    if (isServer) {
-      return true
-    }
-
     const requiresAdmin = to.matched.some(
       (record) => record.meta.requiresAdmin
     )
@@ -15,8 +15,14 @@ export function createAdminNavigationGuard(getAuthStore, isServer) {
       return true
     }
 
+    if (isServer && typeof getServerHttpClient !== 'function') {
+      return true
+    }
+
     const auth = getAuthStore()
-    await auth.restoreSession()
+    await auth.restoreSession(
+      isServer ? getServerHttpClient() : undefined
+    )
 
     if (requiresAdmin && !auth.isAdmin) {
       return {

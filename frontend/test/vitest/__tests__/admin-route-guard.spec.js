@@ -26,11 +26,22 @@ describe('admin navigation guard', () => {
     })
   })
 
-  it('does not restore a private session while rendering on the server', async () => {
-    const guard = createAdminNavigationGuard(() => {
-      throw new Error('server rendering must not access auth state')
-    }, true)
+  it('restores the safe administrator DTO with the request-scoped client during SSR', async () => {
+    const requestClient = { get: () => {} }
+    let restoredClient = null
+    const auth = {
+      isAdmin: true,
+      restoreSession: async (httpClient) => {
+        restoredClient = httpClient
+      }
+    }
+    const guard = createAdminNavigationGuard(
+      () => auth,
+      true,
+      () => requestClient
+    )
 
     await expect(guard(route({ requiresAdmin: true }))).resolves.toBe(true)
+    expect(restoredClient).toBe(requestClient)
   })
 })

@@ -51,6 +51,17 @@ describe('admin routing contract', () => {
     expect(source).toContain('process.env.SERVER')
   })
 
+  it('uses a request-scoped HTTP client to restore protected SSR routes', () => {
+    const source = readFileSync(
+      resolve(process.cwd(), 'src/router/index.js'),
+      'utf8'
+    )
+
+    expect(source).toContain("import { createRequestApiContext } from 'src/services/apiContext'")
+    expect(source).toContain('createRequestApiContext({')
+    expect(source).toContain('ssrContext')
+  })
+
   it('provides a responsive login form and an authenticated shell', () => {
     const loginSource = readFileSync(
       resolve(process.cwd(), 'src/pages/admin/AdminLoginPage.vue'),

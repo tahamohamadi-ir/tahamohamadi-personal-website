@@ -1,13 +1,22 @@
 import { route } from 'quasar/wrappers'
 import { createMemoryHistory, createRouter, createWebHistory } from 'vue-router'
 
+import { createRequestApiContext } from 'src/services/apiContext'
 import { useAdminAuthStore } from 'src/stores/adminAuth'
 
 import { createAdminNavigationGuard } from './adminNavigationGuard'
 import routes from './routes'
 
-export default route(({ store }) => {
-  const createHistory = process.env.SERVER ? createMemoryHistory : createWebHistory
+export default route(({ store, ssrContext }) => {
+  const isServer = process.env.SERVER
+  const createHistory = isServer ? createMemoryHistory : createWebHistory
+  const serverHttpClient = isServer
+    ? createRequestApiContext({
+        isServer,
+        env: process.env,
+        ssrContext
+      }).httpClient
+    : null
   const router = createRouter({
     history: createHistory(process.env.VUE_ROUTER_BASE),
     routes,
@@ -16,7 +25,8 @@ export default route(({ store }) => {
 
   router.beforeEach(createAdminNavigationGuard(
     () => useAdminAuthStore(store),
-    process.env.SERVER
+    isServer,
+    () => serverHttpClient
   ))
 
   return router
