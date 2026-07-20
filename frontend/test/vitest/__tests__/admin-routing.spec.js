@@ -65,6 +65,8 @@ describe('admin routing contract', () => {
     expect(loginSource).toContain('type="email"')
     expect(loginSource).toContain('type="password"')
     expect(loginSource).toContain('useAdminAuthStore')
+    expect(loginSource).toContain('q-layout')
+    expect(loginSource).toContain('q-page-container')
     expect(layoutSource).toContain('q-drawer')
     expect(layoutSource).toContain('logout')
     expect(layoutSource).toContain('noindex')
