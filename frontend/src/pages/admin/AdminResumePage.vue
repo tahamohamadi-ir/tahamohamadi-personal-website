@@ -3,6 +3,7 @@ import { computed, inject, onMounted, ref } from 'vue'
 
 import AdminLifecycleActions from 'src/components/admin/AdminLifecycleActions.vue'
 import AdminLocaleTabs from 'src/components/admin/AdminLocaleTabs.vue'
+import AdminMediaSelector from 'src/components/admin/AdminMediaSelector.vue'
 import AdminPaginatedTable from 'src/components/admin/AdminPaginatedTable.vue'
 import AdminStatePanel from 'src/components/admin/AdminStatePanel.vue'
 import { HTTP_CLIENT_KEY } from 'src/services/apiContext'
@@ -247,7 +248,7 @@ onMounted(() => {
         </q-item>
       </q-list>
       <q-select v-model="documentForm.languageCode" :options="['fa', 'en']" label="Locale" :disable="saving" />
-      <q-input v-model="documentForm.mediaAssetId" label="Existing media asset ID" :disable="saving" />
+      <AdminMediaSelector v-model="documentForm.mediaAssetId" label="Resume document media" :disable="saving" />
       <div class="row q-gutter-sm">
         <q-btn type="submit" color="primary" :loading="saving" label="Save document" />
         <AdminLifecycleActions v-if="documentForm.id" :status="documentForm.status" :saving="saving" :public-preview-path="documentPreviewPath" @publish="transition('documents', 'publish')" @archive="transition('documents', 'archive')" />

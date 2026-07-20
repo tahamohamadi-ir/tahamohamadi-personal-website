@@ -241,6 +241,33 @@ const routes = [
         }
       },
       {
+        path: 'portfolio',
+        name: 'admin-portfolio',
+        component: () => import('pages/admin/AdminPortfolioPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'skills',
+        name: 'admin-skills',
+        component: () => import('pages/admin/AdminSkillsPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'media',
+        name: 'admin-media',
+        component: () => import('pages/admin/AdminMediaPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
         path: ':pathMatch(.*)*',
         name: 'admin-not-found',
         component: () => import('pages/admin/AdminNotFoundPage.vue'),

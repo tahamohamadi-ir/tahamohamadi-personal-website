@@ -18,7 +18,10 @@ const navigation = [
   { label: 'Dashboard', icon: 'dashboard', to: '/admin' },
   { label: 'Pages', icon: 'article', to: '/admin/pages' },
   { label: 'Resume', icon: 'work_history', to: '/admin/resume' },
-  { label: 'Publications', icon: 'menu_book', to: '/admin/publications' }
+  { label: 'Publications', icon: 'menu_book', to: '/admin/publications' },
+  { label: 'Portfolio', icon: 'folder_open', to: '/admin/portfolio' },
+  { label: 'Skills', icon: 'psychology', to: '/admin/skills' },
+  { label: 'Media', icon: 'perm_media', to: '/admin/media' }
 ]
 
 async function logout() {
