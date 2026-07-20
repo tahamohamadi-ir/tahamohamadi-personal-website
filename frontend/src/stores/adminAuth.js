@@ -53,7 +53,7 @@ export const useAdminAuthStore = defineStore('admin-auth', {
 
         this.clearSession()
         this.status = normalized.status === 401 ? 'anonymous' : 'error'
-        this.error = normalized
+        this.error = normalized.status === 401 ? null : normalized
 
         return null
       }

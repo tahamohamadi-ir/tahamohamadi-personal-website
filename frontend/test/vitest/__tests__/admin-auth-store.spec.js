@@ -53,7 +53,7 @@ describe('admin authentication store', () => {
     expect(member.error).toMatchObject({ status: 403, code: 'FORBIDDEN' })
   })
 
-  it('clears an expired session when current-user returns 401', async () => {
+  it('keeps anonymous session restoration free of a displayable error', async () => {
     const store = useAdminAuthStore()
     store.user = adminUser()
 
@@ -63,7 +63,7 @@ describe('admin authentication store', () => {
 
     expect(store.user).toBeNull()
     expect(store.status).toBe('anonymous')
-    expect(store.error).toMatchObject({ status: 401, code: 'UNAUTHENTICATED' })
+    expect(store.error).toBeNull()
   })
 
   it('primes CSRF before login, then stores the returned administrator', async () => {
