@@ -187,15 +187,49 @@ const routes = [
   createLocaleRoute('fa', 'rtl'),
   createLocaleRoute('en', 'ltr'),
   {
+    path: '/admin/login',
+    name: 'admin-login',
+    component: () => import('pages/admin/AdminLoginPage.vue'),
+    meta: {
+      requiresGuest: true,
+      noindex: true
+    }
+  },
+  {
     path: '/admin',
     name: 'admin-root',
     component: AdminLayout,
+    meta: {
+      noindex: true
+    },
     children: [
       {
         path: '',
         name: 'admin-home',
         component: () =>
-          import('pages/admin/AdminHomePage.vue')
+          import('pages/admin/AdminHomePage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'pages',
+        name: 'admin-pages',
+        component: () => import('pages/admin/AdminPagesPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: ':pathMatch(.*)*',
+        name: 'admin-not-found',
+        component: () => import('pages/admin/AdminNotFoundPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
       }
     ]
   }

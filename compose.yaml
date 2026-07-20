@@ -27,6 +27,8 @@ services:
       DB_USERNAME: ${TAHA_QA_POSTGRES_USER:-taha_qa}
       DB_PASSWORD: ${TAHA_QA_POSTGRES_PASSWORD:-taha_qa_local_password}
       TAHA_BACKEND_PORT: 8080
+      TAHA_QA_ADMIN_EMAIL: ${TAHA_QA_ADMIN_EMAIL:?TAHA_QA_ADMIN_EMAIL is required for QA}
+      TAHA_QA_ADMIN_PASSWORD: ${TAHA_QA_ADMIN_PASSWORD:?TAHA_QA_ADMIN_PASSWORD is required for QA}
     depends_on:
       postgres:
         condition: service_healthy
