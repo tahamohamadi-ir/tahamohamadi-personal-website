@@ -5,8 +5,14 @@ import ir.tahamohamadi.audit.event.AuditEvent;
 import ir.tahamohamadi.audit.event.AuditEventRepository;
 import ir.tahamohamadi.identity.user.AppUser;
 import ir.tahamohamadi.identity.user.AppUserRepository;
+import ir.tahamohamadi.common.domain.LanguageCode;
 import ir.tahamohamadi.media.asset.MediaAsset;
 import ir.tahamohamadi.media.asset.MediaAssetRepository;
+import ir.tahamohamadi.publication.Publication;
+import ir.tahamohamadi.publication.PublicationRepository;
+import ir.tahamohamadi.publication.PublicationStage;
+import ir.tahamohamadi.publication.PublicationTranslation;
+import ir.tahamohamadi.publication.PublicationTranslationRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -15,6 +21,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -37,6 +44,28 @@ class PublicationResumeIntegrationTest {
     @Autowired AppUserRepository users;
     @Autowired MediaAssetRepository media;
     @Autowired AuditEventRepository audit;
+    @Autowired PublicationRepository publications;
+    @Autowired PublicationTranslationRepository publicationTranslations;
+
+    @Test
+    @Transactional
+    void listsPublicationWithMissingTranslationForAdminCompletion() throws Exception {
+        AppUser admin = actor("incomplete-publication-admin");
+        Instant now = Instant.now();
+        Publication publication = publications.saveAndFlush(Publication.create(
+                UUID.randomUUID(), "incomplete", PublicationStage.PUBLISHED, 2025, 0, now
+        ));
+        publicationTranslations.saveAndFlush(PublicationTranslation.create(
+                UUID.randomUUID(), publication, LanguageCode.fa, "Incomplete FA", "incomplete-fa",
+                null, null, null, null, null, now
+        ));
+
+        mvc.perform(get("/api/v1/admin/publications").param("sort", "year,desc").with(adminUser(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].id").value(publication.getId().toString()))
+                .andExpect(jsonPath("$.items[0].fa.title").value("Incomplete FA"))
+                .andExpect(jsonPath("$.items[0].en").doesNotExist());
+    }
 
     @Test
     void administersLocalizedPublicationsWithSecurityLifecycleVersionsAuditsAndPublicFiltering() throws Exception {
