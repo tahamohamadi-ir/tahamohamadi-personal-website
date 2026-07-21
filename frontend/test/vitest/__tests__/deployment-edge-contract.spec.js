@@ -42,6 +42,15 @@ describe('production-like QA deployment contract', () => {
     expect(nginx).toMatch(/proxy_pass http:\/\/frontend:3000;/)
   })
 
+  it('sets an explicit edge envelope above the backend multipart request limit', () => {
+    const nginx = readProjectFile('infra/nginx/default.conf')
+    const application = readProjectFile('backend/src/main/resources/application.yml')
+
+    expect(application).toContain('max-file-size: 20971520B')
+    expect(application).toContain('max-request-size: 22020096B')
+    expect(nginx).toMatch(/client_max_body_size\s+22m;/)
+  })
+
   it('uses an IPv4 loopback health probe for the Nginx container', () => {
     const compose = readProjectFile('compose.yaml')
 

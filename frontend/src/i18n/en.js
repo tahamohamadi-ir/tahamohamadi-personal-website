@@ -8,7 +8,9 @@ export default {
   public: {
     temporaryPage: 'Public page',
     home: {
-      lead: 'A personal site for academic, professional, and research work.'
+      lead: 'A personal site for academic, professional, and research work.',
+      featured: 'Featured content',
+      socialLinks: 'Social links'
     },
     richContent: {
       renderingFailure: 'This content cannot be displayed safely right now.'

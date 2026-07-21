@@ -9,6 +9,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -20,6 +21,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class) ResponseEntity<ApiErrorResponse> invalid(MethodArgumentNotValidException e,HttpServletRequest r) { return response(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","Request validation failed",r,e.getBindingResult().getFieldErrors().stream().map(f->new FieldValidationError(f.getField(),f.getDefaultMessage())).toList()); }
     @ExceptionHandler(ConstraintViolationException.class) ResponseEntity<ApiErrorResponse> constrained(ConstraintViolationException e,HttpServletRequest r) { return response(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","Request validation failed",r,List.of()); }
     @ExceptionHandler(MediaUploadException.class) ResponseEntity<ApiErrorResponse> media(MediaUploadException e,HttpServletRequest r) { return response(e.status(),e.code(),e.status().is5xxServerError()?"Unable to process uploaded file":"Uploaded file was rejected",r,List.of()); }
+    @ExceptionHandler(MaxUploadSizeExceededException.class) ResponseEntity<ApiErrorResponse> multipartSize(MaxUploadSizeExceededException e,HttpServletRequest r) { return response(HttpStatus.PAYLOAD_TOO_LARGE,"MEDIA_TOO_LARGE","Uploaded file was rejected",r,List.of()); }
     @ExceptionHandler(NoSuchElementException.class) ResponseEntity<ApiErrorResponse> absent(NoSuchElementException e,HttpServletRequest r) { return response(HttpStatus.NOT_FOUND,"RESOURCE_NOT_FOUND","Resource not found",r,List.of()); }
     @ExceptionHandler(TranslationUnavailableException.class) ResponseEntity<TranslationUnavailableError> untranslated(TranslationUnavailableException e,HttpServletRequest r) { return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new TranslationUnavailableError(Instant.now(),404,"TRANSLATION_UNAVAILABLE","Requested translation is unavailable",r.getRequestURI(),e.availableLocales(),e.alternatePaths())); }
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class) ResponseEntity<ApiErrorResponse> conflict(ObjectOptimisticLockingFailureException e,HttpServletRequest r) { return response(HttpStatus.CONFLICT,"OPTIMISTIC_LOCK_CONFLICT","The resource was changed by another request",r,List.of()); }

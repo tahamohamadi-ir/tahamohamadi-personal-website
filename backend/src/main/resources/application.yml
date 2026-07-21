@@ -1,6 +1,12 @@
 spring:
   application:
     name: tahamohamadi-backend
+  servlet:
+    multipart:
+      # Media policy: images are capped at 10 MiB and PDFs at 20 MiB.
+      # The request cap reserves 1 MiB for multipart framing and metadata.
+      max-file-size: 20971520B
+      max-request-size: 22020096B
 
 taha:
   security:

@@ -92,6 +92,18 @@ export function normalizeApiError(error) {
     ? response.status
     : null
 
+  if (responseStatus === 413) {
+    return {
+      status: responseStatus,
+      code: 'MEDIA_TOO_LARGE',
+      message: 'File exceeds the supported size limit.',
+      path: asString(data.path),
+      fields: [],
+      availableLocales: [],
+      alternatePaths: []
+    }
+  }
+
   return {
     status: responseStatus,
     code: asString(data.code, 'HTTP_ERROR'),

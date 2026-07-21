@@ -187,15 +187,112 @@ const routes = [
   createLocaleRoute('fa', 'rtl'),
   createLocaleRoute('en', 'ltr'),
   {
+    path: '/admin/login',
+    name: 'admin-login',
+    component: () => import('pages/admin/AdminLoginPage.vue'),
+    meta: {
+      requiresGuest: true,
+      noindex: true
+    }
+  },
+  {
     path: '/admin',
     name: 'admin-root',
     component: AdminLayout,
+    meta: {
+      noindex: true
+    },
     children: [
       {
         path: '',
         name: 'admin-home',
         component: () =>
-          import('pages/admin/AdminHomePage.vue')
+          import('pages/admin/AdminHomePage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'pages',
+        name: 'admin-pages',
+        component: () => import('pages/admin/AdminPagesPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'resume',
+        name: 'admin-resume',
+        component: () => import('pages/admin/AdminResumePage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'publications',
+        name: 'admin-publications',
+        component: () => import('pages/admin/AdminPublicationsPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'portfolio',
+        name: 'admin-portfolio',
+        component: () => import('pages/admin/AdminPortfolioPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'skills',
+        name: 'admin-skills',
+        component: () => import('pages/admin/AdminSkillsPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'media',
+        name: 'admin-media',
+        component: () => import('pages/admin/AdminMediaPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'social-links',
+        name: 'admin-social-links',
+        component: () => import('pages/admin/AdminSocialLinksPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: 'featured',
+        name: 'admin-featured',
+        component: () => import('pages/admin/AdminFeaturedPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
+      },
+      {
+        path: ':pathMatch(.*)*',
+        name: 'admin-not-found',
+        component: () => import('pages/admin/AdminNotFoundPage.vue'),
+        meta: {
+          requiresAdmin: true,
+          noindex: true
+        }
       }
     ]
   }
