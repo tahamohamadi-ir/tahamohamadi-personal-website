@@ -1,0 +1,110 @@
+name: taha-prod
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    stop_grace_period: 30s
+    mem_limit: 512m
+    pids_limit: 200
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      POSTGRES_DB: ${PROD_POSTGRES_DB:?PROD_POSTGRES_DB is required}
+      POSTGRES_USER: ${PROD_POSTGRES_USER:?PROD_POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${PROD_POSTGRES_PASSWORD:?PROD_POSTGRES_PASSWORD is required}
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - max_connections=50
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    stop_grace_period: 30s
+    init: true
+    mem_limit: 768m
+    pids_limit: 300
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${PROD_POSTGRES_DB:?PROD_POSTGRES_DB is required}
+      DB_USERNAME: ${PROD_POSTGRES_USER:?PROD_POSTGRES_USER is required}
+      DB_PASSWORD: ${PROD_POSTGRES_PASSWORD:?PROD_POSTGRES_PASSWORD is required}
+      TAHA_BACKEND_PORT: 8080
+      TAHA_MEDIA_STORAGE_ROOT: /app/var/media
+      TAHA_AUTH_BCRYPT_STRENGTH: 12
+      TAHA_BOOTSTRAP_ADMIN_ENABLED: ${PROD_ADMIN_BOOTSTRAP_ENABLED:-false}
+      TAHA_PROD_ADMIN_EMAIL: ${PROD_ADMIN_EMAIL:-}
+      TAHA_PROD_ADMIN_PASSWORD: ${PROD_ADMIN_PASSWORD:-}
+      JAVA_TOOL_OPTIONS: >-
+        -Xms128m
+        -Xmx512m
+        -XX:+ExitOnOutOfMemoryError
+    ports:
+      - "127.0.0.1:18080:8080"
+    volumes:
+      - media_data:/app/var/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://localhost:8080/actuator/health/readiness || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    stop_grace_period: 20s
+    init: true
+    mem_limit: 384m
+    pids_limit: 200
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      NODE_ENV: production
+      NODE_OPTIONS: --max-old-space-size=256
+      TAHA_BACKEND_ORIGIN: http://backend:8080
+      PORT: 3000
+    ports:
+      - "127.0.0.1:13000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://localhost:3000/ || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 20s
+
+volumes:
+  postgres_data:
+    name: taha_prod_postgres_data
+
+  media_data:
+    name: taha_prod_media_data

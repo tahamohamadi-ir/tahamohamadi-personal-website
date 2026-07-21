@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_NAME:taha_prod}
+    username: ${DB_USERNAME:taha_prod}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  sql:
+    init:
+      mode: never
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: ${TAHA_BACKEND_PORT:8080}
+  forward-headers-strategy: framework
+  shutdown: graceful
+
+taha:
+  security:
+    secure-cookies: true
