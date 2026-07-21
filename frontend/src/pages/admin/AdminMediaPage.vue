@@ -6,14 +6,10 @@ import AdminStatePanel from 'src/components/admin/AdminStatePanel.vue'
 import { HTTP_CLIENT_KEY } from 'src/services/apiContext'
 import { primeCsrfToken } from 'src/services/csrf'
 import { normalizeApiError } from 'src/services/httpClient'
+import { MEDIA_UPLOAD_LIMITS, validateMediaUpload } from 'src/services/mediaUploadPolicy'
 
 const httpClient = inject(HTTP_CLIENT_KEY)
-const ACCEPTED_TYPES = Object.freeze({
-  'image/png': 10 * 1024 * 1024,
-  'image/jpeg': 10 * 1024 * 1024,
-  'image/webp': 10 * 1024 * 1024,
-  'application/pdf': 20 * 1024 * 1024
-})
+const ACCEPTED_TYPES = MEDIA_UPLOAD_LIMITS
 const items = ref([])
 const selected = ref(null)
 const uploadFile = ref(null)
@@ -28,13 +24,6 @@ const form = ref(metadata())
 function metadata(value = {}) { return { id: value.id ?? null, originalFilename: value.originalFilename ?? '', mimeType: value.mimeType ?? '', sizeBytes: value.sizeBytes ?? 0, width: value.width ?? null, height: value.height ?? null, status: value.status ?? null, faAlt: value.faAlt ?? '', faCaption: value.faCaption ?? '', enAlt: value.enAlt ?? '', enCaption: value.enCaption ?? '', version: value.version ?? null } }
 const isImage = computed(() => selected.value?.mimeType?.startsWith('image/') ?? false)
 
-function preflight(file) {
-  if (!file) return 'Select a file to upload.'
-  if (!Object.hasOwn(ACCEPTED_TYPES, file.type)) return 'Unsupported media type.'
-  if (file.size > ACCEPTED_TYPES[file.type]) return 'File exceeds the supported size limit.'
-  if (file.name.includes('..') || /[\\/\u0000]/.test(file.name)) return 'Unsafe filename.'
-  return null
-}
 async function load(requestedPage = page.value) {
   state.value = 'loading'; error.value = null
   try { const response = await httpClient.get('/api/v1/admin/media', { params: { page: requestedPage, size: 20 } }); items.value = response.data.items ?? []; page.value = response.data.page ?? requestedPage; totalPages.value = response.data.totalPages ?? 0; state.value = items.value.length === 0 ? 'empty' : 'ready' }
@@ -44,7 +33,7 @@ async function select(item) { error.value = null; try { const response = await h
 async function upload() {
   const duplicate = uploading.value
   if (duplicate) return
-  const fileError = preflight(uploadFile.value)
+  const fileError = validateMediaUpload(uploadFile.value)
   if (fileError) { error.value = { message: fileError }; return }
   uploading.value = true; uploadProgress.value = 0; error.value = null
   try { await primeCsrfToken(httpClient); const data = new FormData(); data.append('file', uploadFile.value); data.append('faAlt', form.value.faAlt); data.append('faCaption', form.value.faCaption); data.append('enAlt', form.value.enAlt); data.append('enCaption', form.value.enCaption); const response = await httpClient.post('/api/v1/admin/media', data, { onUploadProgress: (event) => { uploadProgress.value = event.total ? Math.round((event.loaded / event.total) * 100) : 0 } }); selected.value = response.data; form.value = metadata(response.data); uploadFile.value = null; await load(0) }
