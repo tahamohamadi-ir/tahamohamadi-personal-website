@@ -107,13 +107,13 @@ describe('MarkdownContent SSR boundary', () => {
     const sinkMatches = readdirSync(sourceRoot, { recursive: true })
       .filter((entry) => /\.(?:js|vue)$/.test(entry))
       .map((entry) => ({
-        path: String(entry),
+        path: String(entry).replaceAll('\\', '/'),
         source: readFileSync(resolve(sourceRoot, entry), 'utf8')
       }))
       .flatMap(({ path, source }) => (
         source.match(/v-html|innerHTML|outerHTML|insertAdjacentHTML/g) ?? []
       ).map((sink) => ({ path, sink })))
 
-    expect(sinkMatches).toEqual([{ path: 'components\\content\\MarkdownContent.vue', sink: 'v-html' }])
+    expect(sinkMatches).toEqual([{ path: 'components/content/MarkdownContent.vue', sink: 'v-html' }])
   })
 })
