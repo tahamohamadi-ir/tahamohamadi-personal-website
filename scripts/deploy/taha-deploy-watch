@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+STATE_DIR="/opt/taha/deploy"
+CURRENT_STATE="${STATE_DIR}/current.env"
+FAILED_SHA_FILE="${STATE_DIR}/failed.sha"
+
+REPOSITORY_URL="https://github.com/tahamohamadi-ir/tahamohamadi-personal-website.git"
+
+if [ ! -s "$CURRENT_STATE" ]; then
+    echo "Current deployment state is unavailable." >&2
+    exit 1
+fi
+
+LATEST_LINE="$(
+    git ls-remote \
+        --tags \
+        "$REPOSITORY_URL" \
+        'refs/tags/production-*' \
+    | awk '
+        $2 !~ /\^\{\}$/ {
+            sub("^refs/tags/", "", $2)
+            print $2 " " $1
+        }
+    ' \
+    | sort \
+        -V \
+    | tail \
+        -1
+)"
+
+if [ -z "$LATEST_LINE" ]; then
+    echo "No approved Production deployment tag exists yet."
+    exit 0
+fi
+
+TAG_NAME="${LATEST_LINE%% *}"
+TARGET_SHA="${LATEST_LINE##* }"
+
+if [[ ! "$TAG_NAME" =~ ^production-[0-9]+-[0-9]+-[0-9a-f]{40}$ ]]; then
+    echo "Latest Production tag has an unexpected format: $TAG_NAME" >&2
+    exit 1
+fi
+
+if [[ ! "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "Latest Production tag contains an invalid SHA." >&2
+    exit 1
+fi
+
+set -a
+source "$CURRENT_STATE"
+set +a
+
+: "${PROD_DEPLOYED_SHA:?PROD_DEPLOYED_SHA is required}"
+
+echo "Latest approved tag: $TAG_NAME"
+echo "Approved SHA:        $TARGET_SHA"
+echo "Current SHA:         $PROD_DEPLOYED_SHA"
+
+if [ "$TARGET_SHA" = "$PROD_DEPLOYED_SHA" ]; then
+    echo "Production already runs the approved SHA."
+    exit 0
+fi
+
+if [ -s "$FAILED_SHA_FILE" ]; then
+    FAILED_SHA="$(
+        tr \
+            -d \
+            '[:space:]' \
+            < "$FAILED_SHA_FILE"
+    )"
+
+    if [ "$FAILED_SHA" = "$TARGET_SHA" ]; then
+        FAILED_AT="$(
+            stat \
+                -c '%Y' \
+                "$FAILED_SHA_FILE"
+        )"
+
+        NOW="$(
+            date \
+                +%s
+        )"
+
+        AGE="$((NOW - FAILED_AT))"
+
+        if [ "$AGE" -lt 1800 ]; then
+            echo "Deployment for this SHA failed recently."
+            echo "Retry cooldown remaining: $((1800 - AGE)) seconds"
+            exit 0
+        fi
+    fi
+fi
+
+exec \
+    /usr/local/sbin/taha-deploy \
+    "$TARGET_SHA"

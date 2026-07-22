@@ -1,0 +1,430 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+umask 077
+
+TARGET_SHA="${1:-}"
+
+APP_DIR="/opt/taha/repository"
+ENV_FILE="/opt/taha/secrets/.env.production"
+COMPOSE_FILE="${APP_DIR}/compose.production.yaml"
+STATE_DIR="/opt/taha/deploy"
+
+CURRENT_STATE="${STATE_DIR}/current.env"
+PREVIOUS_STATE="${STATE_DIR}/previous.env"
+FAILED_SHA_FILE="${STATE_DIR}/failed.sha"
+HISTORY_FILE="${STATE_DIR}/history.log"
+
+VERSION_FILE="/var/lib/caddy/taha-deployment/version.txt"
+LOCK_FILE="/run/lock/taha-production-deploy.lock"
+
+REPOSITORY_URL="https://github.com/tahamohamadi-ir/tahamohamadi-personal-website.git"
+DOMAIN="tahamohamadi.ir"
+
+BACKEND_IMAGE="ghcr.io/tahamohamadi-ir/tahamohamadi-personal-website-backend:${TARGET_SHA}"
+FRONTEND_IMAGE="ghcr.io/tahamohamadi-ir/tahamohamadi-personal-website-frontend:${TARGET_SHA}"
+
+CANDIDATE_STATE="${STATE_DIR}/candidate-${TARGET_SHA}.env"
+
+ROLLBACK_REQUIRED="false"
+
+if [[ ! "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "Deployment SHA must be exactly 40 lowercase hexadecimal characters." >&2
+    exit 64
+fi
+
+for REQUIRED_PATH in \
+    "$APP_DIR" \
+    "$ENV_FILE" \
+    "$COMPOSE_FILE" \
+    "$STATE_DIR" \
+    "$CURRENT_STATE"; do
+
+    if [ ! -e "$REQUIRED_PATH" ]; then
+        echo "Required deployment path does not exist: $REQUIRED_PATH" >&2
+        exit 1
+    fi
+done
+
+exec 9>"$LOCK_FILE"
+
+if ! flock -n 9; then
+    echo "Another Production deployment is already running."
+    exit 0
+fi
+
+cleanup() {
+    rm -f "$CANDIDATE_STATE"
+}
+
+write_version() {
+    local SHA="$1"
+    local TEMP_FILE
+
+    TEMP_FILE="$(mktemp)"
+    printf '%s\n' "$SHA" > "$TEMP_FILE"
+
+    install \
+        -o caddy \
+        -g caddy \
+        -m 0644 \
+        "$TEMP_FILE" \
+        "$VERSION_FILE"
+
+    rm -f "$TEMP_FILE"
+}
+
+load_state() {
+    local STATE_FILE="$1"
+
+    set -a
+    source "$STATE_FILE"
+    set +a
+
+    : "${PROD_BACKEND_IMAGE:?PROD_BACKEND_IMAGE is required}"
+    : "${PROD_FRONTEND_IMAGE:?PROD_FRONTEND_IMAGE is required}"
+    : "${PROD_DEPLOYED_SHA:?PROD_DEPLOYED_SHA is required}"
+}
+
+switch_repository() {
+    local SHA="$1"
+
+    runuser \
+        -u deploy \
+        -- \
+        git \
+            -C "$APP_DIR" \
+            switch \
+            --detach \
+            "$SHA"
+
+    local ACTUAL_SHA
+
+    ACTUAL_SHA="$(
+        runuser \
+            -u deploy \
+            -- \
+            git \
+                -C "$APP_DIR" \
+                rev-parse \
+                HEAD
+    )"
+
+    if [ "$ACTUAL_SHA" != "$SHA" ]; then
+        echo "Repository did not switch to expected SHA: $SHA" >&2
+        return 1
+    fi
+}
+
+compose() {
+    (
+        cd "$APP_DIR"
+
+        docker compose \
+            --env-file "$ENV_FILE" \
+            -f "$COMPOSE_FILE" \
+            "$@"
+    )
+}
+
+wait_http() {
+    local LABEL="$1"
+    local EXPECTED_STATUS="$2"
+    local URL="$3"
+
+    shift 3
+
+    local ATTEMPT
+    local STATUS
+
+    for ATTEMPT in $(seq 1 60); do
+        STATUS="$(
+            curl \
+                "$@" \
+                --silent \
+                --show-error \
+                --connect-timeout 5 \
+                --max-time 15 \
+                --output /dev/null \
+                --write-out '%{http_code}' \
+                "$URL" \
+                2>/dev/null \
+            || true
+        )"
+
+        printf \
+            '%s attempt %02d/60 status=%s\n' \
+            "$LABEL" \
+            "$ATTEMPT" \
+            "${STATUS:-unavailable}"
+
+        if [ "$STATUS" = "$EXPECTED_STATUS" ]; then
+            return 0
+        fi
+
+        sleep 5
+    done
+
+    echo "${LABEL} failed to return HTTP ${EXPECTED_STATUS}." >&2
+    return 1
+}
+
+deploy_state() {
+    local STATE_FILE="$1"
+
+    load_state "$STATE_FILE"
+
+    echo "Deploying Backend image:"
+    echo "$PROD_BACKEND_IMAGE"
+
+    compose \
+        up \
+        -d \
+        --no-build \
+        --no-deps \
+        backend
+
+    wait_http \
+        "Backend readiness" \
+        "200" \
+        "http://127.0.0.1:18080/actuator/health/readiness"
+
+    echo "Deploying Frontend image:"
+    echo "$PROD_FRONTEND_IMAGE"
+
+    compose \
+        up \
+        -d \
+        --no-build \
+        --no-deps \
+        frontend
+
+    wait_http \
+        "Frontend health" \
+        "200" \
+        "http://127.0.0.1:13000/"
+
+    wait_http \
+        "Origin health" \
+        "204" \
+        "https://${DOMAIN}/healthz" \
+        --resolve "${DOMAIN}:443:127.0.0.1"
+
+    wait_http \
+        "Origin Persian Home" \
+        "200" \
+        "https://${DOMAIN}/fa" \
+        --resolve "${DOMAIN}:443:127.0.0.1"
+
+    wait_http \
+        "Origin English Home" \
+        "200" \
+        "https://${DOMAIN}/en" \
+        --resolve "${DOMAIN}:443:127.0.0.1"
+
+    wait_http \
+        "Origin Public API" \
+        "200" \
+        "https://${DOMAIN}/api/v1/public/fa/home" \
+        --resolve "${DOMAIN}:443:127.0.0.1"
+
+    wait_http \
+        "Public Persian Home" \
+        "200" \
+        "https://${DOMAIN}/fa"
+
+    wait_http \
+        "Public English Home" \
+        "200" \
+        "https://${DOMAIN}/en"
+
+    wait_http \
+        "Public API" \
+        "200" \
+        "https://${DOMAIN}/api/v1/public/fa/home"
+}
+
+rollback() {
+    echo
+    echo "=== ROLLBACK TO PREVIOUS DEPLOYMENT ==="
+
+    if [ ! -s "$PREVIOUS_STATE" ]; then
+        echo "Previous deployment state is unavailable." >&2
+        return 1
+    fi
+
+    load_state "$PREVIOUS_STATE"
+    local PREVIOUS_SHA="$PROD_DEPLOYED_SHA"
+
+    switch_repository "$PREVIOUS_SHA"
+    deploy_state "$PREVIOUS_STATE"
+
+    cp \
+        "$PREVIOUS_STATE" \
+        "$CURRENT_STATE"
+
+    write_version "$PREVIOUS_SHA"
+
+    echo "Rollback completed."
+}
+
+on_error() {
+    local EXIT_CODE="$?"
+
+    trap - ERR
+    set +e
+
+    printf '%s\n' "$TARGET_SHA" > "$FAILED_SHA_FILE"
+
+    if [ "$ROLLBACK_REQUIRED" = "true" ]; then
+        rollback || echo "Rollback failed and requires manual intervention." >&2
+    fi
+
+    echo "Deployment failed for SHA: $TARGET_SHA" >&2
+    exit "$EXIT_CODE"
+}
+
+trap cleanup EXIT
+trap on_error ERR
+
+echo "=== VERIFY APPROVED DEPLOYMENT TAG ==="
+
+APPROVAL_COUNT="$(
+    git ls-remote \
+        --tags \
+        "$REPOSITORY_URL" \
+        "refs/tags/production-*-${TARGET_SHA}" \
+    | awk '$2 !~ /\^\{\}$/' \
+    | wc -l \
+    | tr -d '[:space:]'
+)"
+
+if [ "$APPROVAL_COUNT" -lt 1 ]; then
+    echo "No approved Production tag exists for SHA: $TARGET_SHA" >&2
+    exit 1
+fi
+
+echo "Approved deployment tag found."
+
+echo
+echo "=== VERIFY REPOSITORY STATE ==="
+
+DIRTY_STATE="$(
+    runuser \
+        -u deploy \
+        -- \
+        git \
+            -C "$APP_DIR" \
+            status \
+            --porcelain
+)"
+
+if [ -n "$DIRTY_STATE" ]; then
+    echo "Production repository contains uncommitted changes:" >&2
+    printf '%s\n' "$DIRTY_STATE" >&2
+    exit 1
+fi
+
+runuser \
+    -u deploy \
+    -- \
+    git \
+        -C "$APP_DIR" \
+        fetch \
+        --prune \
+        origin \
+        main
+
+REMOTE_MAIN_SHA="$(
+    runuser \
+        -u deploy \
+        -- \
+        git \
+            -C "$APP_DIR" \
+            rev-parse \
+            refs/remotes/origin/main
+)"
+
+runuser \
+    -u deploy \
+    -- \
+    git \
+        -C "$APP_DIR" \
+        merge-base \
+        --is-ancestor \
+        "$TARGET_SHA" \
+        "$REMOTE_MAIN_SHA"
+
+echo "Target SHA belongs to origin/main history."
+
+echo
+echo "=== PULL IMMUTABLE IMAGES ==="
+
+docker pull "$BACKEND_IMAGE"
+docker pull "$FRONTEND_IMAGE"
+
+echo
+echo "=== CREATE PRE-DEPLOYMENT BACKUP ==="
+
+/usr/local/sbin/taha-backup
+
+echo
+echo "=== PREPARE DEPLOYMENT STATE ==="
+
+cp \
+    "$CURRENT_STATE" \
+    "$PREVIOUS_STATE"
+
+cat > "$CANDIDATE_STATE" <<STATE
+PROD_BACKEND_IMAGE=${BACKEND_IMAGE}
+PROD_FRONTEND_IMAGE=${FRONTEND_IMAGE}
+PROD_DEPLOYED_SHA=${TARGET_SHA}
+STATE
+
+chmod \
+    0600 \
+    "$CANDIDATE_STATE"
+
+echo
+echo "=== CHECK OUT EXACT APPROVED COMMIT ==="
+
+ROLLBACK_REQUIRED="true"
+switch_repository "$TARGET_SHA"
+
+echo "Repository SHA: $TARGET_SHA"
+
+echo
+echo "=== DEPLOY APPROVED IMAGES ==="
+
+deploy_state "$CANDIDATE_STATE"
+
+mv \
+    "$CANDIDATE_STATE" \
+    "$CURRENT_STATE"
+
+write_version "$TARGET_SHA"
+
+rm -f "$FAILED_SHA_FILE"
+
+ROLLBACK_REQUIRED="false"
+
+printf \
+    '%s,%s,%s,%s\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    "$TARGET_SHA" \
+    "$BACKEND_IMAGE" \
+    "$FRONTEND_IMAGE" \
+    >> "$HISTORY_FILE"
+
+echo
+echo "=== FINAL PRODUCTION STATUS ==="
+
+load_state "$CURRENT_STATE"
+compose ps
+
+echo
+echo "Reported deployment version:"
+cat "$VERSION_FILE"
+
+echo
+echo "PRODUCTION DEPLOYMENT COMPLETE"
