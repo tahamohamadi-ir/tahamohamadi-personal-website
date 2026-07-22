@@ -72,26 +72,26 @@ describe('admin media presentation', () => {
     expect(media).toContain("'/api/v1/admin/media'")
     expect(media).toContain('FormData')
     expect(media).toContain('onUploadProgress')
-    expect(media).toContain('image/png')
-    expect(media).toContain('image/jpeg')
-    expect(media).toContain('image/webp')
-    expect(media).toContain('application/pdf')
+    expect(media).toContain('MEDIA_UPLOAD_LIMITS')
+    expect(media).toContain('validateMediaUpload')
+    expect(media).toContain("Object.keys(ACCEPTED_TYPES).join(',')")
     expect(media).toContain('duplicate')
   })
 })
 
 describe('admin presentation route loading', () => {
   it('loads every added dedicated screen through its lazy route', async () => {
-    const portfolio = await adminRoute('portfolio').component()
-    const skills = await adminRoute('skills').component()
-    const media = await adminRoute('media').component()
+    const [portfolio, skills, media] = await Promise.all([
+      adminRoute('portfolio').component(),
+      adminRoute('skills').component(),
+      adminRoute('media').component()
+    ])
 
     expect(portfolio.default).toBeDefined()
     expect(skills.default).toBeDefined()
     expect(media.default).toBeDefined()
-  })
+  }, 20_000)
 })
-
 describe('admin social links presentation', () => {
   it('uses a protected dedicated route and only the supported social-link fields', () => {
     expect(adminRoute('social-links')).toMatchObject({

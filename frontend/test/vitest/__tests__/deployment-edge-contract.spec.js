@@ -66,7 +66,9 @@ describe('production-like QA deployment contract', () => {
     expect(qaSeed).toContain('qa-blog-bilingual')
     expect(qaSeed).toContain('qa-missing-translation')
     expect(qaSeed).toContain('qa-publication-en-only')
-    expect(qaSeed).toMatch(/'qa-publication-en-only'[\s\S]*?\nON CONFLICT \(id\) DO NOTHING;/)
+    expect(qaSeed).toMatch(
+      /'00000000-0000-0000-0000-000000000521'[\s\S]*?'qa-publication-en-only'[\s\S]*?\nON CONFLICT \(id\) DO UPDATE SET created_at = EXCLUDED\.created_at, updated_at = EXCLUDED\.updated_at;/
+    )
   })
 
   it('creates a lockfile for Quasar generated SSR runtime metadata before its clean install', () => {
