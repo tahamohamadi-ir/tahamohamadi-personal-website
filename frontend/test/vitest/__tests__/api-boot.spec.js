@@ -33,7 +33,9 @@ describe('Quasar API boot contract', () => {
       'utf8'
     )
 
-    expect(configSource).toContain("boot: ['i18n', 'api']")
+    expect(configSource).toMatch(
+      /boot:\s*\[\s*\{\s*path:\s*['"]theme['"],\s*server:\s*false\s*\},\s*['"]i18n['"],\s*['"]api['"]\s*\]/
+    )
     expect(
       readFileSync(resolve(process.cwd(), 'src/stores/index.js'), 'utf8')
     ).toMatch(/createPinia/)

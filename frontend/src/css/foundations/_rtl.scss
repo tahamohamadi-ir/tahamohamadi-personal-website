@@ -1,0 +1,17 @@
+// Canonical rules: docs/design.md
+
+.tm-detail-page__identifier,
+.tm-ltr-isolate {
+  direction: ltr;
+  overflow-wrap: anywhere;
+  unicode-bidi: isolate;
+}
+
+.tm-rtl-isolate {
+  direction: rtl;
+  unicode-bidi: isolate;
+}
+
+[dir='rtl'] {
+  text-align: start;
+}

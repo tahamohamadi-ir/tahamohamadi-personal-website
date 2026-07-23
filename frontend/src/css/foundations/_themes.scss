@@ -1,0 +1,33 @@
+// Canonical values: docs/design-system/design-tokens.json
+@use 'sass:map';
+@use '../tokens/semantic-light' as light;
+@use '../tokens/semantic-dark' as dark;
+
+@mixin tm-theme-properties($tokens) {
+  @each $name, $value in $tokens {
+    --tm-#{$name}: #{$value};
+  }
+
+  // Transitional aliases keep existing pages stable during migration.
+  --tm-canvas: var(--tm-bg-page);
+  --tm-surface: var(--tm-bg-surface);
+  --tm-border-subtle: var(--tm-border-default);
+  --tm-interactive-hover: var(--tm-action-primary-hover);
+  --tm-interactive-active: var(--tm-action-primary-hover);
+  --tm-interactive-surface-hover: var(--tm-bg-surface-subtle);
+  --tm-navigation-current-indicator: var(--tm-action-primary);
+  --tm-shell-boundary: var(--tm-border-default);
+  --tm-success: var(--tm-status-success);
+  --tm-warning: var(--tm-status-warning);
+  --tm-danger: var(--tm-status-danger);
+}
+
+.body--light {
+  color-scheme: light;
+  @include tm-theme-properties(light.$tm-semantic-light);
+}
+
+.body--dark {
+  color-scheme: dark;
+  @include tm-theme-properties(dark.$tm-semantic-dark);
+}

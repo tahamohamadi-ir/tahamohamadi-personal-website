@@ -291,22 +291,32 @@ describe('localized public application shell source contracts', () => {
     }
   })
 
-  it('requires focus, motion, responsive, target-size and logical-spacing safeguards', () => {
+it('requires focus, motion, responsive, target-size and logical-spacing safeguards', () => {
     const appStyles = readProjectFile('frontend/src/css/app.scss')
+    const accessibilityStyles = readProjectFile(
+      'frontend/src/css/foundations/_accessibility.scss'
+    )
+    const resetStyles = readProjectFile(
+      'frontend/src/css/foundations/_reset.scss'
+    )
     const globalStyles = [
       appStyles,
+      accessibilityStyles,
+      resetStyles,
       readProjectFile('frontend/src/css/tokens.scss'),
       readProjectFile('frontend/src/css/typography.scss')
     ].join('\n')
 
-    expect(globalStyles).toMatch(/:focus-visible\s*\{/)
-    expect(appStyles).toMatch(
-      /#main-content\[tabindex=['\"]-1['\"]\]:focus\s*\{[^}]*outline\s*:\s*none\s*;/
+    expect(accessibilityStyles).toMatch(/:focus-visible\s*\{/)
+    expect(accessibilityStyles).toMatch(
+      /#main-content\[tabindex=['"]-1['"]\]:focus\s*\{[^}]*outline\s*:\s*none\s*;/
     )
-    expect(appStyles).not.toMatch(
+    expect(accessibilityStyles).not.toMatch(
       /(?:\*|main|\.public-main|\.public-shell)\s*(?::focus)?\s*\{[^}]*outline\s*:\s*none\s*;/
     )
-    expect(globalStyles).toMatch(/@media\s*\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)/)
+    expect(accessibilityStyles).toMatch(
+      /@media\s*\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)/
+    )
     expect(globalStyles).toMatch(/1200px/)
 
     for (const gutter of ['16px', '24px', '32px']) {
@@ -314,14 +324,20 @@ describe('localized public application shell source contracts', () => {
     }
 
     expect(globalStyles).toMatch(/44px/)
-    expect(globalStyles).toMatch(/(?:margin|padding|inset|border)-(?:inline|block)(?:-start|-end)?\s*:/)
+    expect(globalStyles).toMatch(
+      /(?:margin|padding|inset|border)-(?:inline|block)(?:-start|-end)?\s*:/
+    )
   })
 
-  it('uses overflow clipping without suppressing focus indicators at the document edge', () => {
-    const appStyles = readProjectFile('frontend/src/css/app.scss')
+it('uses overflow clipping without suppressing focus indicators at the document edge', () => {
+    const resetStyles = readProjectFile(
+      'frontend/src/css/foundations/_reset.scss'
+    )
 
-    expect(appStyles).toMatch(/html,\s*\nbody\s*\{[\s\S]*?overflow-x\s*:\s*clip\s*;/)
-    expect(appStyles).not.toMatch(/overflow-x\s*:\s*hidden\s*;/)
+    expect(resetStyles).toMatch(
+      /html,\s*\nbody\s*\{[\s\S]*?overflow-x\s*:\s*clip\s*;/
+    )
+    expect(resetStyles).not.toMatch(/overflow-x\s*:\s*hidden\s*;/)
   })
 
   it('keeps route-change focus on the sole main target without JavaScript font loading', () => {

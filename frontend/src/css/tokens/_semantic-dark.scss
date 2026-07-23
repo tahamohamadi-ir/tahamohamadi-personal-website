@@ -1,0 +1,33 @@
+// Canonical values: docs/design-system/design-tokens.json
+@use 'sass:map';
+@use './primitive' as primitive;
+
+$tm-semantic-dark: (
+  bg-page: primitive.tm-color(dark-canvas),
+  bg-surface: primitive.tm-color(dark-surface),
+  bg-surface-subtle: primitive.tm-color(dark-surface-raised),
+  bg-accent-soft: #173B3A,
+  text-primary: primitive.tm-color(dark-text),
+  text-secondary: primitive.tm-color(dark-text-secondary),
+  text-muted: #93A2B0,
+  border-default: primitive.tm-color(dark-border),
+  border-strong: #405262,
+  action-primary: #59B8AE,
+  action-primary-hover: #79C9C1,
+  action-secondary: #7E9FFF,
+  link: #8EAAFF,
+  link-hover: #B0C2FF,
+  focus-ring: #8EAAFF,
+  status-success: #5FC49B,
+  status-warning: #E8A84C,
+  status-danger: #FF8A80,
+  status-info: #70B9F0
+);
+
+@function tm-dark($name) {
+  @if not map.has-key($tm-semantic-dark, $name) {
+    @error 'Unknown dark semantic token: #{$name}';
+  }
+
+  @return map.get($tm-semantic-dark, $name);
+}

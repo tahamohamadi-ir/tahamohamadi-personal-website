@@ -1,0 +1,96 @@
+// Canonical values: docs/design-system/design-tokens.json
+@use 'sass:map';
+
+$tm-font-family-latin:
+  'Manrope Variable',
+  'Manrope',
+  'Segoe UI',
+  Arial,
+  sans-serif;
+
+$tm-font-family-persian:
+  'Vazirmatn',
+  Tahoma,
+  Arial,
+  sans-serif;
+
+$tm-font-family-mono:
+  ui-monospace,
+  'SFMono-Regular',
+  Menlo,
+  Consolas,
+  monospace;
+
+$tm-type-scale: (
+  display-xl: (
+    desktop-size: 72px,
+    desktop-line: 76px,
+    mobile-size: 44px,
+    mobile-line: 50px,
+    weight: 700
+  ),
+  display-l: (
+    desktop-size: 56px,
+    desktop-line: 62px,
+    mobile-size: 38px,
+    mobile-line: 44px,
+    weight: 700
+  ),
+  h1: (
+    desktop-size: 44px,
+    desktop-line: 52px,
+    mobile-size: 34px,
+    mobile-line: 42px,
+    weight: 700
+  ),
+  h2: (
+    desktop-size: 32px,
+    desktop-line: 40px,
+    mobile-size: 28px,
+    mobile-line: 36px,
+    weight: 700
+  ),
+  h3: (
+    desktop-size: 24px,
+    desktop-line: 32px,
+    mobile-size: 22px,
+    mobile-line: 30px,
+    weight: 650
+  ),
+  body-large: (
+    desktop-size: 19px,
+    desktop-line: 31px,
+    mobile-size: 18px,
+    mobile-line: 30px,
+    weight: 400
+  ),
+  body: (
+    desktop-size: 16px,
+    desktop-line: 27px,
+    mobile-size: 16px,
+    mobile-line: 27px,
+    weight: 400
+  ),
+  body-small: (
+    desktop-size: 14px,
+    desktop-line: 22px,
+    mobile-size: 14px,
+    mobile-line: 22px,
+    weight: 400
+  ),
+  label: (
+    desktop-size: 13px,
+    desktop-line: 18px,
+    mobile-size: 13px,
+    mobile-line: 18px,
+    weight: 650
+  )
+);
+
+@function tm-type-style($style) {
+  @if not map.has-key($tm-type-scale, $style) {
+    @error 'Unknown typography token: #{$style}';
+  }
+
+  @return map.get($tm-type-scale, $style);
+}

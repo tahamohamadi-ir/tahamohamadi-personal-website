@@ -1,0 +1,88 @@
+// Canonical values: docs/design-system/design-tokens.json
+@use 'sass:map';
+
+$tm-colors: (
+  ink-950: #0D1B2A,
+  ink-800: #26384A,
+  slate-650: #445064,
+  slate-500: #68758A,
+  slate-300: #B8C2CF,
+  slate-200: #DDE3EA,
+  slate-100: #EDF1F5,
+  canvas: #F7F8FA,
+  surface: #FFFFFF,
+  teal-700: #0B6E69,
+  teal-800: #075B57,
+  teal-100: #DDEFEA,
+  cobalt-600: #2457D6,
+  cobalt-700: #1D46B1,
+  cobalt-100: #E7EDFF,
+  coral-500: #D96C4A,
+  coral-100: #F9E8E1,
+  success: #16805B,
+  warning: #A15C00,
+  danger: #B42318,
+  info: #1D70B8,
+  dark-canvas: #0B1117,
+  dark-surface: #121B24,
+  dark-surface-raised: #18232E,
+  dark-text: #F2F5F7,
+  dark-text-secondary: #B9C4CF,
+  dark-border: #2C3B49
+);
+
+$tm-space: (
+  1: 4px,
+  2: 8px,
+  3: 12px,
+  4: 16px,
+  5: 20px,
+  6: 24px,
+  8: 32px,
+  10: 40px,
+  12: 48px,
+  16: 64px,
+  20: 80px,
+  24: 96px,
+  32: 128px
+);
+
+$tm-radius: (
+  control: 8px,
+  panel-compact: 10px,
+  card: 14px,
+  feature: 18px,
+  dialog: 18px,
+  pill: 999px
+);
+
+$tm-breakpoints: (
+  sm: 600px,
+  md: 1024px,
+  lg: 1440px,
+  xl: 1920px
+);
+
+@function tm-color($name) {
+  @if not map.has-key($tm-colors, $name) {
+    @error 'Unknown Taha Mohamadi color token: #{$name}';
+  }
+
+  @return map.get($tm-colors, $name);
+}
+
+@function tm-space($name) {
+  @if not map.has-key($tm-space, $name) {
+    @error 'Unknown Taha Mohamadi spacing token: #{$name}';
+  }
+
+  @return map.get($tm-space, $name);
+}
+
+@function tm-radius($name) {
+  @if not map.has-key($tm-radius, $name) {
+    @error 'Unknown Taha Mohamadi radius token: #{$name}';
+  }
+
+  @return map.get($tm-radius, $name);
+}
