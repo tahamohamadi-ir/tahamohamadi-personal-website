@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "name": "Taha Mohamadi Unified Design Tokens",
+  "version": "1.0.0",
+  "status": "foundation",
+  "strategy": {
+    "releaseTheme": "light",
+    "darkInfrastructure": true,
+    "publicDarkToggle": false,
+    "quasarFirst": true
+  },
+  "primitive": {
+    "color": {
+      "ink950": "#0D1B2A",
+      "ink800": "#26384A",
+      "slate650": "#445064",
+      "slate500": "#68758A",
+      "slate300": "#B8C2CF",
+      "slate200": "#DDE3EA",
+      "slate100": "#EDF1F5",
+      "canvas": "#F7F8FA",
+      "surface": "#FFFFFF",
+      "teal700": "#0B6E69",
+      "teal800": "#075B57",
+      "teal100": "#DDEFEA",
+      "cobalt600": "#2457D6",
+      "cobalt700": "#1D46B1",
+      "cobalt100": "#E7EDFF",
+      "coral500": "#D96C4A",
+      "coral100": "#F9E8E1",
+      "success": "#16805B",
+      "warning": "#A15C00",
+      "danger": "#B42318",
+      "info": "#1D70B8",
+      "darkCanvas": "#0B1117",
+      "darkSurface": "#121B24",
+      "darkSurfaceRaised": "#18232E",
+      "darkText": "#F2F5F7",
+      "darkTextSecondary": "#B9C4CF",
+      "darkBorder": "#2C3B49"
+    },
+    "spacePx": [
+      4,
+      8,
+      12,
+      16,
+      20,
+      24,
+      32,
+      40,
+      48,
+      64,
+      80,
+      96,
+      128
+    ],
+    "radiusPx": {
+      "control": 8,
+      "panelCompact": 10,
+      "card": 14,
+      "feature": 18,
+      "dialog": 18,
+      "pill": 999
+    },
+    "motionMs": {
+      "microFast": 100,
+      "micro": 160,
+      "state": 220,
+      "enter": 320,
+      "pageMax": 500
+    },
+    "breakpointPx": {
+      "sm": 600,
+      "md": 1024,
+      "lg": 1440,
+      "xl": 1920
+    }
+  },
+  "semantic": {
+    "light": {
+      "bgPage": "{primitive.color.canvas}",
+      "bgSurface": "{primitive.color.surface}",
+      "bgSurfaceSubtle": "{primitive.color.slate100}",
+      "bgAccentSoft": "{primitive.color.teal100}",
+      "textPrimary": "{primitive.color.ink950}",
+      "textSecondary": "{primitive.color.slate650}",
+      "textMuted": "{primitive.color.slate500}",
+      "borderDefault": "{primitive.color.slate200}",
+      "borderStrong": "{primitive.color.slate300}",
+      "actionPrimary": "{primitive.color.teal700}",
+      "actionPrimaryHover": "{primitive.color.teal800}",
+      "actionSecondary": "{primitive.color.cobalt600}",
+      "link": "{primitive.color.cobalt600}",
+      "linkHover": "{primitive.color.cobalt700}",
+      "focusRing": "{primitive.color.cobalt600}"
+    },
+    "dark": {
+      "bgPage": "{primitive.color.darkCanvas}",
+      "bgSurface": "{primitive.color.darkSurface}",
+      "bgSurfaceSubtle": "{primitive.color.darkSurfaceRaised}",
+      "textPrimary": "{primitive.color.darkText}",
+      "textSecondary": "{primitive.color.darkTextSecondary}",
+      "borderDefault": "{primitive.color.darkBorder}",
+      "actionPrimary": "#59B8AE",
+      "actionPrimaryHover": "#79C9C1",
+      "actionSecondary": "#7E9FFF",
+      "link": "#8EAAFF",
+      "linkHover": "#B0C2FF",
+      "focusRing": "#8EAAFF"
+    }
+  },
+  "quasarBrand": {
+    "primary": "#0B6E69",
+    "secondary": "#2457D6",
+    "accent": "#D96C4A",
+    "dark": "#0B1117",
+    "positive": "#16805B",
+    "negative": "#B42318",
+    "info": "#1D70B8",
+    "warning": "#A15C00"
+  },
+  "typography": {
+    "latin": "Manrope Variable",
+    "persian": "Vazirmatn Variable",
+    "mono": "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+    "scale": {
+      "displayXL": {
+        "desktopPx": 72,
+        "mobilePx": 44,
+        "desktopLinePx": 76,
+        "mobileLinePx": 50
+      },
+      "displayL": {
+        "desktopPx": 56,
+        "mobilePx": 38,
+        "desktopLinePx": 62,
+        "mobileLinePx": 44
+      },
+      "h1": {
+        "desktopPx": 44,
+        "mobilePx": 34,
+        "desktopLinePx": 52,
+        "mobileLinePx": 42
+      },
+      "h2": {
+        "desktopPx": 32,
+        "mobilePx": 28,
+        "desktopLinePx": 40,
+        "mobileLinePx": 36
+      },
+      "h3": {
+        "desktopPx": 24,
+        "mobilePx": 22,
+        "desktopLinePx": 32,
+        "mobileLinePx": 30
+      },
+      "bodyLarge": {
+        "desktopPx": 19,
+        "mobilePx": 18,
+        "desktopLinePx": 31,
+        "mobileLinePx": 30
+      },
+      "body": {
+        "desktopPx": 16,
+        "mobilePx": 16,
+        "desktopLinePx": 27,
+        "mobileLinePx": 27
+      },
+      "bodySmall": {
+        "desktopPx": 14,
+        "mobilePx": 14,
+        "desktopLinePx": 22,
+        "mobileLinePx": 22
+      },
+      "label": {
+        "desktopPx": 13,
+        "mobilePx": 13,
+        "desktopLinePx": 18,
+        "mobileLinePx": 18
+      }
+    }
+  },
+  "layout": {
+    "publicWideMaxPx": 1440,
+    "publicStandardMaxPx": 1200,
+    "proseMaxPx": 720,
+    "gutterPx": {
+      "mobile": 16,
+      "tablet": 24,
+      "desktop": 32,
+      "largeDesktop": 48
+    },
+    "sectionPx": {
+      "majorDesktop": 112,
+      "majorMobile": 72,
+      "compactDesktop": 72,
+      "compactMobile": 52
+    },
+    "controlMinPx": 44
+  },
+  "restrictions": {
+    "defaultGradient": false,
+    "permanentParticles": false,
+    "fakeMetrics": false,
+    "customCursor": false,
+    "scrollHijacking": false,
+    "emojiAsPrimaryIcons": false
+  }
+}
