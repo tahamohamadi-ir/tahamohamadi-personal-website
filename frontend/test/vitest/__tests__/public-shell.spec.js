@@ -113,12 +113,18 @@ describe('localized public application shell source contracts', () => {
   })
 
   it('keeps Persian and English typography under separate locale contracts', () => {
+    const packageManifest = readProjectFile('frontend/package.json')
+    const packageLock = readProjectFile('frontend/package-lock.json')
+    const appStyles = readProjectFile('frontend/src/css/app.scss')
     const typography = readProjectFile('frontend/src/css/typography.scss')
     const englishRule = typography.match(/\[lang=['\"]en['\"]\]\s*\{([\s\S]*?)\}/)?.[1]
     const persianRule = typography.match(/\[lang=['\"]fa['\"]\]\s*\{([\s\S]*?)\}/)?.[1]
 
+    expect(packageManifest).toMatch(/\"@fontsource-variable\/manrope\"\s*:\s*\"[~^]?\d+\.\d+\.\d+\"/)
+    expect(packageLock).toMatch(/node_modules\/@fontsource-variable\/manrope/)
+    expect(appStyles).toMatch(/@import\s+['\"]@fontsource-variable\/manrope['\"]\s*;/)
     expect(persianRule).toMatch(/font-family\s*:\s*Vazirmatn,\s*Tahoma,\s*Arial,\s*sans-serif\s*;/)
-    expect(englishRule).toMatch(/font-family\s*:\s*'Source Sans 3',\s*'Segoe UI',\s*Arial,\s*sans-serif\s*;/)
+    expect(englishRule).toMatch(/font-family\s*:\s*'Manrope Variable',\s*'Manrope',\s*'Segoe UI',\s*Arial,\s*sans-serif\s*;/)
     expect(englishRule).not.toContain('Vazirmatn')
   })
 

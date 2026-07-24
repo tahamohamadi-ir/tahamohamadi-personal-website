@@ -321,13 +321,7 @@ onBeforeUnmount(() => {
   color: var(--tm-action-primary);
 }
 
-@media (min-width: 720px) {
-  .site-header__brand span {
-    display: block;
-  }
-}
-
-@media (min-width: 1180px) {
+@media (min-width: 900px) {
   .site-header__desktop-nav {
     display: flex;
     align-items: center;
@@ -353,6 +347,12 @@ onBeforeUnmount(() => {
 
   .site-header__mobile-trigger {
     display: none;
+  }
+}
+
+@media (min-width: 1180px) {
+  .site-header__brand span {
+    display: block;
   }
 }
 </style>

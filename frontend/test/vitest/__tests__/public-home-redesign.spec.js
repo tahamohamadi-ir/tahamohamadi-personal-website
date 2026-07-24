@@ -203,6 +203,29 @@ describe('public home editorial redesign', () => {
     expect(sources).toMatch(/<footer\b/)
     expect(sources).toMatch(/<nav\b/)
   })
+
+  it('keeps the tablet home composition deliberate without empty archive tiles', () => {
+    const header = readProjectFile(
+      'frontend/src/components/public/SiteHeader.vue'
+    )
+    const hero = readProjectFile(
+      'frontend/src/components/public/home/HomeHero.vue'
+    )
+    const closing = readProjectFile(
+      'frontend/src/components/public/home/HomeClosing.vue'
+    )
+
+    expect(header).toMatch(/@media\s*\(min-width:\s*900px\)/)
+    expect(header).toMatch(/@media\s*\(min-width:\s*1180px\)/)
+    expect(hero).toMatch(
+      /@media\s*\(min-width:\s*600px\)\s*and\s*\(max-width:\s*959px\)/
+    )
+    expect(hero).toMatch(
+      /:global\(\[lang='fa'\]\s+\.home-hero__statement\)/
+    )
+    expect(closing).toMatch(/home-visual__archive-note/)
+    expect(closing).not.toMatch(/home-visual__tile/)
+  })
 })
 describe('public home isolated SSR harnesses', () => {
   it('does not install the full Quasar plugin in isolated SSR harnesses', () => {

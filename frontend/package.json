@@ -10,6 +10,7 @@
     "test:unit:watch": "vitest"
   },
   "dependencies": {
+    "@fontsource-variable/manrope": "5.2.7",
     "@quasar/extras": "^1.16.17",
     "axios": "1.18.1",
     "isomorphic-dompurify": "3.18.0",

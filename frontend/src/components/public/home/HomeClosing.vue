@@ -42,12 +42,9 @@ const { t } = useI18n()
           </TmButton>
         </div>
 
-        <div class="home-visual__frame" aria-hidden="true">
-          <span class="home-visual__tile home-visual__tile--wide" />
-          <span class="home-visual__tile" />
-          <span class="home-visual__tile" />
-          <small>{{ t('public.home.visual.archiveLabel') }}</small>
-        </div>
+        <p class="home-visual__archive-note">
+          {{ t('public.home.visual.archiveLabel') }}
+        </p>
       </div>
     </section>
 
@@ -153,31 +150,12 @@ const { t } = useI18n()
   line-height: 1.7;
 }
 
-.home-visual__frame {
-  display: grid;
-  grid-template-columns: 1.4fr 0.8fr;
-  grid-template-rows: repeat(2, minmax(7rem, 1fr));
-  gap: var(--tm-space-3);
-  min-block-size: 24rem;
-  padding: var(--tm-space-4);
-  border: 1px solid var(--tm-border-subtle);
-  background: var(--tm-surface);
-}
-
-.home-visual__tile {
-  border: 1px solid var(--tm-border-subtle);
-  background: var(--tm-interactive-surface-hover);
-}
-
-.home-visual__tile--wide {
-  grid-row: 1 / 3;
-  background: var(--tm-bg-accent-soft);
-}
-
-.home-visual__frame small {
-  align-self: end;
+.home-visual__archive-note {
+  margin: 0;
+  padding-block-start: var(--tm-space-5);
+  border-block-start: 1px solid var(--tm-border-subtle);
   color: var(--tm-text-secondary);
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -203,11 +181,6 @@ const { t } = useI18n()
 }
 
 @media (min-width: 900px) {
-  .home-visual__grid {
-    grid-template-columns: minmax(0, 0.8fr) minmax(24rem, 1.2fr);
-    align-items: center;
-  }
-
   .home-about__grid {
     grid-template-columns: minmax(10rem, 0.4fr) minmax(0, 1fr);
   }

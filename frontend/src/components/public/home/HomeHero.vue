@@ -184,4 +184,23 @@ const { t } = useI18n()
     border-inline-start: 1px solid var(--tm-border-subtle);
   }
 }
+
+@media (min-width: 600px) and (max-width: 959px) {
+  .home-hero {
+    padding-block: var(--tm-space-12);
+  }
+
+  .home-hero__statement {
+    max-inline-size: 17ch;
+    font-size: clamp(3rem, 5.3vw, 3.75rem);
+    line-height: 1.02;
+  }
+
+  :global([lang='fa'] .home-hero__statement) {
+    max-inline-size: 15ch;
+    font-size: clamp(2.875rem, 5vw, 3.5rem);
+    letter-spacing: normal;
+    line-height: 1.28;
+  }
+}
 </style>
