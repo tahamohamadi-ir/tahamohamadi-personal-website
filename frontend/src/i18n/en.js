@@ -8,16 +8,16 @@ export default {
   public: {
     temporaryPage: 'Public page',
     home: {
-      eyebrow: 'Engineer Â· Researcher Â· HCI Designer',
+      eyebrow: 'Engineer · Researcher · HCI Designer',
       headline: 'I research, design, and build complex systems for people.',
       lead: 'Human-centered software, interactive systems, and evidence-led interfaces across backend engineering, data visualization, and responsible AI.',
       viewWork: 'View selected work',
       exploreResearch: 'Explore research',
       contextLabel: 'Current professional context',
       currentFocusLabel: 'Current focus',
-      currentFocus: 'Humanâ€“AI interaction, explainable systems, and wearable intelligence.',
+      currentFocus: 'Human–AI interaction, explainable systems, and wearable intelligence.',
       practiceLabel: 'Practice',
-      practiceValue: 'Research â†’ systems design â†’ production software.',
+      practiceValue: 'Research → systems design → production software.',
       availabilityLabel: 'Availability',
       availability: 'Research collaboration and selected product work.',
       profileLabel: 'Profile',
@@ -71,7 +71,7 @@ export default {
       },
       about: {
         label: 'About',
-        title: 'Architecture â†’ visual communication â†’ software systems',
+        title: 'Architecture → visual communication → software systems',
         description: 'My practice developed through architecture and graphic design into interaction design, backend engineering, dashboards, and human-centered AI.',
         cta: 'Read the full background'
       },
@@ -209,7 +209,7 @@ export default {
     footer: {
       navigationLabel: 'Footer navigation',
       statement: 'I research, design, and build complex systems for people.',
-      availability: 'Research collaboration Â· Selected product work',
+      availability: 'Research collaboration · Selected product work',
       rights: 'Taha Mohammadi. All rights reserved.'
     }
   },

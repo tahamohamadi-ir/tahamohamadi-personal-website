@@ -52,7 +52,7 @@ function typeLabel(targetType) {
           </span>
 
           <span class="home-featured__action" aria-hidden="true">
-            â†’
+            →
           </span>
         </router-link>
       </div>
