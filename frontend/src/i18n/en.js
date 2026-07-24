@@ -8,9 +8,80 @@ export default {
   public: {
     temporaryPage: 'Public page',
     home: {
-      lead: 'A personal site for academic, professional, and research work.',
-      featured: 'Featured content',
-      socialLinks: 'Social links'
+      eyebrow: 'Engineer Â· Researcher Â· HCI Designer',
+      headline: 'I research, design, and build complex systems for people.',
+      lead: 'Human-centered software, interactive systems, and evidence-led interfaces across backend engineering, data visualization, and responsible AI.',
+      viewWork: 'View selected work',
+      exploreResearch: 'Explore research',
+      contextLabel: 'Current professional context',
+      currentFocusLabel: 'Current focus',
+      currentFocus: 'Humanâ€“AI interaction, explainable systems, and wearable intelligence.',
+      practiceLabel: 'Practice',
+      practiceValue: 'Research â†’ systems design â†’ production software.',
+      availabilityLabel: 'Availability',
+      availability: 'Research collaboration and selected product work.',
+      profileLabel: 'Profile',
+      profileTitle: 'Background and current direction',
+      featuredLabel: 'Selected evidence',
+      featured: 'Selected work',
+      featuredTypes: {
+        project: 'Case study',
+        publication: 'Publication'
+      },
+      practice: {
+        sectionLabel: 'How I work',
+        title: 'From questions to systems',
+        introduction: 'Each project connects human context, interaction decisions, and production engineering.',
+        understand: {
+          title: 'Understand the context',
+          body: 'Frame the problem, examine evidence, and identify the people, constraints, and consequences involved.'
+        },
+        design: {
+          title: 'Shape the interaction',
+          body: 'Turn complexity into clear information architecture, states, feedback, and accountable decisions.'
+        },
+        build: {
+          title: 'Deliver a reliable system',
+          body: 'Implement services, data models, interfaces, deployment, and operational safeguards as one coherent product.'
+        }
+      },
+      research: {
+        label: 'Research',
+        title: 'Questions at the boundary of people and computation',
+        cta: 'Explore research',
+        publicationsCta: 'View publications',
+        topics: {
+          humanAi: 'Human-centered AI and decision support',
+          explainability: 'Explainable and trustworthy interactive systems',
+          wearables: 'Wearable signals and temporal self-management'
+        }
+      },
+      writing: {
+        label: 'Writing',
+        title: 'Notes on systems, interfaces, and evidence',
+        description: 'Essays and working notes about building understandable technology under real technical and human constraints.',
+        cta: 'Read writing'
+      },
+      visual: {
+        label: 'Visual practice',
+        title: 'Observation is part of systems thinking',
+        description: 'Photography and visual communication remain a secondary practice for studying environments, patterns, materials, and interfaces.',
+        cta: 'Open the visual work',
+        archiveLabel: 'Visual archive'
+      },
+      about: {
+        label: 'About',
+        title: 'Architecture â†’ visual communication â†’ software systems',
+        description: 'My practice developed through architecture and graphic design into interaction design, backend engineering, dashboards, and human-centered AI.',
+        cta: 'Read the full background'
+      },
+      contact: {
+        label: 'Contact',
+        title: 'Have a complex system worth making clearer?',
+        description: 'I am open to research collaboration, technical discussion, and selected product work.',
+        cta: 'Start a conversation'
+      },
+      socialLinks: 'Professional links'
     },
     richContent: {
       renderingFailure: 'This content cannot be displayed safely right now.'
@@ -118,13 +189,18 @@ export default {
     openNavigation: 'Open navigation',
     closeNavigation: 'Close navigation',
     switchLanguage: 'Switch language',
-    siteName: 'Taha Mohamadi',
+    siteName: 'Taha Mohammadi',
+    siteDescriptor: 'Human-Centered Systems Builder',
+    menu: 'Menu',
+    close: 'Close',
     navigation: {
       home: 'Home',
+      work: 'Work',
       about: 'About',
       research: 'Research',
       skills: 'Skills',
       resume: 'Resume',
+      writing: 'Writing',
       blog: 'Blog',
       portfolio: 'Portfolio',
       publications: 'Publications',
@@ -132,7 +208,9 @@ export default {
     },
     footer: {
       navigationLabel: 'Footer navigation',
-      rights: 'Taha Mohamadi. All rights reserved.'
+      statement: 'I research, design, and build complex systems for people.',
+      availability: 'Research collaboration Â· Selected product work',
+      rights: 'Taha Mohammadi. All rights reserved.'
     }
   },
   admin: {

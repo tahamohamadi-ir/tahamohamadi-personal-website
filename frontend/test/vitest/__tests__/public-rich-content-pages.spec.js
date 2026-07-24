@@ -140,6 +140,12 @@ async function renderPageOnServer(page, component, data, {
     render: () => h(component, { initialData: data })
   })
   app.use(createPinia())
+  app.config.globalProperties.$q = {
+    platform: {
+      has: { touch: false },
+      is: {}
+    }
+  }
   app.use(router)
   app.use(i18n)
   app.provide(PUBLIC_API_KEY, {})

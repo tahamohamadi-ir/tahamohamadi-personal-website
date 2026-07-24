@@ -156,10 +156,12 @@ describe('admin featured content presentation', () => {
 describe('public home presentation content', () => {
   it('renders the supported featured and social payloads without inventing a preview API', () => {
     const home = source('src/pages/public/PublicHomePage.vue')
-
+    const closing = source(
+      'src/components/public/home/HomeClosing.vue'
+    )
     expect(home).toContain('data.value?.featured')
     expect(home).toContain('data.value?.socialLinks')
     expect(home).toContain('item.slug')
-    expect(home).toContain('link.url')
+    expect(closing).toContain('link.url')
   })
 })
