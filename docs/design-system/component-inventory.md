@@ -57,6 +57,26 @@ This inventory defines the first component families. It prevents ad hoc componen
 | `AdminSeoPanel` | SEO fields and preview |
 | `AdminOperationStatus` | Success, failure and conflict feedback |
 
+The implemented Admin MVP also uses a source-backed dashboard summary, with
+only the `pages`, `posts`, `media`, and `newContactMessages` values supplied
+by the existing admin analytics contract. Translation completeness remains a
+record-level editor/list concern rather than an inferred aggregate metric.
+
+### Implemented CMS composition additions
+
+| Component or route | Implemented behavior |
+|---|---|
+| `AdminPageBlockComposer` | Approved typed blocks, independent `fa`/`en` fields, media-library selection, collection limits, keyboard move controls with focus transfer and live status feedback, a safe local composition preview for unsaved changes, local action-path and server field-error feedback, save conflict reload, deletion confirmation, and unsaved-change guard |
+| `AdminSiteSettingsPage` | Independent `fa`/`en` brand name, tagline and Footer copy, logo/OG media, semantic theme preset, public preview and layout density; no free-form CSS |
+| `AdminNavigationPage` | Ordered bilingual labels, visible state, localized internal route templates or HTTPS external destinations, optimistic conflict reload, and unsaved-change guard |
+| `PageBlockRenderer` | SSR-safe allowlisted renderer for Hero, Markdown, media, CTA, collections, skills, social links and route-owned links; Home, About, Research and custom composed pages load only the route-owned support data their approved blocks need. Markdown goes through the existing safe renderer, action paths are restricted to localized internal paths or HTTPS, and a composed Home emits only one H1 |
+| `PublicLayout`, `SiteHeader`, `SiteFooter` | CMS-backed public site chrome with SSR snapshot loading; the approved density preset is applied through semantic layout tokens. Default chrome remains available only while no managed chrome exists; a saved empty navigation is deliberately rendered empty. |
+| `AdminContactMessagesPage` | Paged contact triage with safe plain-text detail rendering, source-language `rtl`/`ltr` direction, and archive confirmation |
+
+The current composer intentionally does not execute raw HTML, custom CSS,
+JavaScript, or iframe content. Collection/detail routes retain their
+route-owned templates rather than becoming arbitrary page-builder output.
+
 ## 4. Variants
 
 ### `TmButton`

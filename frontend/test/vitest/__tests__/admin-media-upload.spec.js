@@ -1,9 +1,12 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createI18n } from 'vue-i18n'
 
 import AdminMediaPage from 'src/pages/admin/AdminMediaPage.vue'
+import AdminMediaSelector from 'src/components/admin/AdminMediaSelector.vue'
 import { HTTP_CLIENT_KEY } from 'src/services/apiContext'
 import { normalizeApiError } from 'src/services/httpClient'
+import en from 'src/i18n/en'
 
 const { primeCsrfToken } = vi.hoisted(() => ({
   primeCsrfToken: vi.fn()
@@ -23,9 +26,14 @@ const qFormStub = {
   template: '<form @submit.prevent="$emit(\'submit\', $event)"><slot /></form>'
 }
 
+function createTestI18n() {
+  return createI18n({ legacy: false, locale: 'en', messages: { en } })
+}
+
 function mountMediaPage(httpClient) {
   return mount(AdminMediaPage, {
     global: {
+      plugins: [createTestI18n()],
       provide: { [HTTP_CLIENT_KEY]: httpClient },
       stubs: {
         QPage: { template: '<main><slot /></main>' },
@@ -40,6 +48,10 @@ function mountMediaPage(httpClient) {
         QItemSection: true,
         QItemLabel: true,
         QBadge: true,
+        QDialog: true,
+        QCard: true,
+        QCardSection: true,
+        QCardActions: true,
         AdminPaginatedTable: true,
         AdminStatePanel: true
       }
@@ -107,5 +119,34 @@ describe('admin media upload limits', () => {
 
     expect(edge).toMatchObject({ code: 'MEDIA_TOO_LARGE', message: 'File exceeds the supported size limit.' })
     expect(backend).toMatchObject({ code: 'MEDIA_TOO_LARGE', message: 'File exceeds the supported size limit.' })
+  })
+
+  it('presents active media by filename and MIME type in reusable selectors', async () => {
+    const httpClient = {
+      get: vi.fn().mockResolvedValue({
+        data: {
+          items: [
+            { id: 'asset-id', originalFilename: 'portrait.png', mimeType: 'image/png', status: 'ACTIVE' },
+            { id: 'inactive-id', originalFilename: 'old.png', mimeType: 'image/png', status: 'ARCHIVED' }
+          ]
+        }
+      })
+    }
+    const wrapper = mount(AdminMediaSelector, {
+      global: {
+        plugins: [createTestI18n()],
+        provide: { [HTTP_CLIENT_KEY]: httpClient },
+        stubs: {
+          QSelect: { props: ['options'], template: '<output>{{ options[0]?.label }}</output>' },
+          QBtn: { template: '<button><slot /></button>' }
+        }
+      }
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('portrait.png (image/png)')
+    expect(wrapper.text()).not.toContain('old.png')
+    wrapper.unmount()
   })
 })

@@ -9,6 +9,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { i18n } from 'src/boot/i18n'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'
 
+vi.mock('src/composables/usePublicSeoMeta', () => ({
+  usePublicSeoMeta: () => undefined
+}))
+
 const workingDirectory = process.cwd()
 const projectRoot = (
   workingDirectory.split(/[\\/]/).pop().toLowerCase() === 'frontend'
@@ -26,16 +30,16 @@ const COLLECTIONS = [
     response: {
       locale: 'en',
       availableLocales: ['en'],
-      canonicalPath: '/en/posts',
-      hreflang: [{ locale: 'en', path: '/en/posts' }],
+      canonicalPath: '/en/blog',
+      hreflang: [{ locale: 'en', path: '/en/blog' }],
       seo: { title: null, description: null },
       ogMedia: null,
       lastModified: null,
       items: [{
         locale: 'en',
         availableLocales: ['en'],
-        canonicalPath: '/en/posts/first-post',
-        hreflang: [{ locale: 'en', path: '/en/posts/first-post' }],
+      canonicalPath: '/en/blog/first-post',
+      hreflang: [{ locale: 'en', path: '/en/blog/first-post' }],
         seo: { title: null, description: null },
         ogMedia: {
           url: '/api/v1/public/media/post-cover',
@@ -49,8 +53,8 @@ const COLLECTIONS = [
       }, {
         locale: 'en',
         availableLocales: ['en'],
-        canonicalPath: '/en/posts/second-post',
-        hreflang: [{ locale: 'en', path: '/en/posts/second-post' }],
+      canonicalPath: '/en/blog/second-post',
+      hreflang: [{ locale: 'en', path: '/en/blog/second-post' }],
         seo: { title: null, description: null },
         ogMedia: null,
         lastModified: null,
@@ -200,6 +204,10 @@ async function mountLocalized(component, collection, api, {
       name: `${locale}-${collection.name}-contract`,
       component: { template: '<div />' },
       meta: { locale, direction: locale === 'fa' ? 'rtl' : 'ltr' }
+    }, {
+      path: `/${locale}/${collection.routePath}/:slug`,
+      name: `${locale}-${collection.name}-detail-contract`,
+      component: { template: '<div />' }
     }]
   })
   await router.push(`/${locale}/${collection.routePath}${query}`)
@@ -214,15 +222,26 @@ async function mountLocalized(component, collection, api, {
   })
 }
 
+function localizedPath(path, locale) {
+  return path.replace(/^\/(?:en|fa)(?=\/|$)/, `/${locale}`)
+}
+
 function localizedResponse(collection, locale) {
   const localizedItems = collection.response.items.map((item) => ({
     ...item,
     locale,
+    canonicalPath: localizedPath(item.canonicalPath, locale),
+    hreflang: item.hreflang.map((link) => ({
+      ...link,
+      locale,
+      path: localizedPath(link.path, locale)
+    })),
     title: locale === 'fa' ? 'محتوای فارسی' : item.title
   }))
   return {
     ...collection.response,
     locale,
+    canonicalPath: localizedPath(collection.response.canonicalPath, locale),
     availableLocales: [locale],
     items: localizedItems
   }
@@ -319,6 +338,11 @@ describe('localized public collection route contract', () => {
       expect(wrapper.findAll('h1')).toHaveLength(1)
       expect(wrapper.findAll('ol')).toHaveLength(1)
       expect(wrapper.findAll('article')).toHaveLength(response.items.length)
+      const detailLinks = wrapper.findAll('a[href^="/en/"]')
+      expect(detailLinks).toHaveLength(response.items.length)
+      expect(detailLinks.map((link) => link.attributes('href'))).toEqual(
+        response.items.map((item) => item.canonicalPath)
+      )
       expect(wrapper.findAll('li').map((item) => item.text())).toEqual(
         response.items.map((item) => expect.stringContaining(item.title))
       )
@@ -331,6 +355,7 @@ describe('localized public collection route contract', () => {
           .toBe(response.items[0].ogMedia.url)
         expect(wrapper.get('img').attributes('alt'))
           .toBe(response.items[0].ogMedia.altText)
+        expect(wrapper.text()).not.toContain(response.items[0].publishedAt)
       }
       wrapper.unmount()
     }
@@ -420,6 +445,10 @@ describe('collection states and pagination contract', () => {
     })
     await flushPromises()
     expect(offline.get('[role="status"]').text()).toMatch(/offline|connection|network/i)
+
+    wrapper.unmount()
+    recoverable.unmount()
+    offline.unmount()
   })
 
   it('requests only the backend-supported next zero-based page and preserves the active localized route', async () => {
@@ -441,6 +470,7 @@ describe('collection states and pagination contract', () => {
       .toMatch(/Page 2 of 2/)
     expect(wrapper.get('button[aria-label="Next page"]').attributes('disabled'))
       .toBeDefined()
+    wrapper.unmount()
   })
 
   it('uses safe external publication links with unchanged public URLs', async () => {
@@ -450,7 +480,15 @@ describe('collection states and pagination contract', () => {
     const publication = COLLECTIONS[2].response.items[0]
     const wrapper = mount(PublicationList, {
       props: { publications: [publication] },
-      global: { plugins: [i18n] }
+      global: {
+        plugins: [i18n],
+        stubs: {
+          RouterLink: {
+            props: ['to'],
+            template: '<a :href="to"><slot /></a>'
+          }
+        }
+      }
     })
     const link = wrapper.get(`a[href="${publication.externalUrl}"]`)
 
@@ -458,5 +496,6 @@ describe('collection states and pagination contract', () => {
     expect(link.attributes('rel')).toContain('noopener')
     expect(link.attributes('rel')).toContain('noreferrer')
     expect(wrapper.text()).toContain(publication.doi)
+    wrapper.unmount()
   })
 })
