@@ -1,5 +1,7 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
 import CollectionMedia from 'src/components/public/CollectionMedia.vue'
+import { formatLocalizedDate } from 'src/utils/formatDate'
 
 defineProps({
   posts: {
@@ -7,6 +9,8 @@ defineProps({
     required: true
   }
 })
+
+const { locale } = useI18n()
 </script>
 
 <template>
@@ -16,29 +20,34 @@ defineProps({
       :key="post.slug"
       class="blog-post-list__item"
     >
-      <article class="blog-post-list__article">
-        <CollectionMedia
-          v-if="post.ogMedia"
-          :media="post.ogMedia"
-        />
-        <header class="blog-post-list__header">
-          <h2 class="blog-post-list__title">{{ post.title }}</h2>
-          <time
-            v-if="post.publishedAt"
-            class="blog-post-list__date"
-            :datetime="post.publishedAt"
-          >
-            {{ post.publishedAt }}
-          </time>
-        </header>
+      <router-link
+        class="blog-post-list__card tm-interactive"
+        :to="post.canonicalPath"
+      >
+        <article class="blog-post-list__article">
+          <CollectionMedia
+            v-if="post.ogMedia"
+            :media="post.ogMedia"
+          />
+          <header class="blog-post-list__header">
+            <h2 class="blog-post-list__title">{{ post.title }}</h2>
+            <time
+              v-if="post.publishedAt"
+              class="blog-post-list__date"
+              :datetime="post.publishedAt"
+            >
+              {{ formatLocalizedDate(post.publishedAt, locale) }}
+            </time>
+          </header>
 
-        <p
-          v-if="post.excerpt"
-          class="blog-post-list__excerpt"
-        >
-          {{ post.excerpt }}
-        </p>
-      </article>
+          <p
+            v-if="post.excerpt"
+            class="blog-post-list__excerpt"
+          >
+            {{ post.excerpt }}
+          </p>
+        </article>
+      </router-link>
     </li>
   </ol>
 </template>
@@ -46,21 +55,40 @@ defineProps({
 <style scoped lang="scss">
 .blog-post-list {
   display: grid;
-  gap: var(--tm-space-6);
-  max-inline-size: var(--tm-prose-max-width);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--tm-space-5);
+  max-inline-size: 76rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .blog-post-list__item {
-  padding-block-end: var(--tm-space-6);
-  border-block-end: 1px solid var(--tm-border-subtle);
+  min-inline-size: 0;
 }
 
-.blog-post-list__item:last-child {
-  padding-block-end: 0;
-  border-block-end: 0;
+.blog-post-list__card {
+  display: block;
+  block-size: 100%;
+  min-block-size: 13rem;
+  padding: var(--tm-space-5);
+  border: 1px solid var(--tm-border-subtle);
+  border-radius: var(--tm-radius-card);
+  background: var(--tm-surface);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.blog-post-list__card:hover {
+  border-color: var(--tm-link);
+  box-shadow: var(--tm-editorial-shadow);
+  transform: translateY(-2px);
+}
+
+.blog-post-list__card:focus-visible {
+  outline: 3px solid var(--tm-focus-ring);
+  outline-offset: 3px;
 }
 
 .blog-post-list__article {
@@ -94,7 +122,16 @@ defineProps({
 }
 
 .blog-post-list__excerpt {
-  margin-block-start: var(--tm-space-3);
   color: var(--tm-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blog-post-list__card {
+    transition: none;
+  }
+
+  .blog-post-list__card:hover {
+    transform: none;
+  }
 }
 </style>

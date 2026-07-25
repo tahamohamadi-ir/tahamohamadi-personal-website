@@ -8,6 +8,7 @@ import TranslationUnavailable from 'src/components/public/TranslationUnavailable
 import { useAsyncPage } from 'src/composables/useAsyncPage'
 import { usePublicSeoMeta } from 'src/composables/usePublicSeoMeta'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'
+import { formatLocalizedDate } from 'src/utils/formatDate'
 
 const props = defineProps({
   initialData: {
@@ -92,11 +93,11 @@ onMounted(() => {
       <dl v-if="data?.publishedAt || data?.lastModified" class="tm-detail-page__metadata">
         <div v-if="data?.publishedAt">
           <dt>{{ t('public.detail.published') }}</dt>
-          <dd><time :datetime="data.publishedAt"><bdi>{{ data.publishedAt }}</bdi></time></dd>
+          <dd><time :datetime="data.publishedAt"><bdi>{{ formatLocalizedDate(data.publishedAt, locale) }}</bdi></time></dd>
         </div>
         <div v-if="data?.lastModified">
           <dt>{{ t('public.detail.updated') }}</dt>
-          <dd><time :datetime="data.lastModified"><bdi>{{ data.lastModified }}</bdi></time></dd>
+          <dd><time :datetime="data.lastModified"><bdi>{{ formatLocalizedDate(data.lastModified, locale) }}</bdi></time></dd>
         </div>
       </dl>
 

@@ -1,11 +1,25 @@
 :root {
+  /* Primitive palette: the public experience stays editorial, restrained and
+     legible rather than depending on framework defaults. */
+  --tm-navy-950: #102033;
+  --tm-navy-700: #263A52;
+  --tm-slate-600: #526174;
+  --tm-slate-300: #D7DFE8;
+  --tm-slate-100: #EEF3F6;
+  --tm-white: #FFFFFF;
+  --tm-teal-800: #0F5C5C;
+  --tm-teal-900: #0A4747;
+  --tm-blue-700: #1D4ED8;
+
+  /* Semantic layer */
   --tm-canvas: #F8FAFC;
-  --tm-surface: #FFFFFF;
-  --tm-text-primary: #142033;
-  --tm-text-secondary: #465367;
-  --tm-border-subtle: #D9E0E8;
-  --tm-action-primary: #0F5C5C;
-  --tm-link: #1D4ED8;
+  --tm-surface: var(--tm-white);
+  --tm-text-primary: var(--tm-navy-950);
+  --tm-text-secondary: var(--tm-slate-600);
+  --tm-border-subtle: var(--tm-slate-300);
+  --tm-action-primary: var(--tm-teal-800);
+  --tm-action-secondary: var(--tm-blue-700);
+  --tm-link: var(--tm-blue-700);
   --tm-interactive-hover: #0C5050;
   --tm-interactive-active: #083F3F;
   --tm-interactive-surface-hover: #ECF4F4;
@@ -24,9 +38,13 @@
   --tm-space-2: 8px;
   --tm-space-3: 12px;
   --tm-space-4: 16px;
+  --tm-space-5: 20px;
   --tm-space-6: 24px;
+  --tm-space-7: 28px;
   --tm-space-8: 32px;
+  --tm-space-10: 40px;
   --tm-space-12: 48px;
+  --tm-space-14: 56px;
   --tm-space-16: 64px;
   --tm-space-24: 96px;
 
@@ -34,9 +52,38 @@
   --tm-radius-card: 6px;
   --tm-radius-dialog: 8px;
 
+  /* Public editorial component roles. Components consume these aliases rather
+     than selecting new colour values for individual sections. */
+  --tm-editorial-kicker: var(--tm-action-primary);
+  --tm-editorial-muted-surface: #EEF4F6;
+  --tm-editorial-rule: var(--tm-border-subtle);
+  --tm-editorial-card-surface: var(--tm-surface);
+  --tm-editorial-card-border: var(--tm-border-subtle);
+  --tm-editorial-link-hover: var(--tm-interactive-hover);
+  --tm-editorial-shadow: 0 10px 28px rgb(20 32 51 / 8%);
+  --tm-editorial-aside-surface: var(--tm-slate-100);
+  --tm-footer-surface: var(--tm-navy-950);
+  --tm-footer-text: var(--tm-canvas);
+  --tm-footer-rule: rgb(255 255 255 / 22%);
+
+  /* Admin component tokens. These deliberately compose the shared semantic
+     tokens so the operational UI does not introduce a parallel theme. */
+  --tm-admin-canvas: var(--tm-canvas);
+  --tm-admin-surface: var(--tm-surface);
+  --tm-admin-surface-subtle: #F1F5F9;
+  --tm-admin-border: var(--tm-border-subtle);
+  --tm-admin-nav-active: var(--tm-interactive-surface-hover);
+  --tm-admin-panel-gap: var(--tm-space-4);
+  --tm-admin-page-gap: var(--tm-space-6);
+  --tm-admin-control-radius: 8px;
+  --tm-admin-panel-radius: 10px;
+  --tm-admin-card-radius: 14px;
+  --tm-admin-toolbar-height: 64px;
+
   --tm-motion-press: 120ms;
   --tm-motion-state: 160ms;
   --tm-motion-enter: 220ms;
+  --tm-motion-loading: 720ms;
 
   --tm-gutter-mobile: 16px;
   --tm-gutter-tablet: 24px;

@@ -14,7 +14,9 @@ import LanguageSwitch from './LanguageSwitch.vue'
 
 const props = defineProps({
   locale: { type: String, required: true },
-  direction: { type: String, required: true }
+  direction: { type: String, required: true },
+  site: { type: Object, default: null },
+  navigation: { type: Array, default: null }
 })
 
 const { t } = useI18n()
@@ -54,10 +56,20 @@ const navigationItems = [
   }
 ]
 
-const localizedNavigationItems = computed(() => navigationItems.map((item) => ({
-  ...item,
-  path: `/${props.locale}${item.path}`
-})))
+const localizedNavigationItems = computed(() => {
+  if (Array.isArray(props.navigation)) {
+    return props.navigation.map((item) => ({
+      key: item.key,
+      label: item.label,
+      externalTarget: item.externalTarget === true,
+      path: item.externalTarget ? item.targetPath : item.targetPath.replace('{lang}', props.locale)
+    }))
+  }
+  return navigationItems.map((item) => ({ ...item, path: `/${props.locale}${item.path}`, externalTarget: false }))
+})
+
+const brandName = computed(() => props.site?.brandName || t('shell.siteName'))
+const brandTagline = computed(() => props.site?.tagline || t('shell.siteDescriptor'))
 
 const drawerSide = computed(() => (
   props.direction === 'rtl' ? 'right' : 'left'
@@ -99,22 +111,28 @@ onBeforeUnmount(() => {
         :to="`/${locale}`"
         class="site-header__brand tm-interactive"
       >
-        <strong>{{ t('shell.siteName') }}</strong>
-        <span>{{ t('shell.siteDescriptor') }}</span>
+        <img v-if="site?.logoMediaId" class="site-header__logo" :src="`/api/v1/public/media/${site.logoMediaId}`" :alt="brandName" width="40" height="40">
+        <span><strong>{{ brandName }}</strong><span>{{ brandTagline }}</span></span>
       </router-link>
 
       <nav
         class="site-header__desktop-nav"
         :aria-label="t('shell.primaryNavigation')"
       >
-        <router-link
-          v-for="item in localizedNavigationItems"
-          :key="item.key"
-          :to="item.path"
-          class="site-header__nav-link tm-interactive"
-        >
-          {{ t(item.labelKey) }}
-        </router-link>
+        <template v-for="item in localizedNavigationItems" :key="item.key">
+          <a
+            v-if="item.externalTarget"
+            :href="item.path"
+            class="site-header__nav-link tm-interactive"
+            rel="noopener noreferrer"
+            target="_blank"
+          >{{ item.label ?? t(item.labelKey) }}</a>
+          <router-link
+            v-else
+            :to="item.path"
+            class="site-header__nav-link tm-interactive"
+          >{{ item.label ?? t(item.labelKey) }}</router-link>
+        </template>
       </nav>
 
       <div class="site-header__desktop-language">
@@ -148,8 +166,8 @@ onBeforeUnmount(() => {
       >
         <div class="site-header__mobile-nav-header">
           <div>
-            <strong>{{ t('shell.siteName') }}</strong>
-            <span>{{ t('shell.siteDescriptor') }}</span>
+            <strong>{{ brandName }}</strong>
+            <span>{{ brandTagline }}</span>
           </div>
 
           <TmButton
@@ -164,18 +182,25 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="site-header__mobile-links">
-          <router-link
-            v-for="(item, index) in localizedNavigationItems"
-            :key="`mobile-${item.key}`"
-            :to="item.path"
-            class="site-header__mobile-link tm-interactive"
-            @click="closeNavigation"
-          >
-            <span aria-hidden="true">
-              {{ String(index + 1).padStart(2, '0') }}
-            </span>
-            {{ t(item.labelKey) }}
-          </router-link>
+          <template v-for="(item, index) in localizedNavigationItems" :key="`mobile-${item.key}`">
+            <a
+              v-if="item.externalTarget"
+              :href="item.path"
+              class="site-header__mobile-link tm-interactive"
+              rel="noopener noreferrer"
+              target="_blank"
+              @click="closeNavigation"
+            ><span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>{{ item.label ?? t(item.labelKey) }}</a>
+            <router-link
+              v-else
+              :to="item.path"
+              class="site-header__mobile-link tm-interactive"
+              @click="closeNavigation"
+            >
+              <span aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
+              {{ item.label ?? t(item.labelKey) }}
+            </router-link>
+          </template>
         </div>
 
         <div class="site-header__mobile-language">
@@ -211,9 +236,10 @@ onBeforeUnmount(() => {
 }
 
 .site-header__brand {
-  display: grid;
+  display: flex;
+  align-items: center;
   flex: 0 0 auto;
-  gap: 0.125rem;
+  gap: var(--tm-space-1);
   min-block-size: var(--tm-control-min-size);
   align-content: center;
 }
@@ -224,7 +250,7 @@ onBeforeUnmount(() => {
   line-height: 1.2;
 }
 
-.site-header__brand span {
+.site-header__brand > span > span {
   display: none;
   color: var(--tm-text-secondary);
   font-size: 0.6875rem;
@@ -350,8 +376,11 @@ onBeforeUnmount(() => {
   }
 }
 
+.site-header__brand > span { display: grid; gap: var(--tm-space-1); }
+.site-header__logo { block-size: 2.5rem; border-radius: var(--tm-radius-control); inline-size: 2.5rem; object-fit: contain; }
+
 @media (min-width: 1180px) {
-  .site-header__brand span {
+  .site-header__brand > span > span {
     display: block;
   }
 }

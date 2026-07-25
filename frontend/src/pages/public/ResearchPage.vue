@@ -3,9 +3,10 @@ import { computed, inject, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import MarkdownContent from 'src/components/content/MarkdownContent.vue'
+import PageBlockRenderer from 'src/components/public/PageBlockRenderer.vue'
 import PageState from 'src/components/public/PageState.vue'
 import TranslationUnavailable from 'src/components/public/TranslationUnavailable.vue'
-import { useAsyncPage } from 'src/composables/useAsyncPage'
+import { useComposedPageData } from 'src/composables/useComposedPageData'
 import { usePublicSeoMeta } from 'src/composables/usePublicSeoMeta'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'
 
@@ -21,33 +22,30 @@ const route = useRoute()
 const { t } = useI18n()
 const locale = computed(() => route.meta.locale)
 const ssrKey = computed(() => `public:${locale.value}:page:research`)
-
-function isEmptyPage(value) {
-  return ![
-    value?.summary,
-    value?.bodyMarkdown
-  ].some((field) => typeof field === 'string' && field.trim().length > 0)
-}
+const slug = computed(() => 'research')
 
 const {
-  data,
+  page,
+  collectionItems,
+  skills,
+  socialLinks,
   state,
   error,
   load,
   refresh,
   hasInitialState
-} = useAsyncPage({
+} = useComposedPageData({
   api,
-  load: (currentApi) => currentApi.getPage(locale.value, 'research'),
-  isEmpty: isEmptyPage,
+  locale,
+  slug,
   initialData: props.initialData,
   ssrKey: () => ssrKey.value
 })
 
 const showsContent = computed(() => (
-  data.value !== null && state.value !== 'empty'
+  page.value !== null && state.value !== 'empty'
 ))
-usePublicSeoMeta({ data, state })
+usePublicSeoMeta({ data: page, state })
 const alternatePath = computed(() => error.value?.alternatePaths?.[0] ?? null)
 
 function retry() {
@@ -64,7 +62,7 @@ onMounted(() => {
 <template>
   <section class="tm-editorial-page tm-editorial-page--introduction tm-container">
     <header class="tm-editorial-page__content">
-      <h1 class="tm-page-title">{{ t('shell.navigation.research') }}</h1>
+      <h1 class="tm-page-title">{{ page?.title || t('shell.navigation.research') }}</h1>
     </header>
 
     <PageState
@@ -80,18 +78,18 @@ onMounted(() => {
     />
 
     <div
-      v-if="showsContent"
+      v-if="showsContent && !page?.blocks?.length"
       class="tm-editorial-page__content"
     >
       <p
-        v-if="data?.summary"
+        v-if="page?.summary"
         class="tm-page-copy"
       >
-        {{ data.summary }}
+        {{ page.summary }}
       </p>
       <MarkdownContent
-        v-if="data?.bodyMarkdown"
-        :markdown="data.bodyMarkdown"
+        v-if="page?.bodyMarkdown"
+        :markdown="page.bodyMarkdown"
       >
         <template #error>
           <p class="tm-page-copy" role="alert">
@@ -100,5 +98,14 @@ onMounted(() => {
         </template>
       </MarkdownContent>
     </div>
+
+    <PageBlockRenderer
+      v-else-if="showsContent && page?.blocks?.length"
+      :blocks="page.blocks"
+      :collection-items="collectionItems"
+      :locale="locale"
+      :skills="skills"
+      :social-links="socialLinks"
+    />
   </section>
 </template>
