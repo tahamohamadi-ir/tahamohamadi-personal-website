@@ -1,0 +1,22 @@
+// Canonical values: docs/design-system/design-tokens.json
+
+$tm-motion-duration: (
+  micro-fast: 100ms,
+  micro: 160ms,
+  state: 220ms,
+  enter: 320ms,
+  page-max: 500ms
+);
+
+$tm-motion-easing: (
+  standard: cubic-bezier(0.2, 0, 0, 1),
+  enter: cubic-bezier(0.16, 1, 0.3, 1),
+  exit: cubic-bezier(0.4, 0, 1, 1)
+);
+
+$tm-motion-distance: (
+  subtle: 4px,
+  section: 12px
+);
+
+$tm-media-hover-scale: 1.02;

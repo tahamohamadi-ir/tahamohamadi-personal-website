@@ -113,12 +113,18 @@ describe('localized public application shell source contracts', () => {
   })
 
   it('keeps Persian and English typography under separate locale contracts', () => {
+    const packageManifest = readProjectFile('frontend/package.json')
+    const packageLock = readProjectFile('frontend/package-lock.json')
+    const appStyles = readProjectFile('frontend/src/css/app.scss')
     const typography = readProjectFile('frontend/src/css/typography.scss')
     const englishRule = typography.match(/\[lang=['\"]en['\"]\]\s*\{([\s\S]*?)\}/)?.[1]
     const persianRule = typography.match(/\[lang=['\"]fa['\"]\]\s*\{([\s\S]*?)\}/)?.[1]
 
+    expect(packageManifest).toMatch(/\"@fontsource-variable\/manrope\"\s*:\s*\"[~^]?\d+\.\d+\.\d+\"/)
+    expect(packageLock).toMatch(/node_modules\/@fontsource-variable\/manrope/)
+    expect(appStyles).toMatch(/@import\s+['\"]@fontsource-variable\/manrope['\"]\s*;/)
     expect(persianRule).toMatch(/font-family\s*:\s*Vazirmatn,\s*Tahoma,\s*Arial,\s*sans-serif\s*;/)
-    expect(englishRule).toMatch(/font-family\s*:\s*'Source Sans 3',\s*'Segoe UI',\s*Arial,\s*sans-serif\s*;/)
+    expect(englishRule).toMatch(/font-family\s*:\s*'Manrope Variable',\s*'Manrope',\s*'Segoe UI',\s*Arial,\s*sans-serif\s*;/)
     expect(englishRule).not.toContain('Vazirmatn')
   })
 
@@ -291,22 +297,32 @@ describe('localized public application shell source contracts', () => {
     }
   })
 
-  it('requires focus, motion, responsive, target-size and logical-spacing safeguards', () => {
+it('requires focus, motion, responsive, target-size and logical-spacing safeguards', () => {
     const appStyles = readProjectFile('frontend/src/css/app.scss')
+    const accessibilityStyles = readProjectFile(
+      'frontend/src/css/foundations/_accessibility.scss'
+    )
+    const resetStyles = readProjectFile(
+      'frontend/src/css/foundations/_reset.scss'
+    )
     const globalStyles = [
       appStyles,
+      accessibilityStyles,
+      resetStyles,
       readProjectFile('frontend/src/css/tokens.scss'),
       readProjectFile('frontend/src/css/typography.scss')
     ].join('\n')
 
-    expect(globalStyles).toMatch(/:focus-visible\s*\{/)
-    expect(appStyles).toMatch(
-      /#main-content\[tabindex=['\"]-1['\"]\]:focus\s*\{[^}]*outline\s*:\s*none\s*;/
+    expect(accessibilityStyles).toMatch(/:focus-visible\s*\{/)
+    expect(accessibilityStyles).toMatch(
+      /#main-content\[tabindex=['"]-1['"]\]:focus\s*\{[^}]*outline\s*:\s*none\s*;/
     )
-    expect(appStyles).not.toMatch(
+    expect(accessibilityStyles).not.toMatch(
       /(?:\*|main|\.public-main|\.public-shell)\s*(?::focus)?\s*\{[^}]*outline\s*:\s*none\s*;/
     )
-    expect(globalStyles).toMatch(/@media\s*\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)/)
+    expect(accessibilityStyles).toMatch(
+      /@media\s*\(\s*prefers-reduced-motion\s*:\s*reduce\s*\)/
+    )
     expect(globalStyles).toMatch(/1200px/)
 
     for (const gutter of ['16px', '24px', '32px']) {
@@ -314,14 +330,20 @@ describe('localized public application shell source contracts', () => {
     }
 
     expect(globalStyles).toMatch(/44px/)
-    expect(globalStyles).toMatch(/(?:margin|padding|inset|border)-(?:inline|block)(?:-start|-end)?\s*:/)
+    expect(globalStyles).toMatch(
+      /(?:margin|padding|inset|border)-(?:inline|block)(?:-start|-end)?\s*:/
+    )
   })
 
-  it('uses overflow clipping without suppressing focus indicators at the document edge', () => {
-    const appStyles = readProjectFile('frontend/src/css/app.scss')
+it('uses overflow clipping without suppressing focus indicators at the document edge', () => {
+    const resetStyles = readProjectFile(
+      'frontend/src/css/foundations/_reset.scss'
+    )
 
-    expect(appStyles).toMatch(/html,\s*\nbody\s*\{[\s\S]*?overflow-x\s*:\s*clip\s*;/)
-    expect(appStyles).not.toMatch(/overflow-x\s*:\s*hidden\s*;/)
+    expect(resetStyles).toMatch(
+      /html,\s*\nbody\s*\{[\s\S]*?overflow-x\s*:\s*clip\s*;/
+    )
+    expect(resetStyles).not.toMatch(/overflow-x\s*:\s*hidden\s*;/)
   })
 
   it('keeps route-change focus on the sole main target without JavaScript font loading', () => {

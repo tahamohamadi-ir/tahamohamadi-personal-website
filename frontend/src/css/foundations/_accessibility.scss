@@ -1,0 +1,20 @@
+// Canonical rules: docs/design.md
+
+:focus-visible {
+  outline: 3px solid var(--tm-focus-ring);
+  outline-offset: 3px;
+}
+
+#main-content[tabindex='-1']:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto;
+    transition-duration: 0ms;
+    animation-duration: 0ms;
+  }
+}

@@ -1,54 +1,33 @@
 @use './tokens.scss';
+@use './foundations/reset';
+@use './foundations/themes';
 @use './typography.scss';
+@use './tokens/layout';
+@use './foundations/accessibility';
+@use './foundations/rtl';
+@use './foundations/utilities';
 
 @import 'vazirmatn/Vazirmatn-Variable-font-face.css';
+@import '@fontsource-variable/manrope';
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#q-app {
-  min-block-size: 100%;
-}
-
-html,
-body {
-  margin: 0;
-  overflow-x: clip;
-  background: var(--tm-canvas);
-  color: var(--tm-text-primary);
-}
-
-body {
-  min-inline-size: 320px;
-}
-
-:focus-visible {
-  outline: 3px solid var(--tm-focus-ring);
-  outline-offset: 3px;
-}
-
-.tm-container {
-  inline-size: min(100%, var(--tm-page-max-width));
-  margin-inline: auto;
-  padding-inline: var(--tm-gutter);
-}
+// Transitional public styles remain here until their consumers migrate to
+// governed Tm* components and page-family foundations.
 
 .public-shell {
   min-block-size: 100dvh;
   background: var(--tm-canvas);
 }
 
-.public-main {
-  min-block-size: 1px;
+/* These are the only site-wide spacing controls exposed by the CMS. The
+ * semantic token values keep the layout stable across blocks and locales. */
+.public-shell--standard-density {
+  --tm-content-block-start: var(--tm-space-12);
+  --tm-content-block-end: var(--tm-space-16);
+  --tm-header-height: 64px;
 }
 
-#main-content[tabindex='-1']:focus {
-  outline: none;
+.public-main {
+  min-block-size: 1px;
 }
 
 .tm-editorial-page {
@@ -106,12 +85,6 @@ body {
   margin: 0;
 }
 
-.tm-detail-page__identifier {
-  direction: ltr;
-  overflow-wrap: anywhere;
-  unicode-bidi: isolate;
-}
-
 .tm-text-link {
   display: inline-flex;
   align-items: center;
@@ -140,24 +113,107 @@ body {
   max-inline-size: var(--tm-prose-max-width);
 }
 
-@media (min-width: 600px) {
-  .tm-container {
-    padding-inline: var(--tm-gutter-tablet);
-  }
+/* Admin is deliberately tool-like: compact, calm, and source-of-truth first. */
+.admin-main {
+  min-block-size: 100dvh;
+  background: var(--tm-admin-canvas);
+  color: var(--tm-text-primary);
 }
 
-@media (min-width: 1024px) {
-  .tm-container {
-    padding-inline: var(--tm-gutter-desktop);
-  }
+.admin-main .q-page {
+  inline-size: 100%;
+  padding: var(--tm-space-6) var(--tm-gutter);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto;
-    transition-duration: 0ms;
-    animation-duration: 0ms;
-  }
+.admin-page {
+  display: grid;
+  gap: var(--tm-admin-page-gap);
+  max-inline-size: 1600px;
+  margin-inline: auto;
+}
+
+.admin-page__header,
+.admin-page__actions,
+.admin-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tm-space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-page__header h1,
+.admin-page__header h2,
+.admin-page h1,
+.admin-page h2 {
+  color: var(--tm-text-primary);
+}
+
+.admin-page__description {
+  max-inline-size: 70ch;
+  margin: var(--tm-space-1) 0 0;
+  color: var(--tm-text-secondary);
+}
+
+.admin-panel,
+.admin-main .q-card,
+.admin-main .q-list--bordered {
+  border: 1px solid var(--tm-admin-border);
+  border-radius: var(--tm-admin-panel-radius);
+  background: var(--tm-admin-surface);
+  box-shadow: none;
+}
+
+.admin-main .q-field--outlined .q-field__control:before {
+  border-color: var(--tm-admin-border);
+}
+
+.admin-main .q-field--focused .q-field__control:after {
+  border-color: var(--tm-focus-ring);
+}
+
+.admin-main .q-btn {
+  min-block-size: var(--tm-control-min-size);
+  border-radius: var(--tm-admin-control-radius);
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.admin-main .q-item {
+  min-block-size: var(--tm-control-min-size);
+}
+
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--tm-admin-panel-gap);
+}
+
+.admin-metric {
+  display: grid;
+  gap: var(--tm-space-2);
+  min-block-size: 9rem;
+  padding: var(--tm-space-5);
+}
+
+.admin-metric__label {
+  color: var(--tm-text-secondary);
+  font-size: .875rem;
+  font-weight: 650;
+}
+
+.admin-metric__value {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.admin-dashboard-next {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--tm-admin-panel-gap);
+}
+
+.admin-dashboard-next .q-item__label--caption {
+  color: var(--tm-text-secondary);
 }

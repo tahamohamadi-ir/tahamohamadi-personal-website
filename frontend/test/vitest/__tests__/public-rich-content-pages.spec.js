@@ -28,7 +28,7 @@ const PAGES = [
     routeTitle: 'shell.siteName',
     response: {
       page: {
-        title: 'Taha Mohamadi',
+        title: 'Taha Mohammadi',
         summary: 'A factual home summary.',
         bodyMarkdown: '## Home evidence\n\nSafe **home** prose.'
       }
@@ -140,6 +140,12 @@ async function renderPageOnServer(page, component, data, {
     render: () => h(component, { initialData: data })
   })
   app.use(createPinia())
+  app.config.globalProperties.$q = {
+    platform: {
+      has: { touch: false },
+      is: {}
+    }
+  }
   app.use(router)
   app.use(i18n)
   app.provide(PUBLIC_API_KEY, {})
@@ -206,13 +212,11 @@ describe('public rich-content route integration', () => {
         expect(api[page.apiMethod]).toHaveBeenCalledWith(
           ...expectedArgs(page, locale)
         )
+        const managedPage = page.name === 'home' ? response.page : response
+
         expect(wrapper.findAll('h1')).toHaveLength(1)
-        expect(wrapper.get('h1').text()).toBe(i18n.global.t(page.routeTitle))
-        expect(wrapper.text()).toContain(
-          page.name === 'home'
-            ? response.page.summary
-            : response.summary
-        )
+        expect(wrapper.get('h1').text()).toBe(managedPage.title)
+        expect(wrapper.text()).toContain(managedPage.summary)
         expect(wrapper.find('.tm-rich-content').html())
           .toContain('<h2>')
         expect(wrapper.find('.tm-rich-content').html())
@@ -328,20 +332,31 @@ describe('public rich-content route integration', () => {
     }
   })
 
-  it('keeps MarkdownContent as the only HTML sink and keeps placeholder ownership narrow', () => {
-    const sources = PAGES.map((page) => readProjectFile(page.pagePath))
+  it('keeps the composed loader and MarkdownContent boundaries explicit', () => {
     const routesSource = readProjectFile('frontend/src/router/routes.js')
+    const composedDataSource = readProjectFile(
+      'frontend/src/composables/useComposedPageData.js'
+    )
 
-    for (const source of sources) {
+    for (const page of PAGES) {
+      const source = readProjectFile(page.pagePath)
+
       expect(source).toMatch(/inject\s*\(\s*PUBLIC_API_KEY\b/)
-      expect(source).toMatch(/useAsyncPage/)
+      expect(source).toMatch(
+        page.name === 'home'
+          ? /useAsyncPage/
+          : /useComposedPageData/
+      )
       expect(source).toMatch(/MarkdownContent/)
+      expect(source).toMatch(/PageBlockRenderer/)
       expect(source).not.toMatch(/v-html|innerHTML|outerHTML|insertAdjacentHTML/i)
       expect(source).not.toMatch(/markdown-it|isomorphic-dompurify/i)
       expect(source).not.toMatch(/<main\b|<q-page\b/i)
       expect(source).not.toMatch(/\b(?:lang|dir)\s*=/)
     }
 
+    expect(composedDataSource).toMatch(/useAsyncPage/)
+    expect(composedDataSource).toMatch(/currentApi\.getPage/)
     expect(routesSource).toMatch(/AboutPage/)
     expect(routesSource).toMatch(/ResearchPage/)
     expect(routesSource).not.toMatch(/component:\s*PublicRoutePlaceholderPage[\s\S]*pageKey:\s*'about'/)

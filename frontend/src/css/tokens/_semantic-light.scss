@@ -1,0 +1,33 @@
+// Canonical values: docs/design-system/design-tokens.json
+@use 'sass:map';
+@use './primitive' as primitive;
+
+$tm-semantic-light: (
+  bg-page: primitive.tm-color(canvas),
+  bg-surface: primitive.tm-color(surface),
+  bg-surface-subtle: primitive.tm-color(slate-100),
+  bg-accent-soft: primitive.tm-color(teal-100),
+  text-primary: primitive.tm-color(ink-950),
+  text-secondary: primitive.tm-color(slate-650),
+  text-muted: primitive.tm-color(slate-500),
+  border-default: primitive.tm-color(slate-200),
+  border-strong: primitive.tm-color(slate-300),
+  action-primary: primitive.tm-color(teal-700),
+  action-primary-hover: primitive.tm-color(teal-800),
+  action-secondary: primitive.tm-color(cobalt-600),
+  link: primitive.tm-color(cobalt-600),
+  link-hover: primitive.tm-color(cobalt-700),
+  focus-ring: primitive.tm-color(cobalt-600),
+  status-success: primitive.tm-color(success),
+  status-warning: primitive.tm-color(warning),
+  status-danger: primitive.tm-color(danger),
+  status-info: primitive.tm-color(info)
+);
+
+@function tm-light($name) {
+  @if not map.has-key($tm-semantic-light, $name) {
+    @error 'Unknown light semantic token: #{$name}';
+  }
+
+  @return map.get($tm-semantic-light, $name);
+}

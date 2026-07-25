@@ -260,6 +260,9 @@ describe('localized public Resume route contract', () => {
     const PlaceholderPage = await loadContractComponent(
       'frontend/src/pages/public/PublicRoutePlaceholderPage.vue'
     )
+    const ComposedPage = await loadContractComponent(
+      'frontend/src/pages/public/ComposedPage.vue'
+    )
     const collectionPages = new Map(await Promise.all(
       IMPLEMENTED_COLLECTION_ROUTES.map(async (definition) => [
         definition.pageKey,
@@ -315,6 +318,7 @@ describe('localized public Resume route contract', () => {
         [`${locale}-resume`, ResumePage],
         [`${locale}-about`, richContentPages.get('about')],
         [`${locale}-research`, richContentPages.get('research')],
+        [`${locale}-composed-page`, ComposedPage],
         [`${locale}-skills`, ownedPages.get('skills')],
         [`${locale}-contact`, ownedPages.get('contact')]
       ])

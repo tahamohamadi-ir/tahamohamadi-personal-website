@@ -1,0 +1,21 @@
+// Canonical values: docs/design-system/design-tokens.json
+
+$tm-layout: (
+  public-wide-max: 1440px,
+  public-standard-max: 1200px,
+  prose-max: 720px,
+  control-min: 44px,
+  gutter-mobile: 16px,
+  gutter-tablet: 24px,
+  gutter-desktop: 32px,
+  gutter-large-desktop: 48px,
+  section-major-desktop: 112px,
+  section-major-mobile: 72px,
+  section-compact-desktop: 72px,
+  section-compact-mobile: 52px
+);
+
+$tm-grid-columns: 12;
+$tm-grid-gap-mobile: 16px;
+$tm-grid-gap-tablet: 24px;
+$tm-grid-gap-desktop: 32px;

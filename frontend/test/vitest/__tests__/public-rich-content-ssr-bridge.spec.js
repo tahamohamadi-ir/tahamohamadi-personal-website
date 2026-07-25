@@ -56,6 +56,18 @@ function createRouteApplication(api, pinia = createPinia()) {
   const app = createSSRApp({ render: () => h(RouterView) })
 
   app.use(pinia)
+
+  app.config.globalProperties.$q = {
+
+    platform: {
+
+      has: { touch: false },
+
+      is: {}
+
+    }
+
+  }
   app.use(router)
   app.use(i18n)
   app.provide(PUBLIC_API_KEY, api)

@@ -1,10 +1,11 @@
 <script setup>
 import { computed, inject, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import MarkdownContent from 'src/components/content/MarkdownContent.vue'
+
+import PageBlockRenderer from 'src/components/public/PageBlockRenderer.vue'
 import PageState from 'src/components/public/PageState.vue'
 import TranslationUnavailable from 'src/components/public/TranslationUnavailable.vue'
+import MarkdownContent from 'src/components/content/MarkdownContent.vue'
 import { useAsyncPage } from 'src/composables/useAsyncPage'
 import { usePublicSeoMeta } from 'src/composables/usePublicSeoMeta'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'
@@ -18,17 +19,21 @@ const props = defineProps({
 
 const api = inject(PUBLIC_API_KEY, null)
 const route = useRoute()
-const { t } = useI18n()
-const locale = computed(() => route.meta.locale)
+const activeLocale = computed(() => route.meta.locale || props.initialData?.locale || 'en')
+const locale = computed(() => (
+  activeLocale.value
+))
 const ssrKey = computed(() => `public:${locale.value}:home:home`)
 
 function isEmptyHome(value) {
   const page = value?.page
+  if (!page) return true
 
-  return !page || ![
+  const hasText = [
     page.summary,
     page.bodyMarkdown
   ].some((field) => typeof field === 'string' && field.trim().length > 0)
+  return !hasText && !(Array.isArray(page.blocks) && page.blocks.length > 0)
 }
 
 const {
@@ -47,29 +52,32 @@ const {
 })
 
 const page = computed(() => data.value?.page ?? null)
-const featuredItems = computed(() => data.value?.featured?.items ?? [])
+const homeBlocks = computed(() => page.value?.blocks ?? [])
+const collectionItems = computed(() => ({
+  BLOG: data.value?.latestPosts ?? [],
+  PORTFOLIO: data.value?.selectedProjects ?? [],
+  PUBLICATIONS: data.value?.selectedPublications ?? []
+}))
+const skills = computed(() => data.value?.skills?.items ?? [])
 const socialLinks = computed(() => data.value?.socialLinks?.items ?? [])
-usePublicSeoMeta({ data, state })
-const showsContent = computed(() => (
-  data.value !== null && state.value !== 'empty'
+const hasHero = computed(() => homeBlocks.value.some((block) => (
+  block?.enabled !== false
+  && String(block?.type).toLowerCase() === 'hero'
+  && typeof block?.title === 'string'
+  && block.title.trim().length > 0
+)))
+const hasLegacyManagedContent = computed(() => (
+  !homeBlocks.value.length
+  && Boolean(page.value?.summary?.trim() || page.value?.bodyMarkdown?.trim())
 ))
+
 const alternatePath = computed(() => error.value?.alternatePaths?.[0] ?? null)
 
 function retry() {
   return state.value === 'stale' ? refresh() : load()
 }
 
-function featuredPath(item) {
-  if (item?.targetType === 'PORTFOLIO_PROJECT') {
-    return `/${locale.value}/portfolio/${item.slug}`
-  }
-
-  if (item?.targetType === 'PUBLICATION') {
-    return `/${locale.value}/publications/${item.slug}`
-  }
-
-  return null
-}
+usePublicSeoMeta({ data, state })
 
 onMounted(() => {
   if (!hasInitialState) {
@@ -79,64 +87,82 @@ onMounted(() => {
 </script>
 
 <template>
-  <section
-    class="tm-editorial-page tm-editorial-page--introduction tm-container"
-    aria-labelledby="home-title"
-  >
-    <header class="tm-editorial-page__content">
-      <h1 id="home-title" class="tm-page-title">{{ t('shell.siteName') }}</h1>
-    </header>
-
-    <PageState
-      v-if="state && state !== 'translation-unavailable'"
-      :state="state"
-      @retry="retry"
-    />
-
-    <TranslationUnavailable
-      v-else-if="state === 'translation-unavailable'"
-      :alternate-path="alternatePath"
-      :target-locale="locale"
-    />
+  <div class="public-home">
+    <div
+      v-if="state && state !== 'translation-unavailable' && state !== 'empty'"
+      class="tm-container public-home__status"
+    >
+      <PageState
+        :state="state"
+        @retry="retry"
+      />
+    </div>
 
     <div
-      v-if="showsContent"
-      class="tm-editorial-page__content"
+      v-else-if="state === 'translation-unavailable'"
+      class="tm-container public-home__status"
     >
-      <p
-        v-if="page?.summary"
-        class="tm-page-copy"
-      >
-        {{ page.summary }}
-      </p>
-      <MarkdownContent
-        v-if="page?.bodyMarkdown"
-        :markdown="page.bodyMarkdown"
-      >
-        <template #error>
-          <p class="tm-page-copy" role="alert">
-            {{ t('public.richContent.renderingFailure') }}
-          </p>
-        </template>
-      </MarkdownContent>
-
-      <section v-if="featuredItems.length" class="q-mt-xl" :aria-label="t('public.home.featured')">
-        <h2 class="text-h5">{{ t('public.home.featured') }}</h2>
-        <q-list bordered separator>
-          <template v-for="item in featuredItems" :key="`${item.targetType}:${item.slug}`">
-            <q-item v-if="featuredPath(item)" :to="featuredPath(item)">
-              <q-item-section><q-item-label>{{ item.title }}</q-item-label></q-item-section>
-            </q-item>
-          </template>
-        </q-list>
-      </section>
-
-      <nav v-if="socialLinks.length" class="q-mt-xl" :aria-label="t('public.home.socialLinks')">
-        <h2 class="text-h6">{{ t('public.home.socialLinks') }}</h2>
-        <div class="row q-gutter-sm">
-          <q-btn v-for="link in socialLinks" :key="`${link.platformCode}:${link.url}`" outline :href="link.url" target="_blank" rel="noopener noreferrer" :label="link.platformCode" />
-        </div>
-      </nav>
+      <TranslationUnavailable
+        :alternate-path="alternatePath"
+        :target-locale="locale"
+      />
     </div>
-  </section>
+
+    <section v-else-if="hasLegacyManagedContent" class="tm-container public-home__legacy-content">
+      <h1 v-if="page?.title">{{ page.title }}</h1>
+      <p v-if="page?.summary" class="public-home__summary">{{ page.summary }}</p>
+      <MarkdownContent v-if="page?.bodyMarkdown" :markdown="page.bodyMarkdown" />
+    </section>
+
+    <header v-else-if="page?.title && !hasHero" class="tm-container public-home__title">
+      <h1>{{ page.title }}</h1>
+    </header>
+
+    <PageBlockRenderer
+      v-if="homeBlocks.length"
+      :blocks="homeBlocks"
+      :collection-items="collectionItems"
+      :hero-heading-level="1"
+      :locale="locale"
+      :skills="skills"
+      :social-links="socialLinks"
+    />
+  </div>
 </template>
+
+<style scoped>
+.public-home {
+  background: var(--tm-surface);
+}
+
+.public-home__status {
+  padding-block: var(--tm-space-5);
+}
+
+.public-home__title {
+  padding-block: clamp(var(--tm-space-10), 10vw, var(--tm-space-18));
+}
+
+.public-home__title h1,
+.public-home__legacy-content h1 {
+  margin: 0;
+  max-inline-size: 13ch;
+  font-size: clamp(2.625rem, 6.1vw, 5.25rem);
+  letter-spacing: -0.04em;
+}
+
+.public-home__legacy-content {
+  display: grid;
+  gap: var(--tm-space-5);
+  max-inline-size: 72rem;
+  padding-block: clamp(var(--tm-space-10), 10vw, var(--tm-space-18));
+}
+
+.public-home__summary {
+  color: var(--tm-text-secondary);
+  font-size: clamp(1.125rem, 2vw, 1.375rem);
+  line-height: 1.7;
+  margin: 0;
+  max-inline-size: 58ch;
+}
+</style>

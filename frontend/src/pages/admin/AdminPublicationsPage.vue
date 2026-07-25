@@ -1,5 +1,6 @@
 <script setup>
 import { computed, inject, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import AdminLifecycleActions from 'src/components/admin/AdminLifecycleActions.vue'
 import AdminLocaleTabs from 'src/components/admin/AdminLocaleTabs.vue'
@@ -10,6 +11,7 @@ import { primeCsrfToken } from 'src/services/csrf'
 import { normalizeApiError } from 'src/services/httpClient'
 
 const httpClient = inject(HTTP_CLIENT_KEY)
+const { t } = useI18n()
 const publicationStages = ['PREPRINT', 'ACCEPTED', 'IN_PRESS', 'PUBLISHED']
 const items = ref([])
 const page = ref(0)
@@ -168,10 +170,10 @@ onMounted(() => {
   <q-page class="q-pa-md q-pa-lg-md">
     <div class="row items-center justify-between q-col-gutter-md q-mb-lg">
       <div class="col">
-        <h1 class="text-h5 q-my-none">Publications</h1>
-        <p class="text-body2 text-grey-8 q-mb-none">Manage academic bibliographic records and translations.</p>
+        <h1 class="text-h5 q-my-none">{{ t('admin.publications.title') }}</h1>
+        <p class="text-body2 text-grey-8 q-mb-none">{{ t('admin.publications.description') }}</p>
       </div>
-      <div class="col-auto"><q-btn color="primary" label="Create publication" @click="create" /></div>
+      <div class="col-auto"><q-btn color="primary" :label="t('admin.publications.create')" @click="create" /></div>
     </div>
     <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded role="alert">{{ error.message }}</q-banner>
     <AdminStatePanel v-if="state !== 'ready'" :state="state" @retry="load" />
@@ -189,25 +191,25 @@ onMounted(() => {
     </template>
 
     <q-form class="q-mt-xl q-gutter-md" @submit.prevent="save">
-      <h2 class="text-h6 q-my-none">{{ form.id ? 'Edit publication' : 'Create publication' }}</h2>
-      <q-input v-model="form.publicationKey" label="Publication key" :disable="saving" />
-      <q-select v-model="form.publicationStage" :options="publicationStages" label="Publication stage" :disable="saving" />
-      <q-input v-model="form.doi" label="DOI" :disable="saving" />
-      <q-input v-model="form.externalUrl" type="url" label="External URL" :disable="saving" />
-      <q-input v-model="form.publishedOn" type="date" label="Publication date" :disable="saving" />
-      <q-input v-model.number="form.year" type="number" min="1000" max="9999" label="Year" :disable="saving" />
-      <q-input v-model="form.coverMediaId" label="Cover media asset ID" :disable="saving" />
-      <q-input v-model.number="form.sortOrder" type="number" min="0" label="Sort order" :disable="saving" />
+      <h2 class="text-h6 q-my-none">{{ form.id ? t('admin.publications.edit') : t('admin.publications.create') }}</h2>
+      <q-input v-model="form.publicationKey" :label="t('admin.publications.key')" :disable="saving" />
+      <q-select v-model="form.publicationStage" :options="publicationStages" :label="t('admin.publications.stage')" :disable="saving" />
+      <q-input v-model="form.doi" :label="t('admin.publications.doi')" :disable="saving" />
+      <q-input v-model="form.externalUrl" type="url" :label="t('admin.publications.externalUrl')" :disable="saving" />
+      <q-input v-model="form.publishedOn" type="date" :label="t('admin.publications.date')" :disable="saving" />
+      <q-input v-model.number="form.year" type="number" min="1000" max="9999" :label="t('admin.publications.year')" :disable="saving" />
+      <q-input v-model="form.coverMediaId" :label="t('admin.publications.coverMedia')" :disable="saving" />
+      <q-input v-model.number="form.sortOrder" type="number" min="0" :label="t('admin.publications.sortOrder')" :disable="saving" />
       <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />
-      <q-input v-model="activeTranslation.title" label="Title" :disable="saving" />
-      <q-input v-model="activeTranslation.slug" label="Slug" :disable="saving" />
-      <q-input v-model="activeTranslation.authorsDisplay" type="textarea" label="Authors" :disable="saving" />
-      <q-input v-model="activeTranslation.venueDisplay" type="textarea" label="Venue" :disable="saving" />
-      <q-input v-model="activeTranslation.abstractText" type="textarea" label="Abstract" :disable="saving" />
-      <q-input v-model="activeTranslation.seoTitle" label="SEO title" :disable="saving" />
-      <q-input v-model="activeTranslation.seoDescription" type="textarea" label="SEO description" :disable="saving" />
+      <q-input v-model="activeTranslation.title" :label="t('admin.publications.translationTitle')" :disable="saving" />
+      <q-input v-model="activeTranslation.slug" :label="t('admin.publications.slug')" :disable="saving" />
+      <q-input v-model="activeTranslation.authorsDisplay" type="textarea" :label="t('admin.publications.authors')" :disable="saving" />
+      <q-input v-model="activeTranslation.venueDisplay" type="textarea" :label="t('admin.publications.venue')" :disable="saving" />
+      <q-input v-model="activeTranslation.abstractText" type="textarea" :label="t('admin.publications.abstract')" :disable="saving" />
+      <q-input v-model="activeTranslation.seoTitle" :label="t('admin.publications.seoTitle')" :disable="saving" />
+      <q-input v-model="activeTranslation.seoDescription" type="textarea" :label="t('admin.publications.seoDescription')" :disable="saving" />
       <div class="row q-gutter-sm">
-        <q-btn type="submit" color="primary" :loading="saving" label="Save publication" />
+        <q-btn type="submit" color="primary" :loading="saving" :label="t('admin.publications.save')" />
         <AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" />
       </div>
     </q-form>

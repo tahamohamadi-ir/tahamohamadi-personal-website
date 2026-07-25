@@ -1,0 +1,25 @@
+// Canonical rules: docs/design.md
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#q-app {
+  min-block-size: 100%;
+}
+
+html,
+body {
+  margin: 0;
+  overflow-x: clip;
+  background: var(--tm-canvas);
+  color: var(--tm-text-primary);
+}
+
+body {
+  min-inline-size: 320px;
+}

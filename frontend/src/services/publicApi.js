@@ -59,6 +59,10 @@ export function createPublicApi(httpClient) {
       )
     },
 
+    async getSiteChrome(locale) {
+      return getData(httpClient, `${localizedRoot(locale)}/site`)
+    },
+
     async getPage(locale, slug) {
       return getData(
         httpClient,

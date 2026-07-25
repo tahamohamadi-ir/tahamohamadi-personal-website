@@ -9,14 +9,21 @@ export default configure((ctx) => {
   }
 
   return {
-    boot: ['i18n', 'api'],
+    boot: [
+      { path: 'theme', server: false },
+      'i18n',
+      'api'
+    ],
     css: ['app.scss'],
     extras: ['material-icons'],
     build: {
       vueRouterMode: 'history'
     },
     framework: {
-      plugins: ['Meta']
+      config: {
+        dark: false
+      },
+      plugins: ['Meta', 'Dark']
     },
     devServer: {
       strictPort: true,

@@ -75,7 +75,8 @@ describe('admin media presentation', () => {
     expect(media).toContain('MEDIA_UPLOAD_LIMITS')
     expect(media).toContain('validateMediaUpload')
     expect(media).toContain("Object.keys(ACCEPTED_TYPES).join(',')")
-    expect(media).toContain('duplicate')
+    expect(media).toContain('if (uploading.value) return')
+    expect(media).toContain('finally { uploading.value = false }')
   })
 })
 
@@ -154,12 +155,18 @@ describe('admin featured content presentation', () => {
 })
 
 describe('public home presentation content', () => {
-  it('renders the supported featured and social payloads without inventing a preview API', () => {
+  it('renders the CMS-owned collection, skills, and social payloads', () => {
     const home = source('src/pages/public/PublicHomePage.vue')
+    const renderer = source('src/components/public/PageBlockRenderer.vue')
 
-    expect(home).toContain('data.value?.featured')
-    expect(home).toContain('data.value?.socialLinks')
-    expect(home).toContain('item.slug')
-    expect(home).toContain('link.url')
+    expect(home).toContain('data.value?.latestPosts')
+    expect(home).toContain('data.value?.selectedProjects')
+    expect(home).toContain('data.value?.selectedPublications')
+    expect(home).toContain('data.value?.skills?.items')
+    expect(home).toContain('data.value?.socialLinks?.items')
+    expect(home).toContain(':blocks="homeBlocks"')
+    expect(home).toContain(':collection-items="collectionItems"')
+    expect(renderer).toContain('const slug = item?.slug')
+    expect(renderer).toContain(':href="link.url"')
   })
 })

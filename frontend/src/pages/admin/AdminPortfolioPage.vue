@@ -1,6 +1,7 @@
 <script setup>
 import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 import AdminLifecycleActions from 'src/components/admin/AdminLifecycleActions.vue'
 import AdminLocaleTabs from 'src/components/admin/AdminLocaleTabs.vue'
@@ -18,6 +19,7 @@ import { primeCsrfToken } from 'src/services/csrf'
 import { normalizeApiError } from 'src/services/httpClient'
 
 const httpClient = inject(HTTP_CLIENT_KEY)
+const { t } = useI18n()
 const items = ref([])
 const skills = ref([])
 const page = ref(0)
@@ -28,7 +30,7 @@ const saving = ref(false)
 const selectedLocale = ref('fa')
 const replacingForm = ref(false)
 const changes = createUnsavedChangesGuard(() => Promise.resolve(
-  window.confirm('Discard unsaved portfolio changes?')
+  window.confirm(t('admin.portfolio.discard'))
 ))
 const form = ref(createForm())
 
@@ -190,11 +192,11 @@ onMounted(() => { void load() })
 <template>
   <q-page class="q-pa-md q-pa-lg-md">
     <div class="row items-center justify-between q-col-gutter-md q-mb-lg">
-      <div class="col"><h1 class="text-h5 q-my-none">Portfolio projects</h1><p class="text-body2 text-grey-8 q-mb-none">Translations stay independent and project media is a supported cover asset.</p></div>
-      <div class="col-auto"><q-btn color="primary" label="Create project" @click="create" /></div>
+      <div class="col"><h1 class="text-h5 q-my-none">{{ t('admin.portfolio.title') }}</h1><p class="text-body2 text-grey-8 q-mb-none">{{ t('admin.portfolio.description') }}</p></div>
+      <div class="col-auto"><q-btn color="primary" :label="t('admin.portfolio.create')" @click="create" /></div>
     </div>
     <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded role="alert">
-      {{ isVersionConflict(error) ? 'This project changed elsewhere. Reload it before saving.' : error.message }}
+      {{ isVersionConflict(error) ? t('admin.portfolio.conflict') : error.message }}
     </q-banner>
     <AdminStatePanel v-if="state !== 'ready'" :state="state" @retry="load" />
     <template v-else>
@@ -202,23 +204,23 @@ onMounted(() => { void load() })
       <AdminPaginatedTable :page="page" :total-pages="totalPages" @change-page="load" />
     </template>
     <q-form class="q-mt-xl q-gutter-md" @submit.prevent="save">
-      <h2 class="text-h6 q-my-none">{{ form.id ? 'Edit project' : 'Create project' }}</h2>
-      <q-input v-model="form.projectKey" label="Project key" :disable="saving" :error="Boolean(fieldErrors.projectKey)" :error-message="fieldErrors.projectKey" />
-      <q-input v-model="form.startedOn" type="date" label="Start date" :disable="saving" />
-      <q-input v-model="form.endedOn" type="date" label="End date" :disable="saving" />
-      <q-input v-model="form.projectUrl" type="url" label="Project URL" :disable="saving" />
-      <q-input v-model="form.repositoryUrl" type="url" label="Repository URL" :disable="saving" />
-      <q-input v-model.number="form.sortOrder" type="number" min="0" label="Sort order" :disable="saving" />
-      <AdminMediaSelector v-model="form.coverMediaId" label="Cover media" :disable="saving" />
-      <q-select v-model="selectedSkillIds" :options="skillOptions" option-label="label" option-value="value" emit-value map-options multiple use-chips label="Associated skills" :disable="saving" />
+      <h2 class="text-h6 q-my-none">{{ form.id ? t('admin.portfolio.edit') : t('admin.portfolio.create') }}</h2>
+      <q-input v-model="form.projectKey" :label="t('admin.portfolio.key')" :disable="saving" :error="Boolean(fieldErrors.projectKey)" :error-message="fieldErrors.projectKey" />
+      <q-input v-model="form.startedOn" type="date" :label="t('admin.portfolio.startDate')" :disable="saving" />
+      <q-input v-model="form.endedOn" type="date" :label="t('admin.portfolio.endDate')" :disable="saving" />
+      <q-input v-model="form.projectUrl" type="url" :label="t('admin.portfolio.projectUrl')" :disable="saving" />
+      <q-input v-model="form.repositoryUrl" type="url" :label="t('admin.portfolio.repositoryUrl')" :disable="saving" />
+      <q-input v-model.number="form.sortOrder" type="number" min="0" :label="t('admin.portfolio.sortOrder')" :disable="saving" />
+      <AdminMediaSelector v-model="form.coverMediaId" :label="t('admin.portfolio.coverMedia')" :disable="saving" />
+      <q-select v-model="selectedSkillIds" :options="skillOptions" option-label="label" option-value="value" emit-value map-options multiple use-chips :label="t('admin.portfolio.associatedSkills')" :disable="saving" />
       <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />
-      <q-input v-model="activeTranslation.title" label="Title" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.title`])" :error-message="fieldErrors[`${selectedLocale}.title`]" />
-      <q-input v-model="activeTranslation.slug" label="Slug" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.slug`])" :error-message="fieldErrors[`${selectedLocale}.slug`]" />
-      <q-input v-model="activeTranslation.summary" type="textarea" label="Summary" :disable="saving" />
+      <q-input v-model="activeTranslation.title" :label="t('admin.portfolio.translationTitle')" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.title`])" :error-message="fieldErrors[`${selectedLocale}.title`]" />
+      <q-input v-model="activeTranslation.slug" :label="t('admin.portfolio.slug')" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.slug`])" :error-message="fieldErrors[`${selectedLocale}.slug`]" />
+      <q-input v-model="activeTranslation.summary" type="textarea" :label="t('admin.portfolio.summary')" :disable="saving" />
       <AdminMarkdownPreview v-model="activeTranslation.bodyMarkdown" />
-      <q-input v-model="activeTranslation.seoTitle" label="SEO title" :disable="saving" />
-      <q-input v-model="activeTranslation.seoDescription" type="textarea" label="SEO description" :disable="saving" />
-      <div class="row q-gutter-sm"><q-btn type="submit" color="primary" :loading="saving" label="Save project" /><AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" /></div>
+      <q-input v-model="activeTranslation.seoTitle" :label="t('admin.portfolio.seoTitle')" :disable="saving" />
+      <q-input v-model="activeTranslation.seoDescription" type="textarea" :label="t('admin.portfolio.seoDescription')" :disable="saving" />
+      <div class="row q-gutter-sm"><q-btn type="submit" color="primary" :loading="saving" :label="t('admin.portfolio.save')" /><AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" /></div>
     </q-form>
   </q-page>
 </template>

@@ -442,25 +442,109 @@ describe('safe API error normalization', () => {
 })
 
 describe('public page introduction contract', () => {
-  it('renders a localized personal-site identity and API-owned summary for Home', async () => {
+  it('renders the CMS-owned Home title and summary', async () => {
     const wrapper = await mountPublicPage(PublicHomePage, {
       props: { initialData: homeResponse }
     })
 
     expectPageDoesNotOwnShellLandmarks(wrapper)
     expect(wrapper.findAll('h1')).toHaveLength(1)
-    expect(wrapper.get('h1').text()).toBe(i18n.global.t('shell.siteName'))
-    expect(wrapper.get('.tm-page-copy').text()).toBe(homeResponse.page.summary)
+    expect(wrapper.get('h1').text()).toBe(homeResponse.page.title)
+    expect(wrapper.get('.public-home__summary').text()).toBe(homeResponse.page.summary)
+    wrapper.unmount()
   })
 
-  it('keeps Home local, escaped, token-driven, and outside shell ownership', () => {
+  it('renders exactly one H1 for each supported Home ownership state', async () => {
+    const scenarios = [
+      {
+        title: 'Legacy managed home',
+        summary: 'Managed summary.',
+        bodyMarkdown: 'Managed **body**.',
+        blocks: [],
+        expectedTitle: 'Legacy managed home'
+      },
+      {
+        title: 'Title-only managed home',
+        summary: '',
+        bodyMarkdown: '',
+        blocks: [],
+        expectedTitle: 'Title-only managed home'
+      },
+      {
+        title: 'Managed page title',
+        summary: '',
+        bodyMarkdown: '',
+        blocks: [{
+          id: 'primary-hero',
+          type: 'HERO',
+          enabled: true,
+          title: 'Managed hero title'
+        }],
+        expectedTitle: 'Managed hero title'
+      },
+      {
+        title: 'Fallback after disabled hero',
+        summary: '',
+        bodyMarkdown: '',
+        blocks: [{
+          id: 'disabled-hero',
+          type: 'HERO',
+          enabled: false,
+          title: 'Hidden hero title'
+        }],
+        expectedTitle: 'Fallback after disabled hero'
+      },
+      {
+        title: 'Fallback after empty hero',
+        summary: '',
+        bodyMarkdown: '',
+        blocks: [{
+          id: 'empty-hero',
+          type: 'HERO',
+          enabled: true,
+          title: '',
+          lead: 'Lead without a heading.'
+        }],
+        expectedTitle: 'Fallback after empty hero'
+      }
+    ]
+
+    for (const scenario of scenarios) {
+      const wrapper = await mountPublicPage(PublicHomePage, {
+        props: {
+          initialData: {
+            page: {
+              title: scenario.title,
+              summary: scenario.summary,
+              bodyMarkdown: scenario.bodyMarkdown,
+              blocks: scenario.blocks
+            },
+            latestPosts: [],
+            selectedProjects: [],
+            selectedPublications: [],
+            skills: { items: [] },
+            socialLinks: { items: [] }
+          }
+        }
+      })
+
+      expect(wrapper.findAll('h1')).toHaveLength(1)
+      expect(wrapper.get('h1').text()).toBe(scenario.expectedTitle)
+      wrapper.unmount()
+    }
+  })
+
+  it('keeps Home CMS-first, escaped, token-driven, and outside shell ownership', () => {
     const homeSource = readProjectFile(HOME_PAGE_PATH)
 
-    expect(homeSource.match(/<h1\b/g) ?? []).toHaveLength(1)
-    expect(homeSource).toMatch(/t\(['\"]shell\.siteName['\"]\)/)
+    expect(homeSource).toMatch(/PageBlockRenderer/)
+    expect(homeSource).toMatch(/page\.value\?\.blocks/)
+    expect(homeSource).toMatch(/:hero-heading-level="1"/)
     expect(homeSource).toMatch(/MarkdownContent/)
     expect(homeSource).toMatch(/getHome\s*\(/)
+    expect(homeSource).not.toMatch(/t\(['"](?:shell\.siteName|public\.home)/)
     expect(homeSource).not.toMatch(/public\.placeholder|Public profile/i)
+
     for (const source of [homeSource]) {
       expect(source).not.toMatch(/<main\b|<q-page\b/i)
       expect(source).not.toMatch(/\b(?:lang|dir)\s*=/)

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, inject, nextTick, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave } from 'vue-router'
 
 import AdminActivationActions from 'src/components/admin/AdminActivationActions.vue'
@@ -16,6 +17,7 @@ import { primeCsrfToken } from 'src/services/csrf'
 import { normalizeApiError } from 'src/services/httpClient'
 
 const httpClient = inject(HTTP_CLIENT_KEY)
+const { t } = useI18n()
 const items = ref([])
 const publications = ref([])
 const projects = ref([])
@@ -27,7 +29,7 @@ const saving = ref(false)
 const replacingForm = ref(false)
 const form = ref(createForm())
 const changes = createUnsavedChangesGuard(() => Promise.resolve(
-  window.confirm('Discard unsaved featured-content changes?')
+  window.confirm(t('admin.featured.discard'))
 ))
 const { notification, showSuccess, showError } = useAdminNotifications()
 
@@ -61,8 +63,8 @@ const targetOptions = computed(() => {
     .map((entry) => ({
       value: entry.id,
       label: form.value.targetType === 'PUBLICATION'
-        ? `${entry.publicationKey} · FA: ${entry.fa?.title || 'Missing translation'} · EN: ${entry.en?.title || 'Missing translation'}`
-        : `${entry.projectKey} · FA: ${entry.fa?.title || 'Missing translation'} · EN: ${entry.en?.title || 'Missing translation'}`
+        ? t('admin.featured.publicationTarget', { key: entry.publicationKey, fa: entry.fa?.title || t('admin.featured.missingTranslation'), en: entry.en?.title || t('admin.featured.missingTranslation') })
+        : t('admin.featured.projectTarget', { key: entry.projectKey, fa: entry.fa?.title || t('admin.featured.missingTranslation'), en: entry.en?.title || t('admin.featured.missingTranslation') })
     }))
 })
 
@@ -159,7 +161,7 @@ async function save() {
       ? await httpClient.put(`/api/v1/admin/featured-items/${form.value.id}`, payload())
       : await httpClient.post('/api/v1/admin/featured-items', payload())
     replaceForm(response.data)
-    showSuccess('Featured content saved.')
+    showSuccess(t('admin.featured.saved'))
     await load(page.value)
   }
   catch (cause) {
@@ -181,7 +183,7 @@ async function transition(action) {
       { params: { version: form.value.version } }
     )
     replaceForm(response.data)
-    showSuccess(`Featured content ${action}d.`)
+    showSuccess(t(`admin.featured.${action}d`))
     await load(page.value)
   }
   catch (cause) {
@@ -198,38 +200,38 @@ onMounted(() => { void load() })
   <q-page class="q-pa-md q-pa-lg-md">
     <div class="row items-center justify-between q-col-gutter-md q-mb-lg">
       <div class="col">
-        <h1 class="text-h5 q-my-none">Featured content</h1>
-        <p class="text-body2 text-grey-8 q-mb-none">Feature published publications or portfolio projects on the public Home page.</p>
+        <h1 class="text-h5 q-my-none">{{ t('admin.featured.title') }}</h1>
+        <p class="text-body2 text-grey-8 q-mb-none">{{ t('admin.featured.description') }}</p>
       </div>
-      <div class="col-auto"><q-btn color="primary" label="Create featured content" @click="create" /></div>
+      <div class="col-auto"><q-btn color="primary" :label="t('admin.featured.create')" @click="create" /></div>
     </div>
 
     <q-banner v-if="notification" :class="notification.type === 'success' ? 'bg-green-1 text-positive' : 'bg-red-1 text-negative'" class="q-mb-md" rounded role="status">
       {{ notification.message }}
     </q-banner>
     <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded role="alert">
-      {{ isVersionConflict(error) ? 'This featured item changed elsewhere. Reload it before saving.' : error.message }}
+      {{ isVersionConflict(error) ? t('admin.featured.conflict') : error.message }}
     </q-banner>
 
     <AdminStatePanel v-if="state !== 'ready'" :state="state" @retry="load" />
     <template v-else>
       <q-list bordered separator class="q-mb-lg">
         <q-item v-for="item in items" :key="item.id" clickable @click="select(item)">
-          <q-item-section><q-item-label>{{ item.targetType }}</q-item-label><q-item-label caption>Home order {{ item.sortOrder }}</q-item-label></q-item-section>
-          <q-item-section side><q-badge :label="item.active ? 'Active' : 'Inactive'" :color="item.active ? 'positive' : 'grey-7'" /></q-item-section>
+          <q-item-section><q-item-label>{{ item.targetType }}</q-item-label><q-item-label caption>{{ t('admin.featured.homeOrder', { order: item.sortOrder }) }}</q-item-label></q-item-section>
+          <q-item-section side><q-badge :label="item.active ? t('admin.featured.active') : t('admin.featured.inactive')" :color="item.active ? 'positive' : 'grey-7'" /></q-item-section>
         </q-item>
       </q-list>
       <AdminPaginatedTable :page="page" :total-pages="totalPages" @change-page="load" />
     </template>
 
     <q-form class="q-mt-xl q-gutter-md" @submit.prevent="save">
-      <h2 class="text-h6 q-my-none">{{ form.id ? 'Edit featured content' : 'Create featured content' }}</h2>
-      <q-input v-model="form.slotKey" label="Public placement" readonly hint="Featured content is shown in the Home placement." :disable="saving" :error="Boolean(fieldErrors.slotKey)" :error-message="fieldErrors.slotKey" />
-      <q-select v-model="form.targetType" :options="[{ label: 'Publication', value: 'PUBLICATION' }, { label: 'Portfolio project', value: 'PORTFOLIO_PROJECT' }]" option-label="label" option-value="value" emit-value map-options label="Target type" :disable="saving" :error="Boolean(fieldErrors.targetType)" :error-message="fieldErrors.targetType" />
-      <q-select v-model="form.targetId" :options="targetOptions" option-label="label" option-value="value" emit-value map-options label="Published target" :disable="saving" :error="Boolean(fieldErrors.targetId)" :error-message="fieldErrors.targetId" :rules="[(value) => Boolean(value) || 'Select a published target.']" />
-      <q-input v-model.number="form.sortOrder" type="number" min="0" label="Sort order" :disable="saving" :error="Boolean(fieldErrors.sortOrder)" :error-message="fieldErrors.sortOrder" />
+      <h2 class="text-h6 q-my-none">{{ form.id ? t('admin.featured.edit') : t('admin.featured.create') }}</h2>
+      <q-input v-model="form.slotKey" :label="t('admin.featured.placement')" readonly :hint="t('admin.featured.placementHint')" :disable="saving" :error="Boolean(fieldErrors.slotKey)" :error-message="fieldErrors.slotKey" />
+      <q-select v-model="form.targetType" :options="[{ label: t('admin.featured.publication'), value: 'PUBLICATION' }, { label: t('admin.featured.project'), value: 'PORTFOLIO_PROJECT' }]" option-label="label" option-value="value" emit-value map-options :label="t('admin.featured.targetType')" :disable="saving" :error="Boolean(fieldErrors.targetType)" :error-message="fieldErrors.targetType" />
+      <q-select v-model="form.targetId" :options="targetOptions" option-label="label" option-value="value" emit-value map-options :label="t('admin.featured.publishedTarget')" :disable="saving" :error="Boolean(fieldErrors.targetId)" :error-message="fieldErrors.targetId" :rules="[(value) => Boolean(value) || t('admin.featured.selectPublishedTarget')]" />
+      <q-input v-model.number="form.sortOrder" type="number" min="0" :label="t('admin.featured.sortOrder')" :disable="saving" :error="Boolean(fieldErrors.sortOrder)" :error-message="fieldErrors.sortOrder" />
       <div class="row q-gutter-sm">
-        <q-btn type="submit" color="primary" :loading="saving" :disable="saving" label="Save featured content" />
+        <q-btn type="submit" color="primary" :loading="saving" :disable="saving" :label="t('admin.featured.save')" />
         <AdminActivationActions v-if="form.id" :active="form.active" :saving="saving" :public-preview-path="publicPreviewPath" @activate="transition('activate')" @deactivate="transition('deactivate')" />
       </div>
     </q-form>

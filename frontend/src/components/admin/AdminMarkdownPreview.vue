@@ -1,4 +1,6 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
+
 import MarkdownContent from 'src/components/content/MarkdownContent.vue'
 
 defineProps({
@@ -9,23 +11,24 @@ defineProps({
 })
 
 const emit = defineEmits(['update:modelValue'])
+const { t } = useI18n()
 </script>
 
 <template>
-  <section class="admin-markdown-preview" aria-label="Markdown editor and preview">
+  <section class="admin-markdown-preview" :aria-label="t('admin.markdown.editorAndPreview')">
     <label>
-      Markdown
+      {{ t('admin.markdown.source') }}
       <textarea
         :value="modelValue"
         rows="12"
         @input="emit('update:modelValue', $event.target.value)"
       />
     </label>
-    <section aria-label="Safe Markdown preview">
-      <h2 class="text-subtitle1">Preview</h2>
+    <section :aria-label="t('admin.markdown.safePreview')">
+      <h2 class="text-subtitle1">{{ t('admin.markdown.preview') }}</h2>
       <MarkdownContent :markdown="modelValue">
         <template #error>
-          <p role="alert">The Markdown preview could not be rendered safely.</p>
+          <p role="alert">{{ t('admin.markdown.previewError') }}</p>
         </template>
       </MarkdownContent>
     </section>
@@ -35,13 +38,21 @@ const emit = defineEmits(['update:modelValue'])
 <style scoped>
 .admin-markdown-preview {
   display: grid;
-  gap: 1.5rem;
+  gap: var(--tm-space-6);
 }
 
 textarea {
   display: block;
   inline-size: 100%;
-  margin-block-start: 0.5rem;
+  min-block-size: 12rem;
+  margin-block-start: var(--tm-space-2);
+  padding: var(--tm-space-3);
+  border: 1px solid var(--tm-admin-border);
+  border-radius: var(--tm-admin-control-radius);
+  background: var(--tm-admin-surface);
+  color: var(--tm-text-primary);
   font: inherit;
 }
+
+textarea:focus-visible { outline: 3px solid var(--tm-focus-ring); outline-offset: 2px; }
 </style>
