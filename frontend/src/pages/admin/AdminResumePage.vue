@@ -1,5 +1,6 @@
 <script setup>
 import { computed, inject, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import AdminLifecycleActions from 'src/components/admin/AdminLifecycleActions.vue'
 import AdminLocaleTabs from 'src/components/admin/AdminLocaleTabs.vue'
@@ -11,6 +12,7 @@ import { primeCsrfToken } from 'src/services/csrf'
 import { normalizeApiError } from 'src/services/httpClient'
 
 const httpClient = inject(HTTP_CLIENT_KEY)
+const { t } = useI18n()
 const entryTypes = ['EDUCATION', 'EXPERIENCE', 'RESEARCH', 'AWARD', 'CERTIFICATION']
 const entries = ref([])
 const documents = ref([])
@@ -207,8 +209,8 @@ onMounted(() => {
 
 <template>
   <q-page class="q-pa-md q-pa-lg-md">
-    <h1 class="text-h5 q-mt-none">Resume</h1>
-    <p class="text-body2 text-grey-8">Manage entries and the supported published document for each locale.</p>
+    <h1 class="text-h5 q-mt-none">{{ t('admin.resume.title') }}</h1>
+    <p class="text-body2 text-grey-8">{{ t('admin.resume.description') }}</p>
     <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded role="alert">{{ error.message }}</q-banner>
     <AdminStatePanel v-if="state !== 'ready'" :state="state" @retry="load" />
     <template v-else>
@@ -222,35 +224,35 @@ onMounted(() => {
     </template>
 
     <q-form class="q-mt-xl q-gutter-md" @submit.prevent="saveEntry">
-      <h2 class="text-h6 q-my-none">{{ entryForm.id ? 'Edit entry' : 'Create entry' }}</h2>
-      <q-select v-model="entryForm.entryType" :options="entryTypes" label="Entry type" :disable="saving" />
-      <q-input v-model="entryForm.startedOn" type="date" label="Start date" :disable="saving" />
-      <q-input v-model="entryForm.endedOn" type="date" label="End date" :disable="saving || entryForm.current" />
-      <q-checkbox v-model="entryForm.current" label="Current" :disable="saving" />
-      <q-input v-model.number="entryForm.sortOrder" type="number" min="0" label="Sort order" :disable="saving" />
+      <h2 class="text-h6 q-my-none">{{ entryForm.id ? t('admin.resume.editEntry') : t('admin.resume.createEntry') }}</h2>
+      <q-select v-model="entryForm.entryType" :options="entryTypes" :label="t('admin.resume.entryType')" :disable="saving" />
+      <q-input v-model="entryForm.startedOn" type="date" :label="t('admin.resume.startDate')" :disable="saving" />
+      <q-input v-model="entryForm.endedOn" type="date" :label="t('admin.resume.endDate')" :disable="saving || entryForm.current" />
+      <q-checkbox v-model="entryForm.current" :label="t('admin.resume.current')" :disable="saving" />
+      <q-input v-model.number="entryForm.sortOrder" type="number" min="0" :label="t('admin.resume.sortOrder')" :disable="saving" />
       <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />
-      <q-input v-model="activeTranslation.title" label="Title" :disable="saving" />
-      <q-input v-model="activeTranslation.organization" label="Organization" :disable="saving" />
-      <q-input v-model="activeTranslation.location" label="Location" :disable="saving" />
-      <q-input v-model="activeTranslation.summary" type="textarea" label="Description" :disable="saving" />
+      <q-input v-model="activeTranslation.title" :label="t('admin.resume.translationTitle')" :disable="saving" />
+      <q-input v-model="activeTranslation.organization" :label="t('admin.resume.organization')" :disable="saving" />
+      <q-input v-model="activeTranslation.location" :label="t('admin.resume.location')" :disable="saving" />
+      <q-input v-model="activeTranslation.summary" type="textarea" :label="t('admin.resume.entryDescription')" :disable="saving" />
       <div class="row q-gutter-sm">
-        <q-btn type="submit" color="primary" :loading="saving" label="Save entry" />
+        <q-btn type="submit" color="primary" :loading="saving" :label="t('admin.resume.saveEntry')" />
         <AdminLifecycleActions v-if="entryForm.id" :status="entryForm.status" :saving="saving" :public-preview-path="entryPreviewPath" @publish="transition('entries', 'publish')" @archive="transition('entries', 'archive')" />
       </div>
     </q-form>
 
     <q-form class="q-mt-xl q-gutter-md" @submit.prevent="saveDocument">
-      <h2 class="text-h6 q-my-none">Resume document</h2>
+      <h2 class="text-h6 q-my-none">{{ t('admin.resume.document') }}</h2>
       <q-list bordered separator>
         <q-item v-for="item in documents" :key="item.id" clickable @click="selectDocument(item)">
           <q-item-section><q-item-label>{{ item.languageCode }} · {{ item.mediaAssetId }}</q-item-label></q-item-section>
           <q-item-section side><q-badge :label="item.status" :color="item.status === 'PUBLISHED' ? 'positive' : 'grey-7'" /></q-item-section>
         </q-item>
       </q-list>
-      <q-select v-model="documentForm.languageCode" :options="['fa', 'en']" label="Locale" :disable="saving" />
-      <AdminMediaSelector v-model="documentForm.mediaAssetId" label="Resume document media" :disable="saving" />
+      <q-select v-model="documentForm.languageCode" :options="['fa', 'en']" :label="t('admin.resume.locale')" :disable="saving" />
+      <AdminMediaSelector v-model="documentForm.mediaAssetId" :label="t('admin.resume.documentMedia')" :disable="saving" />
       <div class="row q-gutter-sm">
-        <q-btn type="submit" color="primary" :loading="saving" label="Save document" />
+        <q-btn type="submit" color="primary" :loading="saving" :label="t('admin.resume.saveDocument')" />
         <AdminLifecycleActions v-if="documentForm.id" :status="documentForm.status" :saving="saving" :public-preview-path="documentPreviewPath" @publish="transition('documents', 'publish')" @archive="transition('documents', 'archive')" />
       </div>
     </q-form>

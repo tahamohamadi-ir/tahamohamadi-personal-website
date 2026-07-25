@@ -1,5 +1,6 @@
 <script setup>
 import { computed, inject, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 import { HTTP_CLIENT_KEY } from 'src/services/apiContext'
 import { normalizeApiError } from 'src/services/httpClient'
@@ -11,13 +12,14 @@ const props = defineProps({
   },
   label: {
     type: String,
-    default: 'Media asset'
+    default: null
   },
   disable: Boolean
 })
 
 const emit = defineEmits(['update:modelValue'])
 const httpClient = inject(HTTP_CLIENT_KEY)
+const { t } = useI18n()
 const items = ref([])
 const loading = ref(false)
 const error = ref(null)
@@ -25,9 +27,13 @@ const error = ref(null)
 const options = computed(() => items.value
   .filter((item) => item.status === 'ACTIVE')
   .map((item) => ({
-    label: `${item.id} · ${item.mimeType}`,
+    label: t('admin.mediaSelector.optionLabel', {
+      name: item.originalFilename || item.id,
+      mimeType: item.mimeType
+    }),
     value: item.id
   })))
+const resolvedLabel = computed(() => props.label ?? t('admin.mediaSelector.label'))
 
 async function load() {
   loading.value = true
@@ -53,7 +59,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section aria-label="Media selection">
+  <section :aria-label="t('admin.mediaSelector.selection')">
     <q-select
       :model-value="modelValue"
       :options="options"
@@ -62,13 +68,13 @@ onMounted(() => {
       emit-value
       map-options
       clearable
-      :label="label"
+      :label="resolvedLabel"
       :disable="disable || loading"
       @update:model-value="emit('update:modelValue', $event ?? null)"
     />
     <p v-if="error" class="text-negative text-caption q-mt-xs" role="alert">
       {{ error.message }}
-      <button type="button" @click="load">Retry media list</button>
+      <q-btn flat dense no-caps class="q-ml-xs" :label="t('admin.mediaSelector.retry')" :disable="loading" @click="load" />
     </p>
   </section>
 </template>

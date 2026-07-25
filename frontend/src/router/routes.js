@@ -6,6 +6,7 @@ const PublicHomePage = () =>
 
 const AboutPage = () => import('pages/public/AboutPage.vue')
 const ResearchPage = () => import('pages/public/ResearchPage.vue')
+const ComposedPage = () => import('pages/public/ComposedPage.vue')
 const SkillsPage = () => import('pages/public/SkillsPage.vue')
 const ContactPage = () => import('pages/public/ContactPage.vue')
 
@@ -149,6 +150,12 @@ function createLocaleRoute(locale, direction) {
       },
       ...normalChildren,
       {
+        path: 'pages/:slug',
+        name: `${locale}-composed-page`,
+        component: ComposedPage,
+        meta: createRouteMeta(locale, direction, 'composed-page', 'page')
+      },
+      {
         path: 'translation-unavailable',
         name: `${locale}-translation-unavailable`,
         component: TranslationUnavailablePage,
@@ -214,6 +221,18 @@ const routes = [
         }
       },
       {
+        path: 'navigation',
+        name: 'admin-navigation',
+        component: () => import('pages/admin/AdminNavigationPage.vue'),
+        meta: { requiresAdmin: true, noindex: true }
+      },
+      {
+        path: 'site-settings',
+        name: 'admin-site-settings',
+        component: () => import('pages/admin/AdminSiteSettingsPage.vue'),
+        meta: { requiresAdmin: true, noindex: true }
+      },
+      {
         path: 'pages',
         name: 'admin-pages',
         component: () => import('pages/admin/AdminPagesPage.vue'),
@@ -221,6 +240,24 @@ const routes = [
           requiresAdmin: true,
           noindex: true
         }
+      },
+      {
+        path: 'blog/posts',
+        name: 'admin-blog-posts',
+        component: () => import('pages/admin/AdminBlogPostsPage.vue'),
+        meta: { requiresAdmin: true, noindex: true }
+      },
+      {
+        path: 'blog/categories',
+        name: 'admin-blog-categories',
+        component: () => import('pages/admin/AdminBlogCategoriesPage.vue'),
+        meta: { requiresAdmin: true, noindex: true }
+      },
+      {
+        path: 'blog/tags',
+        name: 'admin-blog-tags',
+        component: () => import('pages/admin/AdminBlogTagsPage.vue'),
+        meta: { requiresAdmin: true, noindex: true }
       },
       {
         path: 'resume',
@@ -284,6 +321,12 @@ const routes = [
           requiresAdmin: true,
           noindex: true
         }
+      },
+      {
+        path: 'contact-messages',
+        name: 'admin-contact-messages',
+        component: () => import('pages/admin/AdminContactMessagesPage.vue'),
+        meta: { requiresAdmin: true, noindex: true }
       },
       {
         path: ':pathMatch(.*)*',
