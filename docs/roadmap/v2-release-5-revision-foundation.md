@@ -29,8 +29,18 @@ Admin endpoints:
 - `POST /api/v1/admin/blog/posts/{id}/submit-for-review?version={version}`
 - `POST /api/v1/admin/blog/posts/{id}/return-to-draft?version={version}`
 
+Blog translation freshness now has a first, source-of-truth slice. A post has
+an explicit `sourceLanguage` (`fa` or `en`), selected when it is created or
+saved. The API returns independently computed statuses for `fa` and `en`:
+`MISSING`, `INCOMPLETE`, `COMPLETE`, or `OUTDATED`. When the source text
+changes and the target text does not, only that target becomes `OUTDATED`; no
+content is copied or overwritten. `sourceLanguage` is accepted as an optional
+query parameter on Blog create/update endpoints, and its selection is visible
+in the Admin Blog editor.
+
 ## Remaining Release 5 work
 
 - Extend the same immutable model to Pages and Portfolio case studies.
-- Add translation freshness.
+- Add a cross-entity translation queue with filtering, source update time,
+  comparison, and completion checklist.
 - Add revision timeline, compare, and restore controls to the Admin UI.
