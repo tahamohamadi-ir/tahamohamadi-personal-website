@@ -26,20 +26,23 @@ import java.util.stream.Collectors;
 @Service
 @ConditionalOnExpression("!'${spring.autoconfigure.exclude:}'.contains('DataSourceAutoConfiguration')")
 public class AdminPageService {
-    private final ContentPageRepository pages; private final ContentPageTranslationRepository translations;
+    private final ContentPageRepository pages; private final ContentPageTranslationRepository translations; private final AdminPageRevisionService revisions;
     private final AuditEventRepository audit; private final ObjectMapper mapper; private final AuthenticatedAuditActor actor;
-    public AdminPageService(ContentPageRepository pages, ContentPageTranslationRepository translations, AuditEventRepository audit, ObjectMapper mapper, AuthenticatedAuditActor actor) { this.pages=pages; this.translations=translations; this.audit=audit; this.mapper=mapper; this.actor=actor; }
+    public AdminPageService(ContentPageRepository pages, ContentPageTranslationRepository translations, AdminPageRevisionService revisions, AuditEventRepository audit, ObjectMapper mapper, AuthenticatedAuditActor actor) { this.pages=pages; this.translations=translations; this.revisions=revisions; this.audit=audit; this.mapper=mapper; this.actor=actor; }
     @Transactional(readOnly=true) public Page<AdminPageResponse> list(Pageable pageable) {
         Page<ContentPage> result = pages.findByDeletedAtIsNullOrderByUpdatedAtDescIdDesc(pageable);
         Map<UUID, List<ContentPageTranslation>> localized = result.getContent().isEmpty() ? Map.of() : translations.findByContentPageIdInAndDeletedAtIsNull(ids(result.getContent())).stream().collect(Collectors.groupingBy(value -> value.getContentPage().getId()));
         return result.map(page -> response(page, localized.get(page.getId())));
     }
     @Transactional(readOnly=true) public AdminPageResponse get(UUID id) { return response(page(id)); }
-    @Transactional public AdminPageResponse create(AdminPageRequest request) { ContentPage page=pages.save(ContentPage.create(UUID.randomUUID(),request.pageKey(),Instant.now())); saveTranslations(page,request); record("ADMIN_PAGE_CREATED",page.getId()); return response(page); }
-    @Transactional public AdminPageResponse update(UUID id,AdminPageRequest request) { ContentPage page=page(id); version(page,request.version()); page.rename(request.pageKey()); saveTranslations(page,request); record("ADMIN_PAGE_UPDATED",id); return response(page); }
-    @Transactional public AdminPageResponse publish(UUID id, long version) { ContentPage page=page(id); version(page,version); requirePublishable(page); page.publish(Instant.now()); record("ADMIN_PAGE_PUBLISHED",id); return response(page); }
-    @Transactional public AdminPageResponse archive(UUID id,long version) { ContentPage page=page(id); version(page,version); page.archive(); record("ADMIN_PAGE_ARCHIVED",id); return response(page); }
+    @Transactional public AdminPageResponse create(AdminPageRequest request) { ContentPage page=pages.save(ContentPage.create(UUID.randomUUID(),request.pageKey(),Instant.now())); saveTranslations(page,request); revisions.snapshotBeforeChange(page.getId(),"CREATED"); record("ADMIN_PAGE_CREATED",page.getId()); return response(page); }
+    @Transactional public AdminPageResponse update(UUID id,AdminPageRequest request) { ContentPage page=page(id); version(page,request.version()); revisions.snapshotBeforeChange(id,"UPDATED"); page.rename(request.pageKey()); saveTranslations(page,request); record("ADMIN_PAGE_UPDATED",id); return response(page); }
+    @Transactional public AdminPageResponse publish(UUID id, long version) { ContentPage page=page(id); version(page,version); requirePublishable(page); revisions.snapshotBeforeChange(id,"PUBLISHED"); page.publish(Instant.now()); record("ADMIN_PAGE_PUBLISHED",id); return response(page); }
+    @Transactional public AdminPageResponse archive(UUID id,long version) { ContentPage page=page(id); version(page,version); revisions.snapshotBeforeChange(id,"ARCHIVED"); page.archive(); record("ADMIN_PAGE_ARCHIVED",id); return response(page); }
     @Transactional public void delete(UUID id,long version) { ContentPage page=page(id); version(page,version); page.softDelete(actor.required(),Instant.now()); record("ADMIN_PAGE_DELETED",id); }
+    @Transactional(readOnly=true) public List<AdminPageRevisionSummary> revisions(UUID id) { return revisions.list(id); }
+    @Transactional(readOnly=true) public AdminPageRevisionResponse revision(UUID id,UUID revisionId) { return revisions.detail(id,revisionId); }
+    @Transactional public AdminPageResponse restoreAsDraft(UUID id,UUID revisionId,long version) { return revisions.restoreAsDraft(id,revisionId,version); }
     private ContentPage page(UUID id) { return pages.findById(id).filter(p->p.getDeletedAt()==null).orElseThrow(()->new java.util.NoSuchElementException("Page not found")); }
     private void saveTranslations(ContentPage page,AdminPageRequest request) { save(page,LanguageCode.fa,request.fa()); save(page,LanguageCode.en,request.en()); }
     private void save(ContentPage page,LanguageCode language,PageTranslationRequest request) { translations.findByContentPageIdAndLanguageCodeAndDeletedAtIsNull(page.getId(),language).ifPresentOrElse(t->t.update(request.title(),request.slug(),request.summary(),request.bodyMarkdown(),request.seoTitle(),request.seoDescription(),request.canonicalPath()),()->{ ContentPageTranslation t=ContentPageTranslation.create(UUID.randomUUID(),page,language,request.title(),request.slug(),Instant.now()); t.update(request.title(),request.slug(),request.summary(),request.bodyMarkdown(),request.seoTitle(),request.seoDescription(),request.canonicalPath()); translations.save(t); }); }

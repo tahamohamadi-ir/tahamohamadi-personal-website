@@ -156,6 +156,47 @@ class AdminPageAuditAndConcurrencyIntegrationTest {
                 .andExpect(jsonPath("$.pageKey").value("versioned-page-updated"));
     }
 
+    @Test
+    @Order(4)
+    void restoresAnImmutablePageRevisionAsANewDraftWithItsComposition() throws Exception {
+        AppUser admin = actor("page-revision-admin");
+        String created = mvc.perform(post("/api/v1/admin/pages").contentType(MediaType.APPLICATION_JSON).content(payload("revision-page", null))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        UUID pageId = UUID.fromString(JsonPath.read(created, "$.id"));
+        long version = ((Number) JsonPath.read(created, "$.version")).longValue();
+
+        String firstComposition = composition(version, "First revision block");
+        String first = mvc.perform(put("/api/v1/admin/pages/{id}/blocks/composition", pageId).contentType(MediaType.APPLICATION_JSON).content(firstComposition)
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.sections[0].blocks[0].fa.title").value("First revision block"))
+                .andReturn().getResponse().getContentAsString();
+        long firstVersion = ((Number) JsonPath.read(first, "$.version")).longValue();
+
+        mvc.perform(put("/api/v1/admin/pages/{id}/blocks/composition", pageId).contentType(MediaType.APPLICATION_JSON).content(composition(firstVersion, "Changed block"))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk());
+
+        String revisions = mvc.perform(get("/api/v1/admin/pages/{id}/revisions", pageId).with(adminUser(admin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].reason").value("COMPOSITION_UPDATED"))
+                .andReturn().getResponse().getContentAsString();
+        UUID revisionId = UUID.fromString(JsonPath.read(revisions, "$[0].id"));
+        long sourceVersion = pages.findById(pageId).orElseThrow().getVersion();
+
+        String restored = mvc.perform(post("/api/v1/admin/pages/{id}/revisions/{revisionId}/restore-as-draft", pageId, revisionId)
+                        .param("version", Long.toString(sourceVersion)).with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DRAFT"))
+                .andExpect(jsonPath("$.pageKey").value("revision-page-revision-3"))
+                .andExpect(jsonPath("$.fa.slug").value("fa-revision-page-revision-3"))
+                .andReturn().getResponse().getContentAsString();
+        UUID restoredId = UUID.fromString(JsonPath.read(restored, "$.id"));
+
+        mvc.perform(get("/api/v1/admin/pages/{id}/blocks/composition", restoredId).with(adminUser(admin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.sections[0].blocks[0].fa.title").value("First revision block"));
+        mvc.perform(get("/api/v1/admin/pages/{id}", pageId).with(adminUser(admin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.pageKey").value("revision-page"));
+    }
+
     private void seed(String pageKey, Instant createdAt) {
         ContentPage page = pages.saveAndFlush(ContentPage.create(UUID.randomUUID(), pageKey, createdAt));
         translations.saveAllAndFlush(List.of(
@@ -177,6 +218,10 @@ class AdminPageAuditAndConcurrencyIntegrationTest {
     private String payload(String key, Long version) {
         String versionField = version == null ? "" : ",\"version\":" + version;
         return "{\"pageKey\":\"" + key + "\",\"fa\":{\"title\":\"FA " + key + "\",\"slug\":\"fa-" + key + "\",\"seoTitle\":\"FA SEO\",\"seoDescription\":\"FA description\"},\"en\":{\"title\":\"EN " + key + "\",\"slug\":\"en-" + key + "\",\"seoTitle\":\"EN SEO\",\"seoDescription\":\"EN description\"}" + versionField + "}";
+    }
+
+    private String composition(long version, String title) {
+        return "{\"version\":" + version + ",\"sections\":[{\"type\":\"STANDARD\",\"layout\":\"SINGLE_COLUMN\",\"enabled\":true,\"blocks\":[{\"type\":\"RICH_TEXT\",\"enabled\":true,\"fa\":{\"title\":\"" + title + "\"},\"en\":{\"title\":\"EN " + title + "\"}}]}]}";
     }
 
     private static SecurityMockMvcRequestPostProcessors.UserRequestPostProcessor adminUser(AppUser user) {
