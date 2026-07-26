@@ -16,5 +16,6 @@ public record AdminProjectCreateRequest(
         @Min(0) int sortOrder,
         @Valid @NotNull AdminProjectTranslationRequest fa,
         @Valid @NotNull AdminProjectTranslationRequest en,
-        @Valid @NotNull @Size(max = 50) List<@NotNull AdminProjectSkillReferenceRequest> skills
+        @Valid @NotNull @Size(max = 50) List<@NotNull AdminProjectSkillReferenceRequest> skills,
+        @Valid @NotNull @Size(max = 20) List<@NotNull AdminProjectMediaReferenceRequest> gallery
 ) { }

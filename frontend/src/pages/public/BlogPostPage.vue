@@ -2,6 +2,7 @@
 import { computed, inject, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+import ArticleDocumentContent from 'src/components/content/ArticleDocumentContent.vue'
 import MarkdownContent from 'src/components/content/MarkdownContent.vue'
 import PageState from 'src/components/public/PageState.vue'
 import TranslationUnavailable from 'src/components/public/TranslationUnavailable.vue'
@@ -52,6 +53,10 @@ const isNotFound = computed(() => (
 const seoState = computed(() => isNotFound.value ? 'not-found' : state.value)
 usePublicSeoMeta({ data, state: seoState })
 const alternatePath = computed(() => error.value?.alternatePaths?.[0] ?? null)
+const tableOfContents = computed(() => (data.value?.articleDocument?.blocks ?? [])
+  .map((block, index) => ({ block, index }))
+  .filter(({ block }) => block?.type === 'heading' && typeof block.value === 'string' && block.value.trim())
+  .map(({ block, index }) => ({ id: `article-heading-${index}`, label: block.value, level: Math.max(2, Math.min(6, Number(block.level) || 2)) })))
 
 function retry() {
   return state.value === 'stale' ? refresh() : load()
@@ -101,7 +106,12 @@ onMounted(() => {
         </div>
       </dl>
 
-      <MarkdownContent v-if="data?.bodyMarkdown" :markdown="data.bodyMarkdown">
+      <nav v-if="tableOfContents.length > 1" class="tm-article-toc" :aria-label="t('public.tableOfContents')">
+        <h2 class="tm-article-toc__title">{{ t('public.tableOfContents') }}</h2>
+        <ol><li v-for="entry in tableOfContents" :key="entry.id" :class="`tm-article-toc__level-${entry.level}`"><a :href="`#${entry.id}`">{{ entry.label }}</a></li></ol>
+      </nav>
+      <ArticleDocumentContent v-if="data?.articleDocument?.blocks?.length" :document="data.articleDocument" />
+      <MarkdownContent v-else-if="data?.bodyMarkdown" :markdown="data.bodyMarkdown">
         <template #error>
           <p class="tm-page-copy" role="alert">
             {{ t('public.richContent.renderingFailure') }}
@@ -111,3 +121,13 @@ onMounted(() => {
     </article>
   </section>
 </template>
+
+<style scoped>
+.tm-article-toc { border-block: 1px solid var(--tm-color-border); padding-block: var(--tm-space-4); }
+.tm-article-toc__title { font-size: var(--tm-font-size-body); margin: 0; }
+.tm-article-toc ol { display: grid; gap: var(--tm-space-2); margin: var(--tm-space-3) 0 0; padding-inline-start: var(--tm-space-4); }
+.tm-article-toc__level-3 { margin-inline-start: var(--tm-space-3); }
+.tm-article-toc__level-4, .tm-article-toc__level-5, .tm-article-toc__level-6 { margin-inline-start: var(--tm-space-4); }
+.tm-article-toc a { overflow-wrap: anywhere; }
+@media print { .tm-article-toc { break-inside: avoid; } }
+</style>

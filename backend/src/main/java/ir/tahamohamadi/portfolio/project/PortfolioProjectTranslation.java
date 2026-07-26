@@ -21,6 +21,10 @@ public class PortfolioProjectTranslation extends AuditedSoftDeletableEntity {
     @Column(name = "body_markdown", columnDefinition = "text") private String bodyMarkdown;
     @Column(name = "seo_title") private String seoTitle;
     @Column(name = "seo_description") private String seoDescription;
+    @Column(name = "role_text") private String roleText;
+    @Column(name = "client_label") private String clientLabel;
+    @Column(name = "team_description", columnDefinition = "text") private String teamDescription;
+    @Column(name = "outcome_text", columnDefinition = "text") private String outcomeText;
 
     private PortfolioProjectTranslation(UUID id, PortfolioProject project, LanguageCode language, String title, String slug, String summary, String bodyMarkdown, String seoTitle, String seoDescription, Instant at) {
         initialize(id, at);
@@ -42,4 +46,5 @@ public class PortfolioProjectTranslation extends AuditedSoftDeletableEntity {
         this.seoDescription = seoDescription;
         updatedAt = at;
     }
+    public void updateCaseStudyFacts(String roleText, String clientLabel, String teamDescription, String outcomeText) { this.roleText=roleText; this.clientLabel=clientLabel; this.teamDescription=teamDescription; this.outcomeText=outcomeText; }
 }

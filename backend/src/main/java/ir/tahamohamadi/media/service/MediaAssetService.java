@@ -10,6 +10,7 @@ import ir.tahamohamadi.media.api.MediaUploadException;
 import ir.tahamohamadi.media.api.admin.MediaAssetResponse;
 import ir.tahamohamadi.media.api.admin.MediaAssetSummary;
 import ir.tahamohamadi.media.api.admin.MediaMetadataRequest;
+import ir.tahamohamadi.media.api.admin.MediaReplaceRequest;
 import ir.tahamohamadi.media.asset.*;
 import ir.tahamohamadi.media.storage.MediaStorage;
 import ir.tahamohamadi.media.validation.MediaValidationService;
@@ -17,6 +18,7 @@ import ir.tahamohamadi.media.validation.ValidatedMedia;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +27,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -123,16 +128,27 @@ public class MediaAssetService {
     }
 
     @Transactional(readOnly = true)
-    public Page<MediaAssetSummary> list(Pageable pageable) {
-        return assets.findByDeletedAtIsNullOrderByUpdatedAtDescIdDesc(pageable)
+    public Page<MediaAssetSummary> list(
+            Pageable pageable,
+            String query,
+            String mimePrefix,
+            MediaAssetStatus status
+    ) {
+        return assets.findAll(mediaFilter(query, mimePrefix, status), pageable)
                 .map(asset -> new MediaAssetSummary(
                         asset.getId(),
+                        asset.getOriginalFilename(),
                         asset.getMimeType(),
                         asset.getSizeBytes(),
                         asset.getStatus(),
                         asset.getCreatedAt(),
                         asset.getVersion()
                 ));
+    }
+
+    @Transactional(readOnly = true)
+    public MediaAsset adminReadable(UUID id) {
+        return asset(id);
     }
 
     @Transactional(readOnly = true)
@@ -171,6 +187,28 @@ public class MediaAssetService {
         record(authenticatedActor, "ADMIN_MEDIA_ARCHIVED", id);
     }
 
+    @Transactional
+    public MediaAssetResponse replace(UUID id, MediaReplaceRequest request) {
+        AppUser authenticatedActor = actor.required();
+        MediaAsset source = asset(id);
+        requireVersion(source, request.version());
+        if (source.getId().equals(request.replacementMediaId())) {
+            throw new IllegalArgumentException("Replacement media must be different");
+        }
+        MediaAsset replacement = assets.findByIdAndStatusAndDeletedAtIsNull(
+                        request.replacementMediaId(), MediaAssetStatus.ACTIVE)
+                .orElseThrow(() -> new NoSuchElementException("Replacement media not found"));
+        if (!compatible(source, replacement)) {
+            throw new IllegalArgumentException("Replacement media must have the same media type");
+        }
+        int usages = references.replaceReferences(source.getId(), replacement.getId());
+        source.archive();
+        source.touch(Instant.now());
+        assets.flush();
+        record(authenticatedActor, "ADMIN_MEDIA_REPLACED", id);
+        return response(replacement);
+    }
+
     @Transactional(readOnly = true)
     public MediaAsset activePublic(UUID id) {
         MediaAsset asset = assets.findByIdAndStatusAndDeletedAtIsNull(id, MediaAssetStatus.ACTIVE)
@@ -185,6 +223,34 @@ public class MediaAssetService {
         return assets.findById(id)
                 .filter(value -> value.getDeletedAt() == null)
                 .orElseThrow(() -> new NoSuchElementException("Media not found"));
+    }
+
+    private static Specification<MediaAsset> mediaFilter(
+            String query,
+            String mimePrefix,
+            MediaAssetStatus status
+    ) {
+        return (root, criteriaQuery, builder) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            predicates.add(builder.isNull(root.get("deletedAt")));
+            if (hasText(query)) {
+                predicates.add(builder.like(
+                        builder.lower(root.get("originalFilename")),
+                        "%" + query.trim().toLowerCase(Locale.ROOT) + "%"
+                ));
+            }
+            if (mimePrefix != null) {
+                predicates.add(builder.like(root.get("mimeType"), mimePrefix + "%"));
+            }
+            if (status != null) {
+                predicates.add(builder.equal(root.get("status"), status));
+            }
+            return builder.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+    }
+
+    private static boolean compatible(MediaAsset source, MediaAsset replacement) {
+        return source.getMimeType().startsWith("image/") == replacement.getMimeType().startsWith("image/");
     }
 
     private void updateTranslation(

@@ -1,6 +1,7 @@
 package ir.tahamohamadi.media.service;
 
 import ir.tahamohamadi.media.api.admin.MediaOrphanResponse;
+import ir.tahamohamadi.media.api.admin.MediaUsageResponse;
 import ir.tahamohamadi.media.asset.MediaAsset;
 import ir.tahamohamadi.media.asset.MediaAssetRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -37,5 +38,9 @@ public class MediaOrphanReportService {
                 .filter(asset -> !referencedIds.contains(asset.getId()))
                 .map(asset -> new MediaOrphanResponse(asset.getId()))
                 .toList();
+    }
+
+    public List<MediaUsageResponse> usages(UUID id) {
+        return references.usages(id);
     }
 }

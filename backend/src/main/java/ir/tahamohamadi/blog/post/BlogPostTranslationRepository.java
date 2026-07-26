@@ -19,6 +19,8 @@ public interface BlogPostTranslationRepository extends JpaRepository<BlogPostTra
     List<BlogPostTranslation> findPublishedByLanguage(@Param("language") LanguageCode language, Pageable pageable);
 
     List<BlogPostTranslation> findByBlogPostIdAndDeletedAtIsNull(UUID postId);
+    @Query("select count(t)>0 from BlogPostTranslation t join t.blogPost p where t.languageCode=:language and lower(t.slug)=lower(:slug) and t.deletedAt is null and p.deletedAt is null")
+    boolean existsActiveByLanguageAndSlug(@Param("language") LanguageCode language, @Param("slug") String slug);
     List<BlogPostTranslation> findByBlogPostIdInAndLanguageCodeAndDeletedAtIsNull(Collection<UUID> postIds, LanguageCode language);
 
     @Query(value = "select t.* from blog_post_translation t join blog_post p on p.id=t.blog_post_id where t.language_code=:language and t.deleted_at is null and p.deleted_at is null and p.status='PUBLISHED' and t.search_vector @@ plainto_tsquery(case when :language='en' then 'english'::regconfig else 'simple'::regconfig end,:query) order by p.published_at desc,p.id desc", nativeQuery = true)

@@ -8,5 +8,9 @@ public record AdminProjectTranslationRequest(
         @Size(max = 10_000) String summary,
         @Size(max = 100_000) String bodyMarkdown,
         @Size(max = 255) String seoTitle,
-        @Size(max = 500) String seoDescription
+        @Size(max = 500) String seoDescription,
+        @Size(max = 255) String roleText,
+        @Size(max = 255) String clientLabel,
+        @Size(max = 10_000) String teamDescription,
+        @Size(max = 10_000) String outcomeText
 ) { }

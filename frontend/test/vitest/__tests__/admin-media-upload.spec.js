@@ -39,7 +39,8 @@ function mountMediaPage(httpClient) {
         QPage: { template: '<main><slot /></main>' },
         QForm: qFormStub,
         QFile: qFileStub,
-        QInput: { template: '<input>' },
+        QInput: { props: ['modelValue'], emits: ['update:modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">' },
+        QSelect: { template: '<div><slot /></div>' },
         QBtn: { template: '<button><slot /></button>' },
         QBanner: { template: '<div role="alert"><slot /></div>' },
         QLinearProgress: true,
@@ -121,6 +122,22 @@ describe('admin media upload limits', () => {
     expect(backend).toMatchObject({ code: 'MEDIA_TOO_LARGE', message: 'File exceeds the supported size limit.' })
   })
 
+  it('sends the library search query as a bounded server-side list filter', async () => {
+    const httpClient = {
+      get: vi.fn().mockResolvedValue({ data: { items: [{ id: 'asset-id', originalFilename: 'portrait.png', mimeType: 'image/png', status: 'ACTIVE' }], page: 0, totalPages: 1 } })
+    }
+    const wrapper = mountMediaPage(httpClient)
+    await flushPromises()
+
+    await wrapper.findAll('input')[5].setValue('portrait')
+    await flushPromises()
+
+    expect(httpClient.get).toHaveBeenCalledWith('/api/v1/admin/media', {
+      params: { page: 0, size: 20, query: 'portrait', type: undefined, status: undefined }
+    })
+    wrapper.unmount()
+  })
+
   it('presents active media by filename and MIME type in reusable selectors', async () => {
     const httpClient = {
       get: vi.fn().mockResolvedValue({
@@ -138,7 +155,11 @@ describe('admin media upload limits', () => {
         provide: { [HTTP_CLIENT_KEY]: httpClient },
         stubs: {
           QSelect: { props: ['options'], template: '<output>{{ options[0]?.label }}</output>' },
-          QBtn: { template: '<button><slot /></button>' }
+          QInput: { props: ['modelValue'], emits: ['update:modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">' },
+          QBtn: { template: '<button><slot /></button>' },
+          QForm: qFormStub,
+          QFile: qFileStub,
+          QLinearProgress: true
         }
       }
     })
@@ -147,6 +168,47 @@ describe('admin media upload limits', () => {
 
     expect(wrapper.text()).toContain('portrait.png (image/png)')
     expect(wrapper.text()).not.toContain('old.png')
+    expect(httpClient.get).toHaveBeenCalledWith('/api/v1/admin/media', {
+      params: {
+        page: 0,
+        size: 20,
+        status: 'ACTIVE',
+        query: undefined,
+        type: undefined
+      }
+    })
+    wrapper.unmount()
+  })
+
+  it('uploads a valid in-flow selection and selects the returned asset', async () => {
+    const httpClient = {
+      get: vi.fn().mockResolvedValue({ data: { items: [], page: 0, totalPages: 0 } }),
+      post: vi.fn().mockResolvedValue({ data: { id: 'new-asset-id' } })
+    }
+    const wrapper = mount(AdminMediaSelector, {
+      props: { allowedTypes: ['image'] },
+      global: {
+        plugins: [createTestI18n()],
+        provide: { [HTTP_CLIENT_KEY]: httpClient },
+        stubs: {
+          QForm: qFormStub,
+          QFile: qFileStub,
+          QInput: { template: '<input>' },
+          QSelect: { template: '<div />' },
+          QBtn: { template: '<button><slot /></button>' },
+          QLinearProgress: true
+        }
+      }
+    })
+    await flushPromises()
+
+    await selectFile(wrapper.get('input[type="file"]'), new File([new Uint8Array(1024)], 'new.png', { type: 'image/png' }))
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(primeCsrfToken).toHaveBeenCalledWith(httpClient)
+    expect(httpClient.post).toHaveBeenCalledWith('/api/v1/admin/media', expect.any(FormData), expect.any(Object))
+    expect(wrapper.emitted('update:modelValue')).toContainEqual(['new-asset-id'])
     wrapper.unmount()
   })
 })

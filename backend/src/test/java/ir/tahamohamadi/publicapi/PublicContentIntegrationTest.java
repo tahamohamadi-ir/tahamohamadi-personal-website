@@ -293,6 +293,27 @@ class PublicContentIntegrationTest {
     }
 
     @Test
+    void exposesCaseStudyFactsOnlyFromTheRequestedPortfolioLocale() throws Exception {
+        UUID project = jdbc.queryForObject("SELECT id FROM portfolio_project WHERE project_key = 'portfolio-item'", UUID.class);
+        jdbc.update("UPDATE portfolio_project_translation SET role_text = ?, client_label = ?, team_description = ?, outcome_text = ? WHERE portfolio_project_id = ? AND language_code = 'en'",
+                "Lead engineer", "Example client", "Two-person team", "Released successfully", project);
+        insertProjectTranslation(project, "fa", "fa-portfolio-item", "Project FA");
+
+        mvc.perform(get("/api/v1/public/en/portfolio/portfolio-item"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roleText").value("Lead engineer"))
+                .andExpect(jsonPath("$.clientLabel").value("Example client"))
+                .andExpect(jsonPath("$.teamDescription").value("Two-person team"))
+                .andExpect(jsonPath("$.outcomeText").value("Released successfully"));
+        mvc.perform(get("/api/v1/public/fa/portfolio/fa-portfolio-item"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.roleText").value(""))
+                .andExpect(jsonPath("$.clientLabel").value(""))
+                .andExpect(jsonPath("$.teamDescription").value(""))
+                .andExpect(jsonPath("$.outcomeText").value(""));
+    }
+
+    @Test
     void derivesPostAndProjectAlternatesFromEligibleLocalizedTranslations() throws Exception {
         UUID category = jdbc.queryForObject("SELECT id FROM blog_category WHERE category_key = 'engineering'", UUID.class);
         UUID skill = jdbc.queryForObject("SELECT id FROM skill WHERE skill_key = 'java'", UUID.class);

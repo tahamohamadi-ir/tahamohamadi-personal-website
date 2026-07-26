@@ -76,31 +76,65 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
 </script>
 
 <template>
-  <q-page class="q-pa-md q-pa-lg-md">
-    <div class="q-mb-lg">
-      <h1 class="text-h5 q-my-none">{{ t('admin.siteSettings.title') }}</h1>
-      <p class="text-body2 text-grey-8 q-mb-none">{{ t('admin.siteSettings.description') }}</p>
-    </div>
-    <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded role="alert">
+  <q-page class="admin-page admin-site-settings">
+    <header class="admin-page__header">
+      <div>
+        <h1 class="text-h4 q-my-none">{{ t('admin.siteSettings.title') }}</h1>
+        <p class="admin-page__description">{{ t('admin.siteSettings.description') }}</p>
+      </div>
+      <a :href="`/${selectedLocale}`" target="_blank" rel="noopener noreferrer" class="tm-text-link">
+        <q-icon name="open_in_new" size="18px" class="q-mr-xs" />{{ t('admin.actions.preview') }}
+      </a>
+    </header>
+    <q-banner v-if="error" class="bg-red-1 text-negative" rounded role="alert">
       {{ error.message }}
       <q-btn v-if="isVersionConflict(error)" flat color="negative" :label="t('admin.siteSettings.reload')" @click="load" />
     </q-banner>
     <q-inner-loading :showing="loading" />
-    <q-form v-if="form" class="q-gutter-md" @submit.prevent="save">
-      <AdminLocaleTabs v-model="selectedLocale" :translations="translationCompletion" />
-      <q-input v-if="activeTranslation" v-model="activeTranslation.brandName" :label="t('admin.siteSettings.siteName')" :error="Boolean(fieldErrors[`${selectedLocale}.brandName`])" :error-message="fieldErrors[`${selectedLocale}.brandName`]" :disable="saving" />
-      <q-input v-if="activeTranslation" v-model="activeTranslation.tagline" type="textarea" :label="t('admin.siteSettings.tagline')" :error="Boolean(fieldErrors[`${selectedLocale}.tagline`])" :error-message="fieldErrors[`${selectedLocale}.tagline`]" :disable="saving" />
-      <q-input v-if="activeTranslation" v-model="activeTranslation.footerStatement" type="textarea" :label="t('admin.siteSettings.footerStatement')" :error="Boolean(fieldErrors[`${selectedLocale}.footerStatement`])" :error-message="fieldErrors[`${selectedLocale}.footerStatement`]" :disable="saving" />
-      <q-input v-if="activeTranslation" v-model="activeTranslation.footerAvailability" type="textarea" :label="t('admin.siteSettings.footerAvailability')" :error="Boolean(fieldErrors[`${selectedLocale}.footerAvailability`])" :error-message="fieldErrors[`${selectedLocale}.footerAvailability`]" :disable="saving" />
-      <q-input v-if="activeTranslation" v-model="activeTranslation.footerRights" type="textarea" :label="t('admin.siteSettings.footerRights')" :error="Boolean(fieldErrors[`${selectedLocale}.footerRights`])" :error-message="fieldErrors[`${selectedLocale}.footerRights`]" :disable="saving" />
-      <AdminMediaSelector v-model="form.logoMediaId" :label="t('admin.siteSettings.logo')" :disable="saving" />
-      <AdminMediaSelector v-model="form.ogMediaId" :label="t('admin.siteSettings.ogMedia')" :disable="saving" />
-      <q-select v-model="form.themePreset" :options="themeOptions" emit-value map-options :label="t('admin.siteSettings.theme')" :disable="saving" />
-      <q-select v-model="form.layoutDensity" :options="densityOptions" emit-value map-options :label="t('admin.siteSettings.density')" :disable="saving" />
-      <div class="row q-gutter-sm">
-        <q-btn type="submit" color="primary" :label="t('admin.siteSettings.save')" :loading="saving" />
-        <a :href="`/${selectedLocale}`" target="_blank" rel="noopener noreferrer" class="text-primary self-center">{{ t('admin.actions.preview') }}</a>
-      </div>
+    <q-form v-if="form" class="admin-site-settings__form" @submit.prevent="save">
+      <section class="admin-panel admin-site-settings__panel">
+        <div class="admin-site-settings__panel-header">
+          <div><h2 class="text-h6 q-my-none">{{ t('admin.siteSettings.identity') }}</h2><p>{{ t('admin.siteSettings.identityHelp') }}</p></div>
+          <AdminLocaleTabs v-model="selectedLocale" :translations="translationCompletion" />
+        </div>
+        <div v-if="activeTranslation" class="admin-site-settings__fields">
+          <q-input v-model="activeTranslation.brandName" outlined :label="t('admin.siteSettings.siteName')" :error="Boolean(fieldErrors[`${selectedLocale}.brandName`])" :error-message="fieldErrors[`${selectedLocale}.brandName`]" :disable="saving" />
+          <q-input v-model="activeTranslation.tagline" outlined type="textarea" :rows="3" :label="t('admin.siteSettings.tagline')" :error="Boolean(fieldErrors[`${selectedLocale}.tagline`])" :error-message="fieldErrors[`${selectedLocale}.tagline`]" :disable="saving" />
+        </div>
+      </section>
+      <section class="admin-panel admin-site-settings__panel">
+        <div class="admin-site-settings__panel-header"><div><h2 class="text-h6 q-my-none">{{ t('admin.siteSettings.footer') }}</h2><p>{{ t('admin.siteSettings.footerHelp') }}</p></div></div>
+        <div v-if="activeTranslation" class="admin-site-settings__fields">
+          <q-input v-model="activeTranslation.footerStatement" outlined type="textarea" :rows="3" :label="t('admin.siteSettings.footerStatement')" :error="Boolean(fieldErrors[`${selectedLocale}.footerStatement`])" :error-message="fieldErrors[`${selectedLocale}.footerStatement`]" :disable="saving" />
+          <q-input v-model="activeTranslation.footerAvailability" outlined type="textarea" :rows="3" :label="t('admin.siteSettings.footerAvailability')" :error="Boolean(fieldErrors[`${selectedLocale}.footerAvailability`])" :error-message="fieldErrors[`${selectedLocale}.footerAvailability`]" :disable="saving" />
+          <q-input v-model="activeTranslation.footerRights" outlined type="textarea" :rows="3" :label="t('admin.siteSettings.footerRights')" :error="Boolean(fieldErrors[`${selectedLocale}.footerRights`])" :error-message="fieldErrors[`${selectedLocale}.footerRights`]" :disable="saving" />
+        </div>
+      </section>
+      <section class="admin-panel admin-site-settings__panel">
+        <div class="admin-site-settings__panel-header"><div><h2 class="text-h6 q-my-none">{{ t('admin.siteSettings.presentation') }}</h2><p>{{ t('admin.siteSettings.presentationHelp') }}</p></div></div>
+        <div class="admin-site-settings__fields">
+          <AdminMediaSelector v-model="form.logoMediaId" :label="t('admin.siteSettings.logo')" :disable="saving" />
+          <AdminMediaSelector v-model="form.ogMediaId" :label="t('admin.siteSettings.ogMedia')" :disable="saving" />
+          <q-select v-model="form.themePreset" outlined :options="themeOptions" emit-value map-options :label="t('admin.siteSettings.theme')" :disable="saving" />
+          <q-select v-model="form.layoutDensity" outlined :options="densityOptions" emit-value map-options :label="t('admin.siteSettings.density')" :disable="saving" />
+        </div>
+      </section>
+      <footer class="admin-site-settings__actions">
+        <span class="text-caption">{{ changes.isDirty ? t('admin.siteSettings.unsaved') : t('admin.siteSettings.saved') }}</span>
+        <q-btn type="submit" color="primary" no-caps icon="save" :label="t('admin.siteSettings.save')" :loading="saving" />
+      </footer>
     </q-form>
   </q-page>
 </template>
+
+<style scoped>
+.admin-site-settings__form { display: grid; gap: var(--tm-admin-panel-gap); max-inline-size: 1040px; }
+.admin-site-settings__panel { display: grid; gap: var(--tm-space-5); padding: var(--tm-space-5); }
+.admin-site-settings__panel-header { align-items: start; display: flex; flex-wrap: wrap; gap: var(--tm-space-4); justify-content: space-between; }
+.admin-site-settings__panel-header p { color: var(--tm-text-secondary); margin: var(--tm-space-1) 0 0; max-inline-size: 64ch; }
+.admin-site-settings__fields { display: grid; gap: var(--tm-space-4); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.admin-site-settings__fields > :nth-child(2n + 1):last-child { grid-column: 1 / -1; }
+.admin-site-settings__actions { align-items: center; background: var(--tm-admin-surface); border: 1px solid var(--tm-admin-border); border-radius: var(--tm-admin-panel-radius); display: flex; gap: var(--tm-space-3); justify-content: space-between; padding: var(--tm-space-3) var(--tm-space-4); position: sticky; inset-block-end: var(--tm-space-3); }
+.admin-site-settings__actions span { color: var(--tm-text-secondary); }
+@media (max-width: 599px) { .admin-site-settings__fields { grid-template-columns: 1fr; } .admin-site-settings__fields > :nth-child(2n + 1):last-child { grid-column: auto; } }
+</style>

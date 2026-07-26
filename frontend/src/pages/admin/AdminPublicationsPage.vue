@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 
 import AdminLifecycleActions from 'src/components/admin/AdminLifecycleActions.vue'
 import AdminLocaleTabs from 'src/components/admin/AdminLocaleTabs.vue'
+import AdminMediaSelector from 'src/components/admin/AdminMediaSelector.vue'
 import AdminPaginatedTable from 'src/components/admin/AdminPaginatedTable.vue'
 import AdminStatePanel from 'src/components/admin/AdminStatePanel.vue'
 import { HTTP_CLIENT_KEY } from 'src/services/apiContext'
@@ -198,7 +199,7 @@ onMounted(() => {
       <q-input v-model="form.externalUrl" type="url" :label="t('admin.publications.externalUrl')" :disable="saving" />
       <q-input v-model="form.publishedOn" type="date" :label="t('admin.publications.date')" :disable="saving" />
       <q-input v-model.number="form.year" type="number" min="1000" max="9999" :label="t('admin.publications.year')" :disable="saving" />
-      <q-input v-model="form.coverMediaId" :label="t('admin.publications.coverMedia')" :disable="saving" />
+      <AdminMediaSelector v-model="form.coverMediaId" :allowed-types="['image']" :label="t('admin.publications.coverMedia')" :disable="saving" />
       <q-input v-model.number="form.sortOrder" type="number" min="0" :label="t('admin.publications.sortOrder')" :disable="saving" />
       <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />
       <q-input v-model="activeTranslation.title" :label="t('admin.publications.translationTitle')" :disable="saving" />

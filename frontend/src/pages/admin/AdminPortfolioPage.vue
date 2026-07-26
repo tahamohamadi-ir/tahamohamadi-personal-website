@@ -36,7 +36,7 @@ const form = ref(createForm())
 
 function translation() {
   return {
-    title: '', slug: '', summary: '', bodyMarkdown: '', seoTitle: '', seoDescription: ''
+    title: '', slug: '', summary: '', bodyMarkdown: '', seoTitle: '', seoDescription: '', roleText: '', clientLabel: '', teamDescription: '', outcomeText: ''
   }
 }
 
@@ -52,6 +52,7 @@ function createForm(value = {}) {
     repositoryUrl: value.repositoryUrl ?? '',
     sortOrder: value.sortOrder ?? 0,
     skills: value.skills ?? [],
+    gallery: value.gallery ?? [],
     version: value.version ?? null,
     fa: { ...translation(), ...(value.fa ?? {}) },
     en: { ...translation(), ...(value.en ?? {}) }
@@ -82,6 +83,10 @@ const selectedSkillIds = computed({
   set: (values) => {
     form.value.skills = values.map((skillId, sortOrder) => ({ skillId, sortOrder }))
   }
+})
+const galleryMediaIds = computed({
+  get: () => form.value.gallery.map((reference) => reference.mediaAssetId),
+  set: (values) => { form.value.gallery = values.map((mediaAssetId, sortOrder) => ({ mediaAssetId, sortOrder })) }
 })
 const publicPreviewPath = computed(() => {
   if (form.value.status !== 'PUBLISHED') return null
@@ -149,6 +154,7 @@ function payload() {
     fa: form.value.fa,
     en: form.value.en,
     skills: form.value.skills,
+    gallery: form.value.gallery,
     version: form.value.version
   }
 }
@@ -212,11 +218,16 @@ onMounted(() => { void load() })
       <q-input v-model="form.repositoryUrl" type="url" :label="t('admin.portfolio.repositoryUrl')" :disable="saving" />
       <q-input v-model.number="form.sortOrder" type="number" min="0" :label="t('admin.portfolio.sortOrder')" :disable="saving" />
       <AdminMediaSelector v-model="form.coverMediaId" :label="t('admin.portfolio.coverMedia')" :disable="saving" />
+      <AdminMediaSelector v-model="galleryMediaIds" multiple :allowed-types="['image']" :label="t('admin.portfolio.gallery')" :disable="saving" />
       <q-select v-model="selectedSkillIds" :options="skillOptions" option-label="label" option-value="value" emit-value map-options multiple use-chips :label="t('admin.portfolio.associatedSkills')" :disable="saving" />
       <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />
       <q-input v-model="activeTranslation.title" :label="t('admin.portfolio.translationTitle')" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.title`])" :error-message="fieldErrors[`${selectedLocale}.title`]" />
       <q-input v-model="activeTranslation.slug" :label="t('admin.portfolio.slug')" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.slug`])" :error-message="fieldErrors[`${selectedLocale}.slug`]" />
       <q-input v-model="activeTranslation.summary" type="textarea" :label="t('admin.portfolio.summary')" :disable="saving" />
+      <q-input v-model="activeTranslation.roleText" :label="t('admin.caseStudy.role')" :disable="saving" />
+      <q-input v-model="activeTranslation.clientLabel" :label="t('admin.caseStudy.client')" :disable="saving" />
+      <q-input v-model="activeTranslation.teamDescription" type="textarea" :label="t('admin.caseStudy.team')" :disable="saving" />
+      <q-input v-model="activeTranslation.outcomeText" type="textarea" :label="t('admin.caseStudy.outcome')" :disable="saving" />
       <AdminMarkdownPreview v-model="activeTranslation.bodyMarkdown" />
       <q-input v-model="activeTranslation.seoTitle" :label="t('admin.portfolio.seoTitle')" :disable="saving" />
       <q-input v-model="activeTranslation.seoDescription" type="textarea" :label="t('admin.portfolio.seoDescription')" :disable="saving" />

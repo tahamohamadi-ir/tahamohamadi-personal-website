@@ -110,6 +110,10 @@ describe('admin foundation components', () => {
 
     expect(layoutSource).toContain("t('admin.chrome.navigationLabel')")
     expect(layoutSource).toContain("t('admin.chrome.productName')")
+    expect(layoutSource).toContain('navigationGroups')
+    expect(layoutSource).toContain('admin-navigation__group-label')
+    expect(source('src/i18n/en.js')).toContain("navigationGroups: { workspace: 'Workspace'")
+    expect(source('src/i18n/fa.js')).toContain('navigationGroups: { workspace:')
   })
 
   it('uses design-system tokens for shared admin controls and honours reduced motion', () => {
