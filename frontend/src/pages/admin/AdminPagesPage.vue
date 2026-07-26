@@ -193,27 +193,20 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
 </script>
 
 <template>
-  <q-page class="q-pa-md q-pa-lg-md">
-    <div class="row items-center justify-between q-col-gutter-md q-mb-lg">
-      <div class="col">
-        <h1 class="text-h5 q-my-none">{{ t('admin.pages.title') }}</h1>
-        <p class="text-body2 text-grey-8 q-mb-none">
-          {{ t('admin.pages.description') }}
-        </p>
-      </div>
-      <div class="col-auto">
-        <q-btn color="primary" :label="t('admin.pages.create')" @click="create" />
-      </div>
-    </div>
+  <q-page class="admin-page admin-pages">
+    <header class="admin-page__header">
+      <div><h1 class="text-h4 q-my-none">{{ t('admin.pages.title') }}</h1><p class="admin-page__description">{{ t('admin.pages.description') }}</p></div>
+      <q-btn color="primary" no-caps icon="add" :label="t('admin.pages.create')" @click="create" />
+    </header>
 
-    <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded role="alert">
+    <q-banner v-if="error" class="bg-red-1 text-negative" rounded role="alert">
       {{ error.message }}
       <q-btn v-if="isVersionConflict(error) && form.id" flat color="negative" :label="t('admin.pages.reload')" @click="select(form)" />
     </q-banner>
 
     <AdminStatePanel v-if="state !== 'ready'" :state="state" @retry="load" />
     <template v-else>
-      <q-list bordered separator class="q-mb-lg">
+      <q-list bordered separator class="admin-pages__list">
         <q-item v-for="item in items" :key="item.id" clickable @click="select(item)">
           <q-item-section>
             <q-item-label>{{ item.pageKey }}</q-item-label>
@@ -230,19 +223,38 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
       <AdminPaginatedTable :page="page" :total-pages="totalPages" @change-page="load" />
     </template>
 
-    <q-form class="q-mt-xl q-gutter-md" @submit.prevent="save">
-      <h2 class="text-h6 q-my-none">{{ form.id ? t('admin.pages.edit') : t('admin.pages.create') }}</h2>
-      <q-input v-model="form.pageKey" :label="t('admin.pages.pageKey')" :error="Boolean(fieldErrors.pageKey)" :error-message="fieldErrors.pageKey" :disable="saving" />
-      <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />
-      <q-input v-model="activeTranslation.title" :label="t('admin.pages.titleField')" :error="Boolean(fieldErrors[`${selectedLocale}.title`])" :error-message="fieldErrors[`${selectedLocale}.title`]" :disable="saving" />
-      <q-input v-model="activeTranslation.slug" :label="t('admin.pages.slug')" :error="Boolean(fieldErrors[`${selectedLocale}.slug`])" :error-message="fieldErrors[`${selectedLocale}.slug`]" :disable="saving" />
-      <q-input v-model="activeTranslation.summary" type="textarea" :label="t('admin.pages.summary')" :disable="saving" />
-      <AdminMarkdownPreview v-model="activeTranslation.bodyMarkdown" />
-      <q-input v-model="activeTranslation.seoTitle" :label="t('admin.pages.seoTitle')" :disable="saving" />
-      <q-input v-model="activeTranslation.seoDescription" type="textarea" :label="t('admin.pages.seoDescription')" :disable="saving" />
-      <q-input v-model="activeTranslation.canonicalPath" :label="t('admin.pages.canonicalPath')" :disable="saving" />
-      <div class="row q-gutter-sm">
-        <q-btn type="submit" color="primary" :loading="saving" :label="t('admin.pages.save')" />
+    <q-form class="admin-pages__form" @submit.prevent="save">
+      <section class="admin-panel admin-pages__panel">
+        <div class="admin-pages__panel-header"><h2 class="text-h6 q-my-none">{{ form.id ? t('admin.pages.edit') : t('admin.pages.create') }}</h2><AdminLocaleTabs v-model="selectedLocale" :translations="translations" /></div>
+        <q-input v-model="form.pageKey" outlined :label="t('admin.pages.pageKey')" :error="Boolean(fieldErrors.pageKey)" :error-message="fieldErrors.pageKey" :disable="saving" />
+      </section>
+      <section class="admin-panel admin-pages__panel">
+        <div class="admin-pages__fields">
+          <q-input v-model="activeTranslation.title" outlined :label="t('admin.pages.titleField')" :error="Boolean(fieldErrors[`${selectedLocale}.title`])" :error-message="fieldErrors[`${selectedLocale}.title`]" :disable="saving" />
+          <q-input v-model="activeTranslation.slug" outlined :label="t('admin.pages.slug')" :error="Boolean(fieldErrors[`${selectedLocale}.slug`])" :error-message="fieldErrors[`${selectedLocale}.slug`]" :disable="saving" />
+          <q-input v-model="activeTranslation.summary" outlined type="textarea" :rows="3" :label="t('admin.pages.summary')" :disable="saving" />
+        </div>
+        <AdminMarkdownPreview v-model="activeTranslation.bodyMarkdown" />
+      </section>
+      <section class="admin-panel admin-pages__panel">
+        <div class="admin-pages__fields">
+          <q-input v-model="activeTranslation.seoTitle" outlined :label="t('admin.pages.seoTitle')" :disable="saving" />
+          <q-input v-model="activeTranslation.seoDescription" outlined type="textarea" :rows="3" :label="t('admin.pages.seoDescription')" :disable="saving" />
+          <q-input v-model="activeTranslation.canonicalPath" outlined :label="t('admin.pages.canonicalPath')" :disable="saving" />
+        </div>
+      </section>
+      <section class="admin-panel admin-pages__panel">
+        <AdminPageBlockComposer
+          :page-id="form.id"
+          :page-version="form.version"
+          :page-status="form.status"
+          :disable="saving"
+          @saved="compositionSaved"
+        />
+      </section>
+      <footer class="admin-pages__actions">
+        <span class="text-caption">{{ changes.isDirty ? t('admin.siteSettings.unsaved') : t('admin.siteSettings.saved') }}</span>
+        <div class="admin-pages__actions-buttons"><q-btn type="submit" color="primary" no-caps icon="save" :loading="saving" :label="t('admin.pages.save')" />
         <AdminLifecycleActions
           v-if="form.id"
           :status="form.status"
@@ -251,15 +263,8 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
           @publish="transition('publish')"
           @archive="transition('archive')"
         />
-      </div>
-
-      <AdminPageBlockComposer
-        :page-id="form.id"
-        :page-version="form.version"
-        :page-status="form.status"
-        :disable="saving"
-        @saved="compositionSaved"
-      />
+        </div>
+      </footer>
     </q-form>
   </q-page>
 </template>
@@ -270,4 +275,14 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
   flex-wrap: wrap;
   gap: var(--tm-space-2) var(--tm-space-4);
 }
+.admin-pages__list { margin-block-end: var(--tm-space-4); }
+.admin-pages__form { display: grid; gap: var(--tm-admin-panel-gap); max-inline-size: 1040px; }
+.admin-pages__panel { display: grid; gap: var(--tm-space-5); padding: var(--tm-space-5); }
+.admin-pages__panel-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--tm-space-3); }
+.admin-pages__fields { display: grid; gap: var(--tm-space-4); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.admin-pages__fields > :nth-child(2n + 1):last-child { grid-column: 1 / -1; }
+.admin-pages__actions { position: sticky; inset-block-end: var(--tm-space-3); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--tm-space-3); padding: var(--tm-space-3) var(--tm-space-4); border: 1px solid var(--tm-admin-border); border-radius: var(--tm-admin-panel-radius); background: var(--tm-admin-surface); }
+.admin-pages__actions span { color: var(--tm-text-secondary); }
+.admin-pages__actions-buttons { display: flex; flex-wrap: wrap; gap: var(--tm-space-2); }
+@media (max-width: 599px) { .admin-pages__fields { grid-template-columns: 1fr; } .admin-pages__fields > :nth-child(2n + 1):last-child { grid-column: auto; } }
 </style>

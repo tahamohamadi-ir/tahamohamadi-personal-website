@@ -40,6 +40,17 @@ describe('admin source-backed dashboard', () => {
     expect(settings).toContain(':rows="3"')
     expect(settings).toContain('changes.isDirty')
   })
+
+  it('keeps Pages as a panelled operational editor without changing its composer contract', () => {
+    const page = source('src/pages/admin/AdminPagesPage.vue')
+
+    expect(page).toContain('admin-pages__panel')
+    expect(page).toContain('admin-pages__actions')
+    expect(page).toContain('outlined')
+    expect(page).toContain(':rows="3"')
+    expect(page).toContain('AdminPageBlockComposer')
+    expect(page).toContain('compositionSaved')
+  })
 })
 
 describe('admin blog and contact workflows', () => {
