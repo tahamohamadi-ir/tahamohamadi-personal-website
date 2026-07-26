@@ -43,13 +43,15 @@ public class AdminPageBlockController {
     private final AuditEventRepository audit;
     private final AuthenticatedAuditActor actor;
     private final MediaAssetRepository mediaAssets;
+    private final AdminPageRevisionService revisions;
 
-    public AdminPageBlockController(JdbcTemplate jdbc, ObjectMapper objectMapper, AuditEventRepository audit, AuthenticatedAuditActor actor, MediaAssetRepository mediaAssets) {
+    public AdminPageBlockController(JdbcTemplate jdbc, ObjectMapper objectMapper, AuditEventRepository audit, AuthenticatedAuditActor actor, MediaAssetRepository mediaAssets, AdminPageRevisionService revisions) {
         this.jdbc = jdbc;
         this.objectMapper = objectMapper;
         this.audit = audit;
         this.actor = actor;
         this.mediaAssets = mediaAssets;
+        this.revisions = revisions;
     }
 
     @GetMapping
@@ -70,6 +72,7 @@ public class AdminPageBlockController {
     public PageBlocksResponse replace(@PathVariable UUID pageId, @Valid @RequestBody PageBlocksRequest request) {
         long current = version(pageId);
         if (current != request.version()) throw new ObjectOptimisticLockingFailureException(ContentPage.class, pageId);
+        revisions.snapshotBeforeChange(pageId, "BLOCKS_UPDATED");
         Instant now = Instant.now();
         replaceSections(pageId, List.of(new PageSectionRequest("STANDARD", "SINGLE_COLUMN", true, null, request.blocks())), now);
         long updated = updatePageVersion(pageId, current, now);
@@ -82,6 +85,7 @@ public class AdminPageBlockController {
     public PageCompositionResponse replaceComposition(@PathVariable UUID pageId, @Valid @RequestBody PageCompositionRequest request) {
         long current = version(pageId);
         if (current != request.version()) throw new ObjectOptimisticLockingFailureException(ContentPage.class, pageId);
+        revisions.snapshotBeforeChange(pageId, "COMPOSITION_UPDATED");
         Instant now = Instant.now();
         replaceSections(pageId, request.sections(), now);
         long updated = updatePageVersion(pageId, current, now);

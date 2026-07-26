@@ -38,9 +38,23 @@ content is copied or overwritten. `sourceLanguage` is accepted as an optional
 query parameter on Blog create/update endpoints, and its selection is visible
 in the Admin Blog editor.
 
+Pages now have the same server-side, immutable revision boundary. A snapshot
+includes page metadata, both localized page records, and the full typed page
+composition (sections, blocks, and localized block fields). It is captured at
+creation and before metadata, lifecycle, block, or composition changes.
+
+- `GET /api/v1/admin/pages/{id}/revisions`
+- `GET /api/v1/admin/pages/{id}/revisions/{revisionId}`
+- `POST /api/v1/admin/pages/{id}/revisions/{revisionId}/restore-as-draft?version={version}`
+
+Page restore is copy-on-restore: it creates a separate `DRAFT` page, derives
+non-conflicting page keys and locale slugs, recreates sections and blocks with
+new identifiers, checks that referenced media is still active, and keeps the
+source page untouched. Restore is version-checked and audited.
+
 ## Remaining Release 5 work
 
-- Extend the same immutable model to Pages and Portfolio case studies.
+- Extend the same immutable model to Portfolio case studies.
 - Add a cross-entity translation queue with filtering, source update time,
   comparison, and completion checklist.
 - Add revision timeline, compare, and restore controls to the Admin UI.

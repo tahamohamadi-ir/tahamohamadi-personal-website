@@ -23,5 +23,8 @@ public class AdminPageController {
     @PutMapping("/{id}") public AdminPageResponse update(@PathVariable UUID id,@Valid @RequestBody AdminPageRequest request) { return pages.update(id,request); }
     @PostMapping("/{id}/publish") public AdminPageResponse publish(@PathVariable UUID id,@RequestParam long version) { return pages.publish(id,version); }
     @PostMapping("/{id}/archive") public AdminPageResponse archive(@PathVariable UUID id,@RequestParam long version) { return pages.archive(id,version); }
+    @GetMapping("/{id}/revisions") public java.util.List<AdminPageRevisionSummary> revisions(@PathVariable UUID id) { return pages.revisions(id); }
+    @GetMapping("/{id}/revisions/{revisionId}") public AdminPageRevisionResponse revision(@PathVariable UUID id,@PathVariable UUID revisionId) { return pages.revision(id,revisionId); }
+    @PostMapping("/{id}/revisions/{revisionId}/restore-as-draft") public AdminPageResponse restoreAsDraft(@PathVariable UUID id,@PathVariable UUID revisionId,@RequestParam long version) { return pages.restoreAsDraft(id,revisionId,version); }
     @DeleteMapping("/{id}") public ResponseEntity<Void> delete(@PathVariable UUID id,@RequestParam long version) { pages.delete(id,version); return ResponseEntity.noContent().build(); }
 }
