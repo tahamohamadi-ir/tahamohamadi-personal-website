@@ -150,6 +150,27 @@ class AdminBlogLifecycleIntegrationTest {
         assertThat(audit.findAll()).extracting(AuditEvent::getAction).contains("SYSTEM_BLOG_POST_SCHEDULED_PUBLISHED");
     }
 
+    @Test
+    void keepsAnInvalidatedScheduledPostForRetryAndAuditsTheFailure() throws Exception {
+        AppUser admin = actor("schedule-retry-admin");
+        BlogCategory category = categories.saveAndFlush(BlogCategory.create(UUID.randomUUID(), "schedule-retry-" + UUID.randomUUID(), 0, Instant.now()));
+        String id = createPost(admin, category.getId(), true, List.of(), List.of());
+        mvc.perform(post("/api/v1/admin/blog/posts/{id}/schedule", id).param("version", "0").param("scheduledFor", Instant.now().plusSeconds(120).toString())
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SCHEDULED"));
+        category.deactivate();
+        categories.saveAndFlush(category);
+        jdbc.update("UPDATE blog_post SET scheduled_for = ? WHERE id = ?", java.sql.Timestamp.from(Instant.now().minusSeconds(1)), UUID.fromString(id));
+        scheduledPublisher.publishDue();
+        mvc.perform(get("/api/v1/admin/blog/posts/{id}", id).with(adminUser(admin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SCHEDULED"));
+        assertThat(audit.findAll()).extracting(AuditEvent::getAction).contains("SYSTEM_BLOG_POST_SCHEDULED_PUBLISH_FAILED");
+        jdbc.update("UPDATE blog_category SET is_active = TRUE WHERE id = ?", category.getId());
+        scheduledPublisher.publishDue();
+        mvc.perform(get("/api/v1/admin/blog/posts/{id}", id).with(adminUser(admin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PUBLISHED"));
+    }
+
     private String createPost(AppUser admin, UUID categoryId, boolean seo, List<UUID> tagIds, List<MediaReference> mediaReferences) throws Exception {
         org.springframework.test.web.servlet.ResultActions action = mvc.perform(post("/api/v1/admin/blog/posts").contentType(MediaType.APPLICATION_JSON)
                         .content(postPayload(categoryId, null, seo, tagIds, mediaReferences)).with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
