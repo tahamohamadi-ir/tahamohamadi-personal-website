@@ -2,6 +2,13 @@
 
 Source: `docs/master-plan.md` v2.0.
 
+## Versioned Deltas
+
+- [V2 Home 2.0 Delta](v2-home-2-delta.md) adopts the supplied V2 CMS/public
+  experience plan as an incremental roadmap delta. Release 1 is Home 2.0 only;
+  backend contracts, migrations, admin workflow, and document-wide JSONB
+  composition remain out of scope until separately planned.
+
 ## Phase Breakdown
 
 | Phase | Goal | Deliverables | Definition of Done |

@@ -89,12 +89,22 @@ onMounted(() => {
     </p>
 
     <article v-if="showsContent" class="tm-detail-page__content">
+      <dl v-if="data?.roleText || data?.clientLabel || data?.teamDescription || data?.outcomeText" class="tm-detail-page__metadata">
+        <div v-if="data?.roleText"><dt>{{ t('public.caseStudy.role') }}</dt><dd>{{ data.roleText }}</dd></div>
+        <div v-if="data?.clientLabel"><dt>{{ t('public.caseStudy.client') }}</dt><dd>{{ data.clientLabel }}</dd></div>
+        <div v-if="data?.teamDescription"><dt>{{ t('public.caseStudy.team') }}</dt><dd>{{ data.teamDescription }}</dd></div>
+        <div v-if="data?.outcomeText"><dt>{{ t('public.caseStudy.outcome') }}</dt><dd>{{ data.outcomeText }}</dd></div>
+      </dl>
       <dl v-if="data?.lastModified" class="tm-detail-page__metadata">
         <div>
           <dt>{{ t('public.detail.updated') }}</dt>
           <dd><time :datetime="data.lastModified"><bdi>{{ data.lastModified }}</bdi></time></dd>
         </div>
       </dl>
+
+      <section v-if="data?.gallery?.length" class="tm-detail-page__gallery" :aria-label="t('public.caseStudy.gallery')">
+        <img v-for="item in data.gallery" :key="item.mediaAssetId" :src="item.url" alt="" loading="lazy">
+      </section>
 
       <MarkdownContent v-if="data?.bodyMarkdown" :markdown="data.bodyMarkdown">
         <template #error>
@@ -106,3 +116,8 @@ onMounted(() => {
     </article>
   </section>
 </template>
+
+<style scoped>
+.tm-detail-page__gallery { display: grid; gap: var(--tm-space-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); margin-block: var(--tm-space-6); }
+.tm-detail-page__gallery img { aspect-ratio: 4 / 3; background: var(--tm-surface-subtle); display: block; inline-size: 100%; object-fit: cover; }
+</style>

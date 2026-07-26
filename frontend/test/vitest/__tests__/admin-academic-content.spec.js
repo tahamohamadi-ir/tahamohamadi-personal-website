@@ -91,6 +91,8 @@ describe('admin publications', () => {
     expect(publications).toContain('venueDisplay')
     expect(publications).toContain('version')
     expect(publications).toContain('AdminLocaleTabs')
+    expect(publications).toContain('AdminMediaSelector')
+    expect(publications).toContain(":allowed-types=\"['image']\"")
     expect(publications).toContain('AdminLifecycleActions')
     expect(publications).toContain('selectedLocale.value')
     expect(publications).toContain('publicPreviewPath')

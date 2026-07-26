@@ -29,7 +29,12 @@ const visibleBlocks = computed(() => {
       ...block,
       type: typeof block?.type === 'string' ? block.type.toLowerCase().replaceAll('_', '-') : ''
     }))
-    .filter((block) => block && block.enabled !== false && supportedBlocks.has(block.type))
+    .filter((block) => (
+      block
+      && block.enabled !== false
+      && supportedBlocks.has(block.type)
+      && (block.type !== 'collection' || collectionEntries(block).length > 0)
+    ))
     .map((block) => {
       const headingLevel = block.type === 'hero' && primaryHeroAvailable && block.title
         ? 1
@@ -51,8 +56,29 @@ function isInternalPath(value) {
   return typeof value === 'string' && /^\/(fa|en)(?:\/|$)/.test(value)
 }
 
+function isCurrentLocalePath(value) {
+  return isInternalPath(value) && new RegExp(`^/${props.locale}(?:/|$)`).test(value)
+}
+
 function mediaUrl(block) {
   return block.mediaUrl || (block.mediaId ? `/api/v1/public/media/${block.mediaId}` : null)
+}
+
+function mediaAlt(block) {
+  return typeof block.alt === 'string' ? block.alt.trim() : ''
+}
+
+function heroMediaUrl(block) {
+  return mediaAlt(block) ? mediaUrl(block) : null
+}
+
+function blockClasses(block) {
+  return [
+    `page-block--${block.type}`,
+    {
+      'page-block--has-hero-media': block.type === 'hero' && Boolean(heroMediaUrl(block))
+    }
+  ]
 }
 
 function collectionEntries(block) {
@@ -68,7 +94,7 @@ function collectionEntries(block) {
 }
 
 function collectionPath(source, item) {
-  if (isInternalPath(item?.canonicalPath)) return item.canonicalPath
+  if (isCurrentLocalePath(item?.canonicalPath)) return item.canonicalPath
   const slug = item?.slug
   if (typeof slug !== 'string' || !slug.trim()) return null
   const route = {
@@ -90,16 +116,27 @@ function entrySummary(entry) {
       v-for="(block, index) in visibleBlocks"
       :key="block.id ?? `${block.type}-${index}`"
       class="page-block"
-      :class="`page-block--${block.type}`"
+      :class="blockClasses(block)"
     >
       <div class="tm-container page-block__content">
         <template v-if="block.type === 'hero'">
-          <p v-if="block.eyebrow" class="page-block__kicker">{{ block.eyebrow }}</p>
-          <component :is="block.headingLevel === 1 ? 'h1' : 'h2'" v-if="block.title" class="page-block__title">{{ block.title }}</component>
-          <p v-if="block.lead" class="page-block__lead">{{ block.lead }}</p>
-          <TmButton v-if="block.actionLabel && isSafePath(block.actionPath)" :to="isInternalPath(block.actionPath) ? block.actionPath : undefined" :href="isInternalPath(block.actionPath) ? undefined : block.actionPath" :target="isInternalPath(block.actionPath) ? undefined : '_blank'">
-            {{ block.actionLabel }}
-          </TmButton>
+          <div class="page-block__hero-copy">
+            <p v-if="block.eyebrow" class="page-block__kicker">{{ block.eyebrow }}</p>
+            <component :is="block.headingLevel === 1 ? 'h1' : 'h2'" v-if="block.title" class="page-block__title">{{ block.title }}</component>
+            <p v-if="block.lead" class="page-block__lead">{{ block.lead }}</p>
+            <TmButton v-if="block.actionLabel && isSafePath(block.actionPath)" :to="isInternalPath(block.actionPath) ? block.actionPath : undefined" :href="isInternalPath(block.actionPath) ? undefined : block.actionPath" :target="isInternalPath(block.actionPath) ? undefined : '_blank'" :rel="isInternalPath(block.actionPath) ? undefined : 'noopener noreferrer'">
+              {{ block.actionLabel }}
+            </TmButton>
+          </div>
+          <figure v-if="heroMediaUrl(block)" class="page-block__hero-media">
+            <img
+              :src="heroMediaUrl(block)"
+              :alt="mediaAlt(block)"
+              width="1600"
+              height="900"
+              fetchpriority="high"
+            >
+          </figure>
         </template>
 
         <template v-else-if="block.type === 'rich-text'">
@@ -134,7 +171,7 @@ function entrySummary(entry) {
           <p v-if="block.eyebrow" class="page-block__kicker">{{ block.eyebrow }}</p>
           <h2 v-if="block.title" class="page-block__title">{{ block.title }}</h2>
           <p v-if="block.lead" class="page-block__lead">{{ block.lead }}</p>
-          <TmButton v-if="block.actionLabel && isSafePath(block.actionPath)" :to="isInternalPath(block.actionPath) ? block.actionPath : undefined" :href="isInternalPath(block.actionPath) ? undefined : block.actionPath" :target="isInternalPath(block.actionPath) ? undefined : '_blank'">{{ block.actionLabel }}</TmButton>
+          <TmButton v-if="block.actionLabel && isSafePath(block.actionPath)" :to="isInternalPath(block.actionPath) ? block.actionPath : undefined" :href="isInternalPath(block.actionPath) ? undefined : block.actionPath" :target="isInternalPath(block.actionPath) ? undefined : '_blank'" :rel="isInternalPath(block.actionPath) ? undefined : 'noopener noreferrer'">{{ block.actionLabel }}</TmButton>
         </template>
 
         <template v-else-if="block.type === 'collection'">
@@ -154,7 +191,7 @@ function entrySummary(entry) {
               </router-link>
             </li>
           </ol>
-          <TmButton v-if="block.actionLabel && isSafePath(block.actionPath)" variant="secondary" :to="isInternalPath(block.actionPath) ? block.actionPath : undefined" :href="isInternalPath(block.actionPath) ? undefined : block.actionPath" :target="isInternalPath(block.actionPath) ? undefined : '_blank'">{{ block.actionLabel }}</TmButton>
+          <TmButton v-if="block.actionLabel && isSafePath(block.actionPath)" variant="secondary" :to="isInternalPath(block.actionPath) ? block.actionPath : undefined" :href="isInternalPath(block.actionPath) ? undefined : block.actionPath" :target="isInternalPath(block.actionPath) ? undefined : '_blank'" :rel="isInternalPath(block.actionPath) ? undefined : 'noopener noreferrer'">{{ block.actionLabel }}</TmButton>
         </template>
 
         <template v-else-if="block.type === 'skills'">
@@ -164,7 +201,7 @@ function entrySummary(entry) {
           <ul v-if="skills.length" class="page-block__skills">
             <li v-for="skill in skills" :key="skill.key"><strong>{{ skill.name }}</strong><span v-if="skill.description">{{ skill.description }}</span></li>
           </ul>
-          <TmButton v-if="block.actionLabel && isSafePath(block.actionPath)" variant="secondary" :to="isInternalPath(block.actionPath) ? block.actionPath : undefined" :href="isInternalPath(block.actionPath) ? undefined : block.actionPath" :target="isInternalPath(block.actionPath) ? undefined : '_blank'">{{ block.actionLabel }}</TmButton>
+          <TmButton v-if="block.actionLabel && isSafePath(block.actionPath)" variant="secondary" :to="isInternalPath(block.actionPath) ? block.actionPath : undefined" :href="isInternalPath(block.actionPath) ? undefined : block.actionPath" :target="isInternalPath(block.actionPath) ? undefined : '_blank'" :rel="isInternalPath(block.actionPath) ? undefined : 'noopener noreferrer'">{{ block.actionLabel }}</TmButton>
         </template>
 
         <template v-else-if="block.type === 'social-links'">
@@ -174,7 +211,7 @@ function entrySummary(entry) {
           <nav v-if="socialLinks.length" class="page-block__social-links" :aria-label="block.title || block.eyebrow">
             <a v-for="link in socialLinks" :key="`${link.platformCode}:${link.url}`" :href="link.url" class="tm-interactive" target="_blank" rel="noopener noreferrer">{{ link.platformCode }}</a>
           </nav>
-          <TmButton v-if="block.actionLabel && isSafePath(block.actionPath)" variant="secondary" :to="isInternalPath(block.actionPath) ? block.actionPath : undefined" :href="isInternalPath(block.actionPath) ? undefined : block.actionPath" :target="isInternalPath(block.actionPath) ? undefined : '_blank'">{{ block.actionLabel }}</TmButton>
+          <TmButton v-if="block.actionLabel && isSafePath(block.actionPath)" variant="secondary" :to="isInternalPath(block.actionPath) ? block.actionPath : undefined" :href="isInternalPath(block.actionPath) ? undefined : block.actionPath" :target="isInternalPath(block.actionPath) ? undefined : '_blank'" :rel="isInternalPath(block.actionPath) ? undefined : 'noopener noreferrer'">{{ block.actionLabel }}</TmButton>
         </template>
 
         <template v-else>
@@ -192,6 +229,11 @@ function entrySummary(entry) {
 <style scoped lang="scss">
 .page-block { border-block-end: 1px solid var(--tm-editorial-rule); padding-block: clamp(var(--tm-space-8), 8vw, var(--tm-space-16)); }
 .page-block__content { display: grid; gap: var(--tm-space-5); }
+.page-block--hero { padding-block: clamp(var(--tm-space-10), 10vw, var(--tm-space-16)); }
+.page-block--has-hero-media .page-block__content { gap: var(--tm-space-8); }
+.page-block__hero-copy { display: grid; gap: var(--tm-space-5); max-inline-size: 62rem; }
+.page-block__hero-media { margin: 0; }
+.page-block__hero-media img { aspect-ratio: 16 / 9; background: var(--tm-editorial-muted-surface); display: block; inline-size: 100%; object-fit: cover; }
 .page-block__kicker { color: var(--tm-editorial-kicker); font-size: .75rem; font-weight: 800; letter-spacing: .12em; margin: 0; text-transform: uppercase; }
 .page-block__title { font-size: clamp(2rem, 5vw, 4rem); letter-spacing: -.045em; line-height: 1.05; margin: 0; max-inline-size: 19ch; }
 .page-block__lead { color: var(--tm-text-secondary); font-size: clamp(1.0625rem, 2vw, 1.25rem); line-height: 1.7; margin: 0; max-inline-size: 62ch; }
@@ -212,5 +254,5 @@ function entrySummary(entry) {
 .page-block__social-links { display: flex; flex-wrap: wrap; gap: var(--tm-space-3); }
 .page-block__social-links a { display: inline-flex; align-items: center; min-block-size: var(--tm-control-min-size); color: var(--tm-action-primary); font-weight: 800; }
 @media (prefers-reduced-motion: reduce) { .page-block__collection-link { transition: none; } .page-block__collection-link:hover { transform: none; } }
-@media (min-width: 900px) { .page-block__media-layout { grid-template-columns: minmax(0, 1fr) minmax(18rem, .8fr); } }
+@media (min-width: 900px) { .page-block--has-hero-media .page-block__content { grid-template-columns: minmax(0, .88fr) minmax(24rem, 1.12fr); align-items: end; } .page-block__media-layout { grid-template-columns: minmax(0, 1fr) minmax(18rem, .8fr); } }
 </style>

@@ -45,9 +45,18 @@ class AdminBlogCrudIntegrationTest {
                 .andExpect(status().isForbidden());
         mvc.perform(post("/api/v1/admin/blog/posts").contentType(MediaType.APPLICATION_JSON).content("{}").with(SecurityMockMvcRequestPostProcessors.user(admin.getEmail()).roles("ADMIN")).with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/admin/blog/posts").contentType(MediaType.APPLICATION_JSON).content(body.replace("\"type\":\"paragraph\"", "\"type\":\"unsupported\"")).with(SecurityMockMvcRequestPostProcessors.user(admin.getEmail()).roles("ADMIN")).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/admin/blog/posts").contentType(MediaType.APPLICATION_JSON).content(body.replace("{\"type\":\"paragraph\",\"value\":\"body\"}", "{\"type\":\"image\",\"src\":\"https://example.test/unmanaged.png\"}")).with(SecurityMockMvcRequestPostProcessors.user(admin.getEmail()).roles("ADMIN")).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isBadRequest());
         String response = mvc.perform(post("/api/v1/admin/blog/posts").contentType(MediaType.APPLICATION_JSON).content(body).with(SecurityMockMvcRequestPostProcessors.user(admin.getEmail()).roles("ADMIN")).with(SecurityMockMvcRequestPostProcessors.csrf()))
-                .andExpect(status().isCreated()).andExpect(jsonPath("$.id").isString()).andExpect(jsonPath("$.fa.title").value("Fa")).andExpect(jsonPath("$.en.title").value("En")).andExpect(jsonPath("$.version").value(0)).andExpect(jsonPath("$.hibernateLazyInitializer").doesNotExist()).andReturn().getResponse().getContentAsString();
-        String id = JsonPath.read(response, "$.id");
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.id").isString()).andExpect(jsonPath("$.fa.title").value("Fa")).andExpect(jsonPath("$.en.title").value("En")).andExpect(jsonPath("$.en.articleDocument.blocks[0].type").value("paragraph")).andExpect(jsonPath("$.version").value(0)).andExpect(jsonPath("$.hibernateLazyInitializer").doesNotExist()).andReturn().getResponse().getContentAsString();
+          String id = JsonPath.read(response, "$.id");
+          String revisionList = mvc.perform(get("/api/v1/admin/blog/posts/{id}/revisions", id).with(SecurityMockMvcRequestPostProcessors.user(admin.getEmail()).roles("ADMIN")))
+                  .andExpect(status().isOk()).andExpect(jsonPath("$[0].revisionNumber").value(1)).andReturn().getResponse().getContentAsString();
+          String revisionId = JsonPath.read(revisionList, "$[0].id");
+          mvc.perform(post("/api/v1/admin/blog/posts/{id}/revisions/{revisionId}/restore-as-draft", id, revisionId).param("version", "0").with(SecurityMockMvcRequestPostProcessors.user(admin.getEmail()).roles("ADMIN")).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                  .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DRAFT")).andExpect(jsonPath("$.fa.slug").value(org.hamcrest.Matchers.containsString("-revision-1")));
         mvc.perform(get("/api/v1/admin/blog/posts").param("size", "101").with(SecurityMockMvcRequestPostProcessors.user("admin").roles("ADMIN")))
                 .andExpect(status().isBadRequest());
         mvc.perform(get("/api/v1/admin/blog/posts").param("size", "1").with(SecurityMockMvcRequestPostProcessors.user("super").roles("SUPER_ADMIN")))
@@ -64,6 +73,6 @@ class AdminBlogCrudIntegrationTest {
 
     private static String payload(UUID categoryId, Long version, String enTitle, String enSlug) {
         String versionField = version == null ? "" : ",\"version\":" + version;
-        return "{\"categoryId\":\"" + categoryId + "\",\"fa\":{\"title\":\"Fa\",\"slug\":\"fa-" + UUID.randomUUID() + "\",\"bodyMarkdown\":\"body\"},\"en\":{\"title\":\"" + enTitle + "\",\"slug\":\"" + enSlug + "-" + UUID.randomUUID() + "\",\"bodyMarkdown\":\"body\"}" + versionField + "}";
+        return "{\"categoryId\":\"" + categoryId + "\",\"fa\":{\"title\":\"Fa\",\"slug\":\"fa-" + UUID.randomUUID() + "\",\"bodyMarkdown\":\"body\",\"articleDocument\":{\"version\":1,\"blocks\":[{\"type\":\"paragraph\",\"value\":\"body\"}]}},\"en\":{\"title\":\"" + enTitle + "\",\"slug\":\"" + enSlug + "-" + UUID.randomUUID() + "\",\"bodyMarkdown\":\"body\",\"articleDocument\":{\"version\":1,\"blocks\":[{\"type\":\"paragraph\",\"value\":\"body\"}]}}" + versionField + "}";
     }
 }

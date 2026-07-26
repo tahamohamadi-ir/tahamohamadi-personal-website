@@ -22,16 +22,18 @@ public class AdminProjectService {
     private final PortfolioProjectRepository projects;
     private final PortfolioProjectTranslationRepository translations;
     private final PortfolioProjectSkillRepository projectSkills;
+    private final PortfolioProjectMediaRepository projectMedia;
     private final MediaAssetRepository media;
     private final SkillRepository skills;
     private final AuditEventRepository audit;
     private final ObjectMapper mapper;
     private final AuthenticatedAuditActor actor;
 
-    public AdminProjectService(PortfolioProjectRepository projects, PortfolioProjectTranslationRepository translations, PortfolioProjectSkillRepository projectSkills, MediaAssetRepository media, SkillRepository skills, AuditEventRepository audit, ObjectMapper mapper, AuthenticatedAuditActor actor) {
+    public AdminProjectService(PortfolioProjectRepository projects, PortfolioProjectTranslationRepository translations, PortfolioProjectSkillRepository projectSkills, PortfolioProjectMediaRepository projectMedia, MediaAssetRepository media, SkillRepository skills, AuditEventRepository audit, ObjectMapper mapper, AuthenticatedAuditActor actor) {
         this.projects = projects;
         this.translations = translations;
         this.projectSkills = projectSkills;
+        this.projectMedia = projectMedia;
         this.media = media;
         this.skills = skills;
         this.audit = audit;
@@ -58,6 +60,7 @@ public class AdminProjectService {
         PortfolioProject project = projects.save(PortfolioProject.create(UUID.randomUUID(), request.projectKey(), cover(request.coverMediaId()), request.startedOn(), request.endedOn(), request.projectUrl(), request.repositoryUrl(), request.sortOrder(), now));
         saveTranslations(project, request.fa(), request.en(), now);
         replaceSkills(project, request.skills());
+        replaceGallery(project, request.gallery());
         projects.flush();
         record("ADMIN_PROJECT_CREATED", project.getId());
         return response(project);
@@ -70,6 +73,7 @@ public class AdminProjectService {
         project.update(request.projectKey(), cover(request.coverMediaId()), request.startedOn(), request.endedOn(), request.projectUrl(), request.repositoryUrl(), request.sortOrder(), now);
         saveTranslations(project, request.fa(), request.en(), now);
         replaceSkills(project, request.skills());
+        replaceGallery(project, request.gallery());
         projects.flush();
         record("ADMIN_PROJECT_UPDATED", id);
         return response(project);
@@ -102,9 +106,11 @@ public class AdminProjectService {
         record("ADMIN_PROJECT_DELETED", id);
     }
 
+
     private PortfolioProject project(UUID id) {
         return projects.findById(id).filter(value -> value.getDeletedAt() == null).orElseThrow(() -> new NoSuchElementException("Project not found"));
     }
+
 
     private MediaAsset cover(UUID id) {
         if (id == null) return null;
@@ -119,20 +125,36 @@ public class AdminProjectService {
 
     private void saveTranslation(PortfolioProject project, List<PortfolioProjectTranslation> existing, LanguageCode language, AdminProjectTranslationRequest value, Instant now) {
         existing.stream().filter(translation -> translation.getLanguageCode() == language).findFirst()
-                .ifPresentOrElse(translation -> translation.update(value.title(), value.slug(), value.summary(), value.bodyMarkdown(), value.seoTitle(), value.seoDescription(), now),
-                        () -> translations.save(PortfolioProjectTranslation.create(UUID.randomUUID(), project, language, value.title(), value.slug(), value.summary(), value.bodyMarkdown(), value.seoTitle(), value.seoDescription(), now)));
+                .ifPresentOrElse(translation -> { translation.update(value.title(), value.slug(), value.summary(), value.bodyMarkdown(), value.seoTitle(), value.seoDescription(), now); translation.updateCaseStudyFacts(value.roleText(), value.clientLabel(), value.teamDescription(), value.outcomeText()); },
+                        () -> { PortfolioProjectTranslation translation = PortfolioProjectTranslation.create(UUID.randomUUID(), project, language, value.title(), value.slug(), value.summary(), value.bodyMarkdown(), value.seoTitle(), value.seoDescription(), now); translation.updateCaseStudyFacts(value.roleText(), value.clientLabel(), value.teamDescription(), value.outcomeText()); translations.save(translation); });
     }
 
     private void replaceSkills(PortfolioProject project, List<AdminProjectSkillReferenceRequest> references) {
+        Map<UUID, Skill> byId = validateSkills(references);
+        projectSkills.deleteAllByProjectId(project.getId());
+        projectSkills.flush();
+        projectSkills.saveAll(references.stream().map(reference -> PortfolioProjectSkill.assign(project, byId.get(reference.skillId()), reference.sortOrder())).toList());
+    }
+
+    private void replaceGallery(PortfolioProject project, List<AdminProjectMediaReferenceRequest> references) {
+        if (references.stream().map(AdminProjectMediaReferenceRequest::mediaAssetId).distinct().count() != references.size()) throw new IllegalArgumentException("Gallery media ids must be unique");
+        if (references.stream().map(AdminProjectMediaReferenceRequest::sortOrder).distinct().count() != references.size()) throw new IllegalArgumentException("Gallery sort orders must be unique");
+        List<UUID> ids = references.stream().map(AdminProjectMediaReferenceRequest::mediaAssetId).toList();
+        List<MediaAsset> assets = media.findAllById(ids);
+        if (assets.size() != ids.size() || assets.stream().anyMatch(asset -> asset.getDeletedAt() != null || asset.getStatus() != MediaAssetStatus.ACTIVE || !asset.getMimeType().startsWith("image/"))) throw new NoSuchElementException("Gallery media asset not found");
+        Map<UUID, MediaAsset> byId = assets.stream().collect(Collectors.toMap(MediaAsset::getId, value -> value));
+        projectMedia.deleteAllByProjectId(project.getId());
+        projectMedia.flush();
+        projectMedia.saveAll(references.stream().map(reference -> PortfolioProjectMedia.attach(project, byId.get(reference.mediaAssetId()), reference.sortOrder())).toList());
+    }
+
+    private Map<UUID, Skill> validateSkills(List<AdminProjectSkillReferenceRequest> references) {
         if (references.stream().map(AdminProjectSkillReferenceRequest::skillId).distinct().count() != references.size()) throw new IllegalArgumentException("Skill ids must be unique");
         if (references.stream().map(AdminProjectSkillReferenceRequest::sortOrder).distinct().count() != references.size()) throw new IllegalArgumentException("Skill sort orders must be unique");
         List<UUID> ids = references.stream().map(AdminProjectSkillReferenceRequest::skillId).toList();
         List<Skill> values = skills.findAllById(ids);
         if (values.size() != ids.size() || values.stream().anyMatch(value -> value.getDeletedAt() != null || !value.isActive())) throw new NoSuchElementException("Skill not found");
-        Map<UUID, Skill> byId = values.stream().collect(Collectors.toMap(Skill::getId, value -> value));
-        projectSkills.deleteAllByProjectId(project.getId());
-        projectSkills.flush();
-        projectSkills.saveAll(references.stream().map(reference -> PortfolioProjectSkill.assign(project, byId.get(reference.skillId()), reference.sortOrder())).toList());
+        return values.stream().collect(Collectors.toMap(Skill::getId, value -> value));
     }
 
     private AdminProjectSummary summary(PortfolioProject project, List<PortfolioProjectTranslation> localized) {
@@ -143,12 +165,13 @@ public class AdminProjectService {
         List<PortfolioProjectTranslation> localized = translations.findByProjectIdAndDeletedAtIsNull(project.getId());
         List<AdminProjectSkillResponse> references = projectSkills.findByProjectIdWithSkillOrderBySortOrder(project.getId()).stream()
                 .map(value -> new AdminProjectSkillResponse(value.getSkill().getId(), value.getSortOrder())).toList();
-        return new AdminProjectResponse(project.getId(), project.getProjectKey(), project.getCoverMedia() == null ? null : project.getCoverMedia().getId(), project.getStatus().name(), project.getStartedOn(), project.getEndedOn(), project.getProjectUrl(), project.getRepositoryUrl(), project.getSortOrder(), translation(localized, LanguageCode.fa), translation(localized, LanguageCode.en), references, project.getVersion());
+        List<AdminProjectMediaResponse> gallery = projectMedia.findByProjectIdWithAssetOrderBySortOrder(project.getId()).stream().map(value -> new AdminProjectMediaResponse(value.getMediaAsset().getId(), value.getSortOrder())).toList();
+        return new AdminProjectResponse(project.getId(), project.getProjectKey(), project.getCoverMedia() == null ? null : project.getCoverMedia().getId(), project.getStatus().name(), project.getStartedOn(), project.getEndedOn(), project.getProjectUrl(), project.getRepositoryUrl(), project.getSortOrder(), translation(localized, LanguageCode.fa), translation(localized, LanguageCode.en), references, gallery, project.getVersion());
     }
 
     private AdminProjectTranslationRequest translation(List<PortfolioProjectTranslation> values, LanguageCode language) {
         PortfolioProjectTranslation value = values.stream().filter(translation -> translation.getLanguageCode() == language).findFirst().orElseThrow(() -> new NoSuchElementException("Project translation not found"));
-        return new AdminProjectTranslationRequest(value.getTitle(), value.getSlug(), value.getSummary(), value.getBodyMarkdown(), value.getSeoTitle(), value.getSeoDescription());
+        return new AdminProjectTranslationRequest(value.getTitle(), value.getSlug(), value.getSummary(), value.getBodyMarkdown(), value.getSeoTitle(), value.getSeoDescription(), value.getRoleText(), value.getClientLabel(), value.getTeamDescription(), value.getOutcomeText());
     }
 
     private static void version(PortfolioProject project, long requested) {

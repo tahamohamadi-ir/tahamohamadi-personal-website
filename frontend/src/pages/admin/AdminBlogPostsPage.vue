@@ -4,7 +4,9 @@ import { useI18n } from 'vue-i18n'
 
 import AdminLifecycleActions from 'src/components/admin/AdminLifecycleActions.vue'
 import AdminLocaleTabs from 'src/components/admin/AdminLocaleTabs.vue'
+import ArticleBlockEditor from 'src/components/admin/ArticleBlockEditor.vue'
 import AdminMarkdownPreview from 'src/components/admin/AdminMarkdownPreview.vue'
+import AdminMediaSelector from 'src/components/admin/AdminMediaSelector.vue'
 import AdminPaginatedTable from 'src/components/admin/AdminPaginatedTable.vue'
 import AdminStatePanel from 'src/components/admin/AdminStatePanel.vue'
 import {
@@ -20,19 +22,23 @@ const { t } = useI18n()
 const items = ref([])
 const categories = ref([])
 const tags = ref([])
-const media = ref([])
 const state = ref('loading')
 const page = ref(0)
 const totalPages = ref(0)
 const error = ref(null)
 const saving = ref(false)
 const selectedLocale = ref('en')
+const articleEditorMode = ref(true)
 const form = ref(createForm())
+const revisions = ref([])
+const revisionsLoading = ref(false)
+const revisionDetail = ref(null)
+const revisionDialog = ref(false)
 
 function translation(value = {}) {
   return {
     title: value.title ?? '', slug: value.slug ?? '', excerpt: value.excerpt ?? '',
-    bodyMarkdown: value.bodyMarkdown ?? '', seoTitle: value.seoTitle ?? '',
+    bodyMarkdown: value.bodyMarkdown ?? '', articleDocument: value.articleDocument ?? null, seoTitle: value.seoTitle ?? '',
     seoDescription: value.seoDescription ?? ''
   }
 }
@@ -63,10 +69,6 @@ const tagOptions = computed(() => tags.value.filter((item) => item.active).map((
   label: item[selectedLocale.value]?.name ?? item.tagKey,
   value: item.id
 })))
-const mediaOptions = computed(() => media.value.filter((item) => item.status === 'ACTIVE').map((item) => ({
-  label: `${item.originalFilename ?? item.id} · ${item.mimeType}`,
-  value: item.id
-})))
 const mediaIds = computed({
   get: () => form.value.media.map((reference) => reference.mediaAssetId),
   set: (values) => {
@@ -85,18 +87,16 @@ async function load(requestedPage = page.value) {
   state.value = 'loading'
   error.value = null
   try {
-    const [posts, categoryResponse, tagResponse, mediaResponse] = await Promise.all([
+    const [posts, categoryResponse, tagResponse] = await Promise.all([
       httpClient.get('/api/v1/admin/blog/posts', { params: { page: requestedPage, size: 20 } }),
       httpClient.get('/api/v1/admin/blog/categories', { params: { page: 0, size: 100 } }),
-      httpClient.get('/api/v1/admin/blog/tags', { params: { page: 0, size: 100 } }),
-      httpClient.get('/api/v1/admin/media', { params: { page: 0, size: 100 } })
+      httpClient.get('/api/v1/admin/blog/tags', { params: { page: 0, size: 100 } })
     ])
     items.value = posts.data.items ?? []
     page.value = posts.data.page ?? requestedPage
     totalPages.value = posts.data.totalPages ?? 0
     categories.value = categoryResponse.data.items ?? []
     tags.value = tagResponse.data.items ?? []
-    media.value = mediaResponse.data.items ?? []
     state.value = items.value.length === 0 ? 'empty' : 'ready'
   }
   catch (cause) {
@@ -111,6 +111,7 @@ async function select(item) {
     const response = await httpClient.get(`/api/v1/admin/blog/posts/${item.id}`)
     form.value = createForm(response.data)
     selectedLocale.value = 'en'
+    await loadRevisions(form.value.id)
   }
   catch (cause) { error.value = normalizeApiError(cause) }
 }
@@ -119,6 +120,7 @@ function create() {
   form.value = createForm()
   selectedLocale.value = 'en'
   error.value = null
+  revisions.value = []
 }
 
 function payload() {
@@ -163,6 +165,42 @@ async function transition(action) {
   finally { saving.value = false }
 }
 
+async function loadRevisions(id = form.value.id) {
+  if (!id) { revisions.value = []; return }
+  revisionsLoading.value = true
+  try { revisions.value = (await httpClient.get(`/api/v1/admin/blog/posts/${id}/revisions`)).data ?? [] }
+  catch (cause) { error.value = normalizeApiError(cause) }
+  finally { revisionsLoading.value = false }
+}
+
+async function restoreRevision(revision) {
+  if (!form.value.id || form.value.version == null) return
+  saving.value = true
+  error.value = null
+  try {
+    await primeCsrfToken(httpClient)
+    const response = await httpClient.post(`/api/v1/admin/blog/posts/${form.value.id}/revisions/${revision.id}/restore-as-draft`, null, { params: { version: form.value.version } })
+    form.value = createForm(response.data)
+    selectedLocale.value = 'en'
+    await load(page.value)
+    await loadRevisions(form.value.id)
+  }
+  catch (cause) { error.value = normalizeApiError(cause) }
+  finally { saving.value = false }
+}
+
+async function viewRevision(revision) {
+  if (!form.value.id) return
+  revisionsLoading.value = true
+  error.value = null
+  try {
+    revisionDetail.value = (await httpClient.get(`/api/v1/admin/blog/posts/${form.value.id}/revisions/${revision.id}`)).data
+    revisionDialog.value = true
+  }
+  catch (cause) { error.value = normalizeApiError(cause) }
+  finally { revisionsLoading.value = false }
+}
+
 onMounted(() => { void load() })
 </script>
 
@@ -188,15 +226,50 @@ onMounted(() => { void load() })
       <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />
       <q-select v-model="form.categoryId" :options="categoryOptions" emit-value map-options :label="t('admin.blogPosts.category')" :disable="saving" :error="Boolean(fieldErrors.categoryId)" :error-message="fieldErrors.categoryId" />
       <q-select v-model="form.tagIds" :options="tagOptions" emit-value map-options multiple use-chips :label="t('admin.blogPosts.tags')" :disable="saving" />
-      <q-select v-model="mediaIds" :options="mediaOptions" emit-value map-options multiple use-chips :label="t('admin.blogPosts.media')" :disable="saving" />
+      <AdminMediaSelector v-model="mediaIds" multiple :label="t('admin.blogPosts.media')" :disable="saving" />
       <q-input v-model="activeTranslation.title" :label="t('admin.blogPosts.titleField')" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.title`])" :error-message="fieldErrors[`${selectedLocale}.title`]" />
       <q-input v-model="activeTranslation.slug" :label="t('admin.blogPosts.slug')" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.slug`])" :error-message="fieldErrors[`${selectedLocale}.slug`]" />
       <q-input v-model="activeTranslation.excerpt" type="textarea" :label="t('admin.blogPosts.excerpt')" :disable="saving" />
-      <AdminMarkdownPreview v-model="activeTranslation.bodyMarkdown" />
+      <q-btn-toggle v-model="articleEditorMode" unelevated toggle-color="primary" :options="[{ label: t('admin.articleEditor.blockMode'), value: true }, { label: t('admin.articleEditor.markdownMode'), value: false }]" :aria-label="t('admin.articleEditor.mode')" />
+        <ArticleBlockEditor v-if="articleEditorMode" v-model="activeTranslation.bodyMarkdown" v-model:document="activeTranslation.articleDocument" :media-ids="mediaIds" :disable="saving" />
+      <AdminMarkdownPreview v-else v-model="activeTranslation.bodyMarkdown" />
       <q-expansion-item :label="t('admin.blogPosts.seoMetadata')" header-class="text-weight-medium">
         <div class="q-gutter-md q-pa-sm"><q-input v-model="activeTranslation.seoTitle" :label="t('admin.blogPosts.seoTitle')" :disable="saving" /><q-input v-model="activeTranslation.seoDescription" type="textarea" :label="t('admin.blogPosts.seoDescription')" :disable="saving" /></div>
       </q-expansion-item>
+      <q-expansion-item v-if="form.id" :label="t('admin.blogPosts.revisions')" header-class="text-weight-medium">
+        <div class="q-pa-sm q-gutter-sm">
+          <p class="text-caption q-mb-sm">{{ t('admin.blogPosts.revisionHelp') }}</p>
+          <q-btn flat no-caps icon="refresh" :loading="revisionsLoading" :label="t('admin.blogPosts.refreshRevisions')" @click="loadRevisions()" />
+          <q-list v-if="revisions.length" dense bordered separator>
+            <q-item v-for="revision in revisions" :key="revision.id">
+              <q-item-section clickable @click="viewRevision(revision)"><q-item-label>{{ t('admin.blogPosts.revision', { number: revision.revisionNumber }) }}</q-item-label><q-item-label caption>{{ revision.reason }}</q-item-label></q-item-section>
+              <q-item-section side><q-btn outline no-caps icon="restore" :disable="saving" :label="t('admin.blogPosts.restoreAsDraft')" @click="restoreRevision(revision)" /></q-item-section>
+            </q-item>
+          </q-list>
+          <p v-else-if="!revisionsLoading" class="text-caption q-mb-none">{{ t('admin.blogPosts.noRevisions') }}</p>
+        </div>
+      </q-expansion-item>
       <div class="admin-form-actions"><q-btn type="submit" color="primary" no-caps :loading="saving" :label="t('admin.blogPosts.save')" /><AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" /></div>
     </q-form>
+    <q-dialog v-model="revisionDialog">
+      <q-card class="admin-revision-dialog">
+        <q-card-section class="row items-center q-pb-none"><h2 class="text-h6 q-my-none">{{ t('admin.blogPosts.revisionCompare') }}</h2><q-space /><q-btn flat round icon="close" :aria-label="t('admin.actions.cancel')" v-close-popup /></q-card-section>
+        <q-card-section v-if="revisionDetail?.snapshot" class="q-gutter-md">
+          <p class="text-caption q-mb-none">{{ t('admin.blogPosts.revision', { number: revisionDetail.revisionNumber }) }} · {{ revisionDetail.reason }}</p>
+          <div v-for="locale in ['en', 'fa']" :key="locale" class="admin-revision-dialog__locale">
+            <h3 class="text-subtitle2 q-my-none">{{ locale.toUpperCase() }}</h3>
+            <dl><dt>{{ t('admin.blogPosts.titleField') }}</dt><dd>{{ revisionDetail.snapshot[locale]?.title }}</dd><dt>{{ t('admin.blogPosts.slug') }}</dt><dd>{{ revisionDetail.snapshot[locale]?.slug }}</dd><dt>{{ t('admin.blogPosts.compareCurrent') }}</dt><dd>{{ form[locale]?.title }} · {{ form[locale]?.slug }}</dd></dl>
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
+
+<style scoped>
+.admin-revision-dialog { inline-size: min(42rem, calc(100vw - 2 * var(--tm-space-4))); }
+.admin-revision-dialog__locale { border-block-start: 1px solid var(--tm-admin-border); display: grid; gap: var(--tm-space-2); padding-block-start: var(--tm-space-3); }
+.admin-revision-dialog dl { display: grid; gap: var(--tm-space-1); margin: 0; }
+.admin-revision-dialog dt { font-weight: 600; }
+.admin-revision-dialog dd { margin: 0; overflow-wrap: anywhere; }
+</style>

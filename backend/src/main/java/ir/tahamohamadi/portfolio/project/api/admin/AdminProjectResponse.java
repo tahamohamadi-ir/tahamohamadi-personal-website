@@ -16,5 +16,6 @@ public record AdminProjectResponse(
         AdminProjectTranslationRequest fa,
         AdminProjectTranslationRequest en,
         List<AdminProjectSkillResponse> skills,
+        List<AdminProjectMediaResponse> gallery,
         long version
 ) { }

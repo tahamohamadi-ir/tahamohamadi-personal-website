@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject, nextTick, ref, watch } from 'vue'
+import { computed, inject, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave } from 'vue-router'
 
@@ -15,6 +15,7 @@ import { normalizeApiError } from 'src/services/httpClient'
 const props = defineProps({
   pageId: { type: String, default: null },
   pageVersion: { type: Number, default: null },
+  pageStatus: { type: String, default: 'DRAFT' },
   disable: Boolean
 })
 const emit = defineEmits(['saved'])
@@ -22,6 +23,7 @@ const httpClient = inject(HTTP_CLIENT_KEY)
 const { t } = useI18n()
 const locale = ref('fa')
 const blocks = ref([])
+const sections = ref([])
 const version = ref(null)
 const loading = ref(false)
 const saving = ref(false)
@@ -30,7 +32,14 @@ const fieldErrors = ref({})
 const replacing = ref(false)
 const pendingRemoval = ref(null)
 const previewOpen = ref(false)
+const previewViewport = ref('desktop')
+const previewLoading = ref(false)
+const serverPreviewBlocks = ref(null)
+const history = ref([])
+const historyIndex = ref(-1)
 const operationStatus = ref('')
+const autosaveState = ref('idle')
+let autosaveTimer = null
 const changes = createUnsavedChangesGuard(() => Promise.resolve(window.confirm(t('admin.unsaved.discard'))))
 const removalOpen = computed({
   get: () => pendingRemoval.value !== null,
@@ -46,6 +55,10 @@ const collectionOptions = computed(() => [
   value,
   label: t(`admin.composer.collectionSources.${value}`)
 })))
+const previewWidth = computed(() => ({ mobile: '375px', tablet: '768px', desktop: '100%' })[previewViewport.value])
+const isDraft = computed(() => props.pageStatus === 'DRAFT')
+const autosaveLabel = computed(() => t(`admin.composer.autosave.${autosaveState.value}`))
+const sectionOptions = computed(() => sections.value.map((section, index) => ({ value: index, label: t('admin.composer.sectionHeading', { index: index + 1 }) })))
 
 function supportsEyebrow(type) {
   return ['HERO', 'CALL_TO_ACTION', 'COLLECTION', 'SKILLS', 'RESUME', 'SOCIAL_LINKS', 'CONTACT'].includes(type)
@@ -72,7 +85,7 @@ const activeTranslations = computed(() => blocks.value.map((block) => ({
   en: complete(block, block.en)
 })))
 
-const previewBlocks = computed(() => blocks.value.map((block) => ({
+const previewBlocks = computed(() => serverPreviewBlocks.value ?? blocks.value.map((block) => ({
   ...block,
   ...block[locale.value],
   settings: block.settings ?? {}
@@ -103,6 +116,10 @@ function defaultBlock() {
   }
 }
 
+function defaultSection(value = {}) {
+  return { type: 'STANDARD', layout: 'SINGLE_COLUMN', enabled: true, settingsJson: null, ...value }
+}
+
 function normalize(block) {
   let settings = {}
   try { settings = block.settingsJson ? JSON.parse(block.settingsJson) : {} }
@@ -110,12 +127,27 @@ function normalize(block) {
   return { ...defaultBlock(), ...block, settings, fa: translation(block.fa), en: translation(block.en) }
 }
 
-function replaceBlocks(value) {
+function replaceBlocks(value, composition = []) {
   replacing.value = true
   blocks.value = value.map(normalize)
+  sections.value = composition.map(defaultSection)
   changes.markSaved()
   queueMicrotask(() => { replacing.value = false })
+  history.value = [JSON.stringify(blocks.value)]
+  historyIndex.value = 0
+  autosaveState.value = 'saved'
 }
+
+function restoreHistory(index) {
+  const snapshot = history.value[index]
+  if (!snapshot) return
+  replacing.value = true
+  blocks.value = JSON.parse(snapshot)
+  historyIndex.value = index
+  queueMicrotask(() => { replacing.value = false })
+}
+function undo() { if (historyIndex.value > 0) restoreHistory(historyIndex.value - 1) }
+function redo() { if (historyIndex.value + 1 < history.value.length) restoreHistory(historyIndex.value + 1) }
 
 async function load() {
   if (!props.pageId) {
@@ -126,12 +158,28 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    const response = await httpClient.get(`/api/v1/admin/pages/${props.pageId}/blocks`)
+    const response = await httpClient.get(`/api/v1/admin/pages/${props.pageId}/blocks/composition`)
     version.value = response.data.version
-    replaceBlocks(response.data.blocks ?? [])
+    const composition = response.data.sections ?? []
+    replaceBlocks(composition.flatMap((section, sectionIndex) => (section.blocks ?? []).map((block) => ({ ...block, sectionIndex }))), composition)
   }
   catch (cause) { error.value = normalizeApiError(cause) }
   finally { loading.value = false }
+}
+
+async function openPreview() {
+  if (!props.pageId) return
+  previewLoading.value = true
+  error.value = null
+  try {
+    await primeCsrfToken(httpClient)
+    const issued = await httpClient.post(`/api/v1/admin/pages/${props.pageId}/preview-token`)
+    const preview = await httpClient.get(`/api/v1/preview/pages/${props.pageId}`, { params: { token: issued.data.token, lang: locale.value } })
+    serverPreviewBlocks.value = preview.data.blocks ?? []
+    previewOpen.value = true
+  }
+  catch (cause) { error.value = normalizeApiError(cause) }
+  finally { previewLoading.value = false }
 }
 
 function announce(message) {
@@ -139,8 +187,33 @@ function announce(message) {
   nextTick(() => { operationStatus.value = message })
 }
 function add() {
-  blocks.value.push(defaultBlock())
+  blocks.value.push({ ...defaultBlock(), sectionIndex: 0 })
   announce(t('admin.composer.added', { index: blocks.value.length }))
+}
+function addSection() {
+  sections.value.push(defaultSection())
+  announce(t('admin.composer.sectionAdded', { index: sections.value.length }))
+}
+function moveSection(index, offset) {
+  const target = index + offset
+  if (target < 0 || target >= sections.value.length) return
+  const [section] = sections.value.splice(index, 1)
+  sections.value.splice(target, 0, section)
+  blocks.value.forEach((block) => {
+    if (block.sectionIndex === index) block.sectionIndex = target
+    else if (index < target && block.sectionIndex > index && block.sectionIndex <= target) block.sectionIndex -= 1
+    else if (target < index && block.sectionIndex >= target && block.sectionIndex < index) block.sectionIndex += 1
+  })
+  announce(t('admin.composer.sectionMoved', { from: index + 1, to: target + 1 }))
+}
+function removeSection(index) {
+  if (sections.value.length <= 1) return
+  sections.value.splice(index, 1)
+  blocks.value.forEach((block) => {
+    if (block.sectionIndex === index) block.sectionIndex = 0
+    else if (block.sectionIndex > index) block.sectionIndex -= 1
+  })
+  announce(t('admin.composer.sectionRemoved', { index: index + 1 }))
 }
 function requestRemove(index) { pendingRemoval.value = index }
 function remove() {
@@ -196,10 +269,29 @@ function settingsPayload(settings) {
   return Object.keys(compact).length ? JSON.stringify(compact) : null
 }
 
-async function save() {
+function compositionPayload() {
+  const activeSections = sections.value.length ? sections.value : [defaultSection()]
+  return activeSections.map((section, sectionIndex) => ({
+    type: section.type,
+    layout: section.layout,
+    enabled: section.enabled,
+    settingsJson: section.settingsJson ?? null,
+    blocks: blocks.value.filter((block) => (block.sectionIndex ?? 0) === sectionIndex).map((block) => ({
+      type: block.type,
+      enabled: block.enabled,
+      settingsJson: settingsPayload(block.settings),
+      fa: block.fa,
+      en: block.en
+    }))
+  }))
+}
+
+async function save(automatic = false) {
   if (!props.pageId) return
+  if (automatic && (!isDraft.value || saving.value || loading.value)) return
   if (!validateActionPaths()) {
-    error.value = { message: t('admin.composer.invalidActionPath') }
+    if (automatic) autosaveState.value = 'error'
+    else error.value = { message: t('admin.composer.invalidActionPath') }
     return
   }
   saving.value = true
@@ -207,30 +299,43 @@ async function save() {
   fieldErrors.value = {}
   try {
     await primeCsrfToken(httpClient)
-    const response = await httpClient.put(`/api/v1/admin/pages/${props.pageId}/blocks`, {
+    if (automatic) autosaveState.value = 'saving'
+    const response = await httpClient.put(`/api/v1/admin/pages/${props.pageId}/blocks/composition`, {
       version: version.value ?? props.pageVersion,
-      blocks: blocks.value.map((block) => ({
-        type: block.type,
-        enabled: block.enabled,
-        settingsJson: settingsPayload(block.settings),
-        fa: block.fa,
-        en: block.en
-      }))
+      sections: compositionPayload()
     })
     version.value = response.data.version
-    replaceBlocks(response.data.blocks ?? [])
+    const composition = response.data.sections ?? []
+    replaceBlocks(composition.flatMap((section, sectionIndex) => (section.blocks ?? []).map((block) => ({ ...block, sectionIndex }))), composition)
+    autosaveState.value = 'saved'
     emit('saved', response.data.version)
   }
   catch (cause) {
     error.value = normalizeApiError(cause)
     fieldErrors.value = mapValidationErrors(error.value)
+    if (automatic) autosaveState.value = isVersionConflict(error.value) ? 'conflict' : 'error'
   }
   finally { saving.value = false }
 }
 
 watch(() => props.pageId, () => { void load() }, { immediate: true })
-watch(blocks, () => { if (!replacing.value) changes.markDirty() }, { deep: true, flush: 'sync' })
+watch(locale, () => { if (previewOpen.value) void openPreview() })
+watch(blocks, () => {
+  if (replacing.value) return
+  changes.markDirty()
+  const snapshot = JSON.stringify(blocks.value)
+  if (history.value[historyIndex.value] === snapshot) return
+  history.value.splice(historyIndex.value + 1)
+  history.value.push(snapshot)
+  historyIndex.value = history.value.length - 1
+  if (isDraft.value) {
+    autosaveState.value = 'pending'
+    clearTimeout(autosaveTimer)
+    autosaveTimer = setTimeout(() => { void save(true) }, 1500)
+  }
+}, { deep: true, flush: 'sync' })
 onBeforeRouteLeave(async () => changes.confirmLeave())
+onBeforeUnmount(() => clearTimeout(autosaveTimer))
 </script>
 
 <template>
@@ -241,12 +346,16 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
         <p class="text-body2 text-grey-8 q-mb-none">{{ t('admin.composer.description') }}</p>
       </div>
       <div class="col-auto q-gutter-sm">
-        <q-btn outline color="primary" icon="visibility" :label="t('admin.composer.preview')" :disable="loading" @click="previewOpen = true" />
+        <q-btn outline dense icon="undo" :disable="historyIndex <= 0 || saving" aria-label="Undo" @click="undo" />
+        <q-btn outline dense icon="redo" :disable="historyIndex + 1 >= history.length || saving" aria-label="Redo" @click="redo" />
+        <q-btn outline color="primary" icon="visibility" :label="t('admin.composer.preview')" :loading="previewLoading" :disable="loading || saving" @click="openPreview" />
+        <q-btn outline color="primary" icon="view_agenda" :label="t('admin.composer.addSection')" :disable="disable || loading || saving" @click="addSection" />
         <q-btn outline color="primary" icon="add" :label="t('admin.composer.add')" :disable="disable || loading" @click="add" />
       </div>
     </div>
 
     <p class="admin-composer__status" role="status" aria-live="polite">{{ operationStatus }}</p>
+    <p v-if="isDraft && autosaveLabel" class="text-caption text-grey-8 q-mb-sm" role="status" aria-live="polite">{{ autosaveLabel }}</p>
 
     <q-banner v-if="error" class="bg-red-1 text-negative q-mb-md" rounded role="alert">
       {{ error.message }}
@@ -254,6 +363,17 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
     </q-banner>
 
     <q-inner-loading :showing="loading" />
+    <q-card v-for="(section, sectionIndex) in sections" :key="`section-${sectionIndex}`" flat bordered class="q-mb-sm bg-grey-1">
+      <q-card-section class="row items-center q-col-gutter-sm q-py-sm">
+        <div class="col"><h3 class="text-subtitle2 q-my-none">{{ t('admin.composer.sectionHeading', { index: sectionIndex + 1 }) }}</h3></div>
+        <div class="col-auto"><q-toggle v-model="section.enabled" :label="t('admin.composer.visible')" :disable="disable || saving" /></div>
+        <div class="col-auto q-gutter-xs">
+          <q-btn flat round icon="keyboard_arrow_up" :aria-label="t('admin.composer.moveSectionUp', { index: sectionIndex + 1 })" :disable="sectionIndex === 0 || disable || saving" @click="moveSection(sectionIndex, -1)" />
+          <q-btn flat round icon="keyboard_arrow_down" :aria-label="t('admin.composer.moveSectionDown', { index: sectionIndex + 1 })" :disable="sectionIndex === sections.length - 1 || disable || saving" @click="moveSection(sectionIndex, 1)" />
+          <q-btn flat round color="negative" icon="delete" :aria-label="t('admin.composer.removeSection', { index: sectionIndex + 1 })" :disable="sections.length <= 1 || disable || saving" @click="removeSection(sectionIndex)" />
+        </div>
+      </q-card-section>
+    </q-card>
     <p v-if="!loading && blocks.length === 0" class="text-grey-8">{{ t('admin.composer.empty') }}</p>
     <q-card v-for="(block, index) in blocks" :key="block.id ?? `new-${index}`" flat bordered tabindex="-1" class="admin-composer__block q-mb-md" :data-composer-block-index="index" :aria-labelledby="`composer-block-${index}`">
       <q-card-section class="admin-composer__block-header row items-center q-col-gutter-sm">
@@ -262,6 +382,7 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
             {{ t('admin.composer.blockHeading', { type: t(`admin.composer.blockTypes.${block.type}`), index: index + 1 }) }}
           </h3>
         </div>
+        <div class="col-12 col-md"><q-select v-model="block.sectionIndex" :options="sectionOptions" emit-value map-options :label="t('admin.composer.section')" :disable="disable || saving" /></div>
         <div class="col-12 col-md"><q-select v-model="block.type" :options="blockOptions" emit-value map-options :label="t('admin.composer.type')" :disable="disable || saving" @update:model-value="onBlockTypeChange(block)" /></div>
         <div class="col-auto"><q-toggle v-model="block.enabled" :label="t('admin.composer.visible')" :disable="disable || saving" /></div>
         <div class="col-auto q-gutter-xs">
@@ -271,7 +392,7 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
         </div>
       </q-card-section>
       <q-card-section class="q-pt-none">
-        <AdminMediaSelector v-if="['HERO', 'MEDIA', 'MEDIA_TEXT'].includes(block.type)" v-model="block.settings.mediaId" :label="t('admin.composer.media')" :disable="disable || saving" />
+        <AdminMediaSelector v-if="['HERO', 'MEDIA', 'MEDIA_TEXT'].includes(block.type)" v-model="block.settings.mediaId" :allowed-types="['image']" :label="t('admin.composer.media')" :disable="disable || saving" />
         <template v-if="block.type === 'COLLECTION'">
           <q-select v-model="block.settings.source" :options="collectionOptions" emit-value map-options :label="t('admin.composer.collection')" :disable="disable || saving" />
           <q-input v-model.number="block.settings.limit" type="number" min="1" max="12" :label="t('admin.composer.limit')" :disable="disable || saving" />
@@ -302,11 +423,20 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
       <q-card class="admin-composer__preview" role="document">
         <q-card-section class="row items-center justify-between">
           <h3 class="text-h6 q-my-none">{{ t('admin.composer.previewTitle') }}</h3>
-          <q-btn flat round icon="close" :aria-label="t('admin.composer.closePreview')" @click="previewOpen = false" />
+          <div class="q-gutter-xs">
+            <q-btn-toggle v-model="previewViewport" unelevated toggle-color="primary" :options="[{ label: '375', value: 'mobile' }, { label: '768', value: 'tablet' }, { label: '1440', value: 'desktop' }]" aria-label="Preview viewport" />
+            <q-btn flat round icon="close" :aria-label="t('admin.composer.closePreview')" @click="previewOpen = false" />
+          </div>
         </q-card-section>
         <q-separator />
-        <q-card-section class="q-pa-none">
-          <PageBlockRenderer :blocks="previewBlocks" :locale="locale" :hero-heading-level="2" />
+        <q-card-section class="q-py-sm text-caption text-grey-8" role="status">
+          {{ t('admin.composer.previewSavedDraft') }}
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="admin-composer__preview-canvas q-pa-none">
+          <div class="admin-composer__preview-viewport" :style="{ maxWidth: previewWidth }">
+            <PageBlockRenderer :blocks="previewBlocks" :locale="locale" :hero-heading-level="2" />
+          </div>
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -337,6 +467,9 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+.admin-composer__preview-canvas { background: var(--tm-admin-surface-subtle); overflow: auto; padding: var(--tm-space-4); }
+.admin-composer__preview-viewport { background: var(--tm-surface); box-shadow: var(--tm-shadow-sm); margin-inline: auto; min-inline-size: min(100%, 20rem); transition: max-width 160ms ease; }
 
 .admin-composer__block-header {
   background: var(--tm-admin-surface-subtle);

@@ -95,6 +95,10 @@ class AdminProjectIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.fa.title").value("پروژه"))
                 .andExpect(jsonPath("$.en.slug").value("en-first"))
+                .andExpect(jsonPath("$.en.roleText").value("Role"))
+                .andExpect(jsonPath("$.en.clientLabel").value("Client"))
+                .andExpect(jsonPath("$.en.teamDescription").value("Team"))
+                .andExpect(jsonPath("$.en.outcomeText").value("Outcome"))
                 .andExpect(jsonPath("$.skills[0].skillId").value(firstSkill.getId().toString()))
                 .andExpect(jsonPath("$.skills[1].skillId").value(secondSkill.getId().toString()))
                 .andExpect(jsonPath("$.coverMediaId").value(cover.getId().toString()))
@@ -188,7 +192,7 @@ class AdminProjectIntegrationTest {
         String skillsField = references.stream().map(reference -> "{\"skillId\":\"" + reference.skillId() + "\",\"sortOrder\":" + reference.sortOrder() + "}")
                 .collect(java.util.stream.Collectors.joining(","));
         String versionField = version == null ? "" : ",\"version\":" + version;
-        return "{\"projectKey\":\"" + key + "\",\"coverMediaId\":\"" + coverMediaId + "\",\"startedOn\":\"2025-01-01\",\"endedOn\":\"2025-02-01\",\"projectUrl\":\"https://example.test/projects/" + key + "\",\"repositoryUrl\":\"https://github.com/example/" + key + "\",\"sortOrder\":" + sortOrder + ",\"fa\":{\"title\":\"پروژه\",\"slug\":\"fa-" + key + "\",\"summary\":\"خلاصه\",\"bodyMarkdown\":\"متن\",\"seoTitle\":\"سئو\",\"seoDescription\":\"توضیح\"},\"en\":{\"title\":\"Project\",\"slug\":\"en-" + key + "\",\"summary\":\"Summary\",\"bodyMarkdown\":\"Body\",\"seoTitle\":\"SEO\",\"seoDescription\":\"Description\"},\"skills\":[" + skillsField + "]" + versionField + "}";
+        return "{\"projectKey\":\"" + key + "\",\"coverMediaId\":\"" + coverMediaId + "\",\"startedOn\":\"2025-01-01\",\"endedOn\":\"2025-02-01\",\"projectUrl\":\"https://example.test/projects/" + key + "\",\"repositoryUrl\":\"https://github.com/example/" + key + "\",\"sortOrder\":" + sortOrder + ",\"fa\":{\"title\":\"پروژه\",\"slug\":\"fa-" + key + "\",\"summary\":\"خلاصه\",\"bodyMarkdown\":\"متن\",\"seoTitle\":\"سئو\",\"seoDescription\":\"توضیح\"},\"en\":{\"title\":\"Project\",\"slug\":\"en-" + key + "\",\"summary\":\"Summary\",\"bodyMarkdown\":\"Body\",\"seoTitle\":\"SEO\",\"seoDescription\":\"Description\",\"roleText\":\"Role\",\"clientLabel\":\"Client\",\"teamDescription\":\"Team\",\"outcomeText\":\"Outcome\"},\"skills\":[" + skillsField + "],\"gallery\":[]" + versionField + "}";
     }
 
     private String payloadWithUpdatedTranslations(String key, UUID coverMediaId, List<SkillReference> references, Long version, int sortOrder) {

@@ -8,6 +8,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { i18n } from 'src/boot/i18n'
+import PageBlockRenderer from 'src/components/public/PageBlockRenderer.vue'
 import PublicHomePage from 'src/pages/public/PublicHomePage.vue'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'
 import {
@@ -83,6 +84,38 @@ async function mountPublicPage(component, {
 function expectPageDoesNotOwnShellLandmarks(wrapper) {
   expect(wrapper.findAll('main, .q-page')).toHaveLength(0)
   expect(wrapper.findAll('[lang], [dir]')).toHaveLength(0)
+}
+
+async function mountPageBlockRenderer(props = {}) {
+  i18n.global.locale.value = props.locale || 'en'
+
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      {
+        path: '/:lang',
+        component: { template: '<div />' }
+      },
+      {
+        path: '/:lang/:section/:slug?',
+        component: { template: '<div />' }
+      }
+    ]
+  })
+
+  await router.push(`/${props.locale || 'en'}`)
+  await router.isReady()
+
+  return mount(PageBlockRenderer, {
+    props: {
+      locale: 'en',
+      blocks: [],
+      ...props
+    },
+    global: {
+      plugins: [Quasar, createPinia(), router, i18n]
+    }
+  })
 }
 
 afterEach(() => {
@@ -532,6 +565,197 @@ describe('public page introduction contract', () => {
       expect(wrapper.get('h1').text()).toBe(scenario.expectedTitle)
       wrapper.unmount()
     }
+  })
+
+  it('renders approved hero media from the existing composer contract with localized alt text', async () => {
+    const wrapper = await mountPageBlockRenderer({
+      locale: 'en',
+      heroHeadingLevel: 1,
+      blocks: [{
+        id: 'home-hero',
+        type: 'HERO',
+        enabled: true,
+        mediaId: '550e8400-e29b-41d4-a716-446655440001',
+        title: 'Taha Mohamadi',
+        lead: 'Research, design, and reliable systems.',
+        alt: 'Portrait of Taha Mohamadi'
+      }]
+    })
+
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.get('h1').text()).toBe('Taha Mohamadi')
+    const image = wrapper.get('.page-block__hero-media img')
+
+    expect(image.attributes('src'))
+      .toBe('/api/v1/public/media/550e8400-e29b-41d4-a716-446655440001')
+    expect(image.attributes('alt')).toBe('Portrait of Taha Mohamadi')
+    expect(image.attributes('width')).toBe('1600')
+    expect(image.attributes('height')).toBe('900')
+    expect(image.attributes('fetchpriority')).toBe('high')
+    wrapper.unmount()
+  })
+
+  it('does not publish hero media without approved alt text', async () => {
+    const wrapper = await mountPageBlockRenderer({
+      locale: 'fa',
+      heroHeadingLevel: 1,
+      blocks: [{
+        id: 'home-hero-without-alt',
+        type: 'HERO',
+        enabled: true,
+        mediaUrl: '/api/v1/public/media/550e8400-e29b-41d4-a716-446655440001',
+        title: '\u0637\u0647 \u0645\u062d\u0645\u062f\u06cc',
+        alt: ''
+      }]
+    })
+
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    expect(wrapper.find('.page-block__hero-media img').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('renders approved hero media when the API provides a direct mediaUrl', async () => {
+    const wrapper = await mountPageBlockRenderer({
+      locale: 'en',
+      heroHeadingLevel: 1,
+      blocks: [{
+        id: 'home-hero-media-url',
+        type: 'HERO',
+        enabled: true,
+        mediaUrl: '/api/v1/public/media/approved-home-hero',
+        title: 'Taha Mohamadi',
+        alt: 'Taha Mohamadi working at a desk'
+      }]
+    })
+
+    const image = wrapper.get('.page-block__hero-media img')
+
+    expect(image.attributes('src')).toBe('/api/v1/public/media/approved-home-hero')
+    expect(image.attributes('alt')).toBe('Taha Mohamadi working at a desk')
+    wrapper.unmount()
+  })
+
+  it('omits empty collection sections instead of rendering placeholders', async () => {
+    const wrapper = await mountPageBlockRenderer({
+      locale: 'en',
+      blocks: [
+        {
+          id: 'empty-selected-work',
+          type: 'COLLECTION',
+          enabled: true,
+          source: 'PORTFOLIO',
+          limit: 3,
+          title: 'Selected work',
+          lead: 'This should not appear without published items.'
+        },
+        {
+          id: 'latest-writing',
+          type: 'COLLECTION',
+          enabled: true,
+          source: 'BLOG',
+          limit: 1,
+          title: 'Latest writing'
+        }
+      ],
+      collectionItems: {
+        BLOG: [{
+          slug: 'systems-for-people',
+          title: 'Systems for people',
+          excerpt: 'A short note.'
+        }],
+        PORTFOLIO: []
+      }
+    })
+
+    expect(wrapper.text()).not.toContain('Selected work')
+    expect(wrapper.text()).not.toContain('This should not appear')
+    expect(wrapper.get('.page-block--collection').text()).toContain('Latest writing')
+    expect(wrapper.get('.page-block__collection-link').attributes('href'))
+      .toBe('/en/blog/systems-for-people')
+    wrapper.unmount()
+  })
+
+  it('keeps renderer CTAs limited to locale-owned paths or secure HTTPS URLs', async () => {
+    const wrapper = await mountPageBlockRenderer({
+      locale: 'en',
+      blocks: [
+        {
+          id: 'internal-cta',
+          type: 'CALL_TO_ACTION',
+          enabled: true,
+          title: 'Internal CTA',
+          actionLabel: 'Read writing',
+          actionPath: '/en/blog'
+        },
+        {
+          id: 'external-cta',
+          type: 'CALL_TO_ACTION',
+          enabled: true,
+          title: 'External CTA',
+          actionLabel: 'Visit profile',
+          actionPath: 'https://example.com/profile'
+        },
+        {
+          id: 'unsafe-cta',
+          type: 'CALL_TO_ACTION',
+          enabled: true,
+          title: 'Unsafe CTA',
+          actionLabel: 'Do not render',
+          actionPath: 'javascript:alert(1)'
+        }
+      ]
+    })
+
+    const internal = wrapper.get('a[href="/en/blog"]')
+    const external = wrapper.get('a[href="https://example.com/profile"]')
+
+    expect(internal.attributes('target')).toBeUndefined()
+    expect(external.attributes('target')).toBe('_blank')
+    expect(external.attributes('rel')).toContain('noopener')
+    expect(external.attributes('rel')).toContain('noreferrer')
+    expect(wrapper.text()).not.toContain('Do not render')
+    expect(wrapper.html()).not.toContain('javascript:alert')
+    wrapper.unmount()
+  })
+
+  it('uses only safe canonical collection paths before falling back to the current locale slug route', async () => {
+    const wrapper = await mountPageBlockRenderer({
+      locale: 'fa',
+      blocks: [{
+        id: 'featured-publications',
+        type: 'COLLECTION',
+        enabled: true,
+        source: 'PUBLICATIONS',
+        title: 'Featured publications'
+      }],
+      collectionItems: {
+        PUBLICATIONS: [
+          {
+            slug: 'safe-paper',
+            title: 'Safe paper',
+            canonicalPath: '/fa/publications/safe-paper'
+          },
+          {
+            slug: 'fallback-paper',
+            title: 'Fallback paper',
+            canonicalPath: 'https://untrusted.example/fa/publications/fallback-paper'
+          },
+          {
+            slug: 'cross-locale-paper',
+            title: 'Cross-locale paper',
+            canonicalPath: '/en/publications/cross-locale-paper'
+          }
+        ]
+      }
+    })
+
+    const links = wrapper.findAll('.page-block__collection-link')
+
+    expect(links).toHaveLength(3)
+    expect(links[0].attributes('href')).toBe('/fa/publications/safe-paper')
+    expect(links[1].attributes('href')).toBe('/fa/publications/fallback-paper')
+    expect(links[2].attributes('href')).toBe('/fa/publications/cross-locale-paper')
+    wrapper.unmount()
   })
 
   it('keeps Home CMS-first, escaped, token-driven, and outside shell ownership', () => {

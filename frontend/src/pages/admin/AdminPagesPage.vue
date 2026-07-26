@@ -256,6 +256,7 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
       <AdminPageBlockComposer
         :page-id="form.id"
         :page-version="form.version"
+        :page-status="form.status"
         :disable="saving"
         @saved="compositionSaved"
       />
