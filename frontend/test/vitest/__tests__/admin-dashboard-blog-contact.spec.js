@@ -50,6 +50,11 @@ describe('admin source-backed dashboard', () => {
     expect(page).toContain(':rows="3"')
     expect(page).toContain('AdminPageBlockComposer')
     expect(page).toContain('compositionSaved')
+    expect(page).toContain('/api/v1/admin/pages/${id}/revisions')
+    expect(page).toContain('restore-as-draft')
+    expect(page).toContain('restoreConfirmationOpen')
+    expect(page).toContain('admin.pages.restoreDescription')
+    expect(page).toContain('snapshotComposition')
   })
 })
 
