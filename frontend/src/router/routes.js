@@ -248,6 +248,12 @@ const routes = [
         meta: { requiresAdmin: true, noindex: true }
       },
       {
+        path: 'translation-queue',
+        name: 'admin-translation-queue',
+        component: () => import('pages/admin/AdminTranslationQueuePage.vue'),
+        meta: { requiresAdmin: true, noindex: true }
+      },
+      {
         path: 'blog/categories',
         name: 'admin-blog-categories',
         component: () => import('pages/admin/AdminBlogCategoriesPage.vue'),

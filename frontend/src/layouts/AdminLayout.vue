@@ -33,6 +33,7 @@ const navigationGroups = [
       { labelKey: 'admin.navigationItems.blogPosts', icon: 'article', to: '/admin/blog/posts' },
       { labelKey: 'admin.navigationItems.blogCategories', icon: 'category', to: '/admin/blog/categories' },
       { labelKey: 'admin.navigationItems.blogTags', icon: 'sell', to: '/admin/blog/tags' },
+      { labelKey: 'admin.translationQueue.title', icon: 'translate', to: '/admin/translation-queue' },
       { labelKey: 'admin.navigationItems.featured', icon: 'star', to: '/admin/featured' }
     ]
   },

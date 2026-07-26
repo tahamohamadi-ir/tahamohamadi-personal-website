@@ -1,6 +1,7 @@
 <script setup>
 import { computed, inject, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 
 import AdminLifecycleActions from 'src/components/admin/AdminLifecycleActions.vue'
 import AdminLocaleTabs from 'src/components/admin/AdminLocaleTabs.vue'
@@ -19,6 +20,7 @@ import { normalizeApiError } from 'src/services/httpClient'
 
 const httpClient = inject(HTTP_CLIENT_KEY)
 const { t } = useI18n()
+const route = useRoute()
 const items = ref([])
 const categories = ref([])
 const tags = ref([])
@@ -107,6 +109,7 @@ async function load(requestedPage = page.value) {
     categories.value = categoryResponse.data.items ?? []
     tags.value = tagResponse.data.items ?? []
     state.value = items.value.length === 0 ? 'empty' : 'ready'
+    if (route.query.post && form.value.id !== route.query.post) await select({ id: route.query.post })
   }
   catch (cause) {
     error.value = normalizeApiError(cause)

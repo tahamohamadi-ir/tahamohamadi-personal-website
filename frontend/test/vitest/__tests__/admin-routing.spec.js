@@ -102,6 +102,13 @@ describe('admin routing contract', () => {
     })
   })
 
+  it('keeps translation queue inside the protected admin shell', () => {
+    expect(adminRoute('translation-queue')).toMatchObject({
+      name: 'admin-translation-queue',
+      meta: { requiresAdmin: true, noindex: true }
+    })
+  })
+
   it('provides a noindex not-found destination inside the protected admin shell', () => {
     const notFound = adminRoute(':pathMatch(.*)*')
 

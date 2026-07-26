@@ -44,7 +44,7 @@ describe('admin source-backed dashboard', () => {
 
 describe('admin blog and contact workflows', () => {
   it('protects the new routes from public access and lazy-loads them', async () => {
-    const paths = ['blog/posts', 'blog/categories', 'blog/tags', 'contact-messages']
+    const paths = ['blog/posts', 'blog/categories', 'blog/tags', 'translation-queue', 'contact-messages']
 
     for (const path of paths) {
       expect(adminRoute(path)).toMatchObject({
@@ -97,6 +97,18 @@ describe('admin blog and contact workflows', () => {
     expect(contacts).toContain("transition('read')")
     expect(contacts).toContain("transition('archive')")
     expect(contacts).toContain(':dir="detailDirection"')
+  })
+
+  it('keeps the translation queue limited to source-backed Blog data', () => {
+    const queue = source('src/pages/admin/AdminTranslationQueuePage.vue')
+
+    expect(queue).toContain("'/api/v1/admin/blog/posts'")
+    expect(queue).toContain('size: 100')
+    expect(queue).toContain('faTranslationStatus')
+    expect(queue).toContain('enTranslationStatus')
+    expect(queue).toContain('sourceUpdatedAt')
+    expect(queue).toContain('checklist')
+    expect(queue).toContain('OUTDATED')
   })
 })
 
