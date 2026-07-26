@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 import java.util.List;
 import java.time.Instant;
+import ir.tahamohamadi.common.domain.LanguageCode;
 
 @RestController
 @RequestMapping("/api/v1/admin/blog/posts")
@@ -22,8 +23,8 @@ public class AdminBlogController {
     public AdminBlogController(AdminBlogService blog) { this.blog=blog; }
     @GetMapping public PageResponse<AdminBlogSummary> list(@RequestParam(defaultValue="0") @Min(0) int page,@RequestParam(defaultValue="20") @Min(1) @Max(100) int size) { return PageResponse.from(blog.list(PageRequest.of(page,size))); }
     @GetMapping("/{id}") public AdminBlogResponse get(@PathVariable UUID id) { return blog.get(id); }
-    @PostMapping public ResponseEntity<AdminBlogResponse> create(@Valid @RequestBody AdminBlogCreateRequest request) { return ResponseEntity.status(HttpStatus.CREATED).body(blog.create(request)); }
-    @PutMapping("/{id}") public AdminBlogResponse update(@PathVariable UUID id,@Valid @RequestBody AdminBlogUpdateRequest request) { return blog.update(id,request); }
+    @PostMapping public ResponseEntity<AdminBlogResponse> create(@Valid @RequestBody AdminBlogCreateRequest request, @RequestParam(defaultValue="fa") LanguageCode sourceLanguage) { return ResponseEntity.status(HttpStatus.CREATED).body(blog.create(request, sourceLanguage)); }
+    @PutMapping("/{id}") public AdminBlogResponse update(@PathVariable UUID id,@Valid @RequestBody AdminBlogUpdateRequest request, @RequestParam(required=false) LanguageCode sourceLanguage) { return blog.update(id,request,sourceLanguage); }
     @PostMapping("/{id}/submit-for-review") public AdminBlogResponse submitForReview(@PathVariable UUID id,@RequestParam long version) { return blog.submitForReview(id,version); }
     @PostMapping("/{id}/return-to-draft") public AdminBlogResponse returnToDraft(@PathVariable UUID id,@RequestParam long version) { return blog.returnToDraft(id,version); }
     @PostMapping("/{id}/publish") public AdminBlogResponse publish(@PathVariable UUID id,@RequestParam long version) { return blog.publish(id,version); }

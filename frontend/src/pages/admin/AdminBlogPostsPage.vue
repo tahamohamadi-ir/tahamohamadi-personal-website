@@ -48,6 +48,9 @@ function createForm(value = {}) {
     id: value.id ?? null,
     categoryId: value.categoryId ?? null,
     status: value.status ?? 'DRAFT',
+    sourceLanguage: value.sourceLanguage ?? 'fa',
+    faTranslationStatus: value.faTranslationStatus ?? null,
+    enTranslationStatus: value.enTranslationStatus ?? null,
     scheduledFor: value.scheduledFor ?? '',
     version: value.version ?? null,
     tagIds: value.tagIds ?? [],
@@ -61,6 +64,11 @@ const translations = computed(() => ({
   fa: Boolean(form.value.fa.title && form.value.fa.slug),
   en: Boolean(form.value.en.title && form.value.en.slug)
 }))
+const sourceLanguageOptions = computed(() => [
+  { label: t('admin.localeTabs.persian'), value: 'fa' },
+  { label: t('admin.localeTabs.english'), value: 'en' }
+])
+const activeTranslationStatus = computed(() => form.value[`${selectedLocale.value}TranslationStatus`]?.status)
 const fieldErrors = computed(() => mapValidationErrors(error.value))
 const categoryOptions = computed(() => categories.value.filter((item) => item.active).map((item) => ({
   label: item[selectedLocale.value]?.name ?? item.categoryKey,
@@ -141,8 +149,8 @@ async function save() {
   try {
     await primeCsrfToken(httpClient)
     const response = form.value.id
-      ? await httpClient.put(`/api/v1/admin/blog/posts/${form.value.id}`, payload())
-      : await httpClient.post('/api/v1/admin/blog/posts', payload())
+      ? await httpClient.put(`/api/v1/admin/blog/posts/${form.value.id}`, payload(), { params: { sourceLanguage: form.value.sourceLanguage } })
+      : await httpClient.post('/api/v1/admin/blog/posts', payload(), { params: { sourceLanguage: form.value.sourceLanguage } })
     form.value = createForm(response.data)
     await load(page.value)
   }
@@ -241,7 +249,11 @@ onMounted(() => { void load() })
     </template>
     <q-form class="admin-panel q-pa-md q-gutter-md" @submit.prevent="save">
       <div class="admin-page__header"><h2 class="text-h5 q-my-none">{{ form.id ? t('admin.blogPosts.edit') : t('admin.blogPosts.new') }}</h2><span class="text-caption">{{ form.status }} · {{ form.version == null ? t('admin.blogPosts.newVersion') : t('admin.blogPosts.version', { version: form.version }) }}</span></div>
-      <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />
+      <div class="admin-blog-posts__translation-controls">
+        <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />
+        <q-select v-model="form.sourceLanguage" outlined dense emit-value map-options :options="sourceLanguageOptions" :label="t('admin.blogTranslationSource')" :disable="saving" />
+        <q-badge v-if="activeTranslationStatus" outline color="primary">{{ t(`admin.blogTranslationStatuses.${activeTranslationStatus}`) }}</q-badge>
+      </div>
       <q-select v-model="form.categoryId" :options="categoryOptions" emit-value map-options :label="t('admin.blogPosts.category')" :disable="saving" :error="Boolean(fieldErrors.categoryId)" :error-message="fieldErrors.categoryId" />
       <q-select v-model="form.tagIds" :options="tagOptions" emit-value map-options multiple use-chips :label="t('admin.blogPosts.tags')" :disable="saving" />
       <AdminMediaSelector v-model="mediaIds" multiple :label="t('admin.blogPosts.media')" :disable="saving" />
@@ -302,4 +314,6 @@ onMounted(() => { void load() })
 .admin-revision-dialog dt { font-weight: 600; }
 .admin-revision-dialog dd { margin: 0; overflow-wrap: anywhere; }
 .admin-schedule { border-block: 1px solid var(--tm-admin-border); display: grid; padding-block: var(--tm-space-4); }
+.admin-blog-posts__translation-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tm-space-3); }
+.admin-blog-posts__translation-controls :deep(.q-field) { min-inline-size: 12rem; }
 </style>

@@ -158,6 +158,22 @@ class AdminBlogLifecycleIntegrationTest {
     }
 
     @Test
+    void marksOnlyTheNonUpdatedTargetLocaleOutdatedWhenItsSourceChanges() throws Exception {
+        AppUser admin = actor("translation-admin");
+        BlogCategory category = categories.saveAndFlush(BlogCategory.create(UUID.randomUUID(), "translation-" + UUID.randomUUID(), 0, Instant.now()));
+        String faSlug = "fa-source-" + UUID.randomUUID();
+        String enSlug = "en-target-" + UUID.randomUUID();
+        String createPayload = "{\"categoryId\":\"" + category.getId() + "\",\"fa\":{\"title\":\"Source one\",\"slug\":\"" + faSlug + "\",\"bodyMarkdown\":\"body\",\"seoTitle\":\"SEO\",\"seoDescription\":\"Description\"},\"en\":{\"title\":\"Target\",\"slug\":\"" + enSlug + "\",\"bodyMarkdown\":\"body\",\"seoTitle\":\"SEO\",\"seoDescription\":\"Description\"}}";
+        String created = mvc.perform(post("/api/v1/admin/blog/posts").param("sourceLanguage", "fa").contentType(MediaType.APPLICATION_JSON).content(createPayload).with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.faTranslationStatus.status").value("COMPLETE")).andExpect(jsonPath("$.enTranslationStatus.status").value("COMPLETE"))
+                .andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(created, "$.id");
+        String updatePayload = "{\"categoryId\":\"" + category.getId() + "\",\"version\":0,\"fa\":{\"title\":\"Source two\",\"slug\":\"" + faSlug + "\",\"bodyMarkdown\":\"body\",\"seoTitle\":\"SEO\",\"seoDescription\":\"Description\"},\"en\":{\"title\":\"Target\",\"slug\":\"" + enSlug + "\",\"bodyMarkdown\":\"body\",\"seoTitle\":\"SEO\",\"seoDescription\":\"Description\"}}";
+        mvc.perform(put("/api/v1/admin/blog/posts/{id}", id).param("sourceLanguage", "fa").contentType(MediaType.APPLICATION_JSON).content(updatePayload).with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.sourceLanguage").value("fa")).andExpect(jsonPath("$.faTranslationStatus.status").value("COMPLETE")).andExpect(jsonPath("$.enTranslationStatus.status").value("OUTDATED"));
+    }
+
+    @Test
     void schedulesCancelsAndIdempotentlyPublishesDuePosts() throws Exception {
         AppUser admin = actor("schedule-admin");
         BlogCategory category = categories.saveAndFlush(BlogCategory.create(UUID.randomUUID(), "schedule-" + UUID.randomUUID(), 0, Instant.now()));

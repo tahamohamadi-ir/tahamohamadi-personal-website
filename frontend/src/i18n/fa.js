@@ -140,6 +140,8 @@ export default {
     }
   },
   admin: {
+    blogTranslationSource: '\u0632\u0628\u0627\u0646 \u0645\u0628\u0646\u0627',
+    blogTranslationStatuses: { MISSING: '\u0645\u0648\u062c\u0648\u062f \u0646\u06cc\u0633\u062a', INCOMPLETE: '\u0646\u0627\u0642\u0635', COMPLETE: '\u06a9\u0627\u0645\u0644', OUTDATED: '\u0646\u06cc\u0627\u0632\u0645\u0646\u062f \u0628\u0647\u200c\u0631\u0648\u0632\u0631\u0633\u0627\u0646\u06cc' },
     navigationGroups: { workspace: '\u0645\u062d\u06cc\u0637 \u06a9\u0627\u0631', publishing: '\u0627\u0646\u062a\u0634\u0627\u0631', profile: '\u067e\u0631\u0648\u0641\u0627\u06cc\u0644', assets: '\u0631\u0633\u0627\u0646\u0647 \u0648 \u067e\u06cc\u0627\u0645\u200c\u0647\u0627' },
     publications: {
       title: 'انتشارات', description: 'رکوردهای کتاب‌شناختی دانشگاهی و ترجمه‌های آن‌ها را مدیریت کنید.', create: 'ایجاد انتشار', edit: 'ویرایش انتشار', save: 'ذخیرهٔ انتشار',
