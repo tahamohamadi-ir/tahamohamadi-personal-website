@@ -140,6 +140,7 @@ export default {
     }
   },
   admin: {
+    navigationGroups: { workspace: '\u0645\u062d\u06cc\u0637 \u06a9\u0627\u0631', publishing: '\u0627\u0646\u062a\u0634\u0627\u0631', profile: '\u067e\u0631\u0648\u0641\u0627\u06cc\u0644', assets: '\u0631\u0633\u0627\u0646\u0647 \u0648 \u067e\u06cc\u0627\u0645\u200c\u0647\u0627' },
     publications: {
       title: 'انتشارات', description: 'رکوردهای کتاب‌شناختی دانشگاهی و ترجمه‌های آن‌ها را مدیریت کنید.', create: 'ایجاد انتشار', edit: 'ویرایش انتشار', save: 'ذخیرهٔ انتشار',
       key: 'کلید انتشار', stage: 'مرحلهٔ انتشار', doi: 'DOI', externalUrl: 'نشانی خارجی', date: 'تاریخ انتشار', year: 'سال', coverMedia: 'شناسهٔ رسانهٔ جلد', sortOrder: 'ترتیب نمایش',

@@ -17,22 +17,42 @@ const $q = useQuasar()
 const auth = useAdminAuthStore()
 const { t } = useI18n()
 const drawerOpen = ref(false)
-const navigation = [
-  { labelKey: 'admin.navigationItems.dashboard', icon: 'dashboard', to: '/admin' },
-  { labelKey: 'admin.navigationItems.siteSettings', icon: 'tune', to: '/admin/site-settings' },
-  { labelKey: 'admin.navigationItems.navigation', icon: 'menu_open', to: '/admin/navigation' },
-  { labelKey: 'admin.navigationItems.pages', icon: 'article', to: '/admin/pages' },
-  { labelKey: 'admin.navigationItems.blogPosts', icon: 'article', to: '/admin/blog/posts' },
-  { labelKey: 'admin.navigationItems.blogCategories', icon: 'category', to: '/admin/blog/categories' },
-  { labelKey: 'admin.navigationItems.blogTags', icon: 'sell', to: '/admin/blog/tags' },
-  { labelKey: 'admin.navigationItems.resume', icon: 'work_history', to: '/admin/resume' },
-  { labelKey: 'admin.navigationItems.publications', icon: 'menu_book', to: '/admin/publications' },
-  { labelKey: 'admin.navigationItems.portfolio', icon: 'folder_open', to: '/admin/portfolio' },
-  { labelKey: 'admin.navigationItems.skills', icon: 'psychology', to: '/admin/skills' },
-  { labelKey: 'admin.navigationItems.media', icon: 'perm_media', to: '/admin/media' },
-  { labelKey: 'admin.navigationItems.socialLinks', icon: 'share', to: '/admin/social-links' },
-  { labelKey: 'admin.navigationItems.featured', icon: 'star', to: '/admin/featured' },
-  { labelKey: 'admin.navigationItems.contactMessages', icon: 'mail', to: '/admin/contact-messages' }
+const navigationGroups = [
+  {
+    labelKey: 'admin.navigationGroups.workspace',
+    items: [
+      { labelKey: 'admin.navigationItems.dashboard', icon: 'dashboard', to: '/admin' },
+      { labelKey: 'admin.navigationItems.siteSettings', icon: 'tune', to: '/admin/site-settings' },
+      { labelKey: 'admin.navigationItems.navigation', icon: 'menu_open', to: '/admin/navigation' }
+    ]
+  },
+  {
+    labelKey: 'admin.navigationGroups.publishing',
+    items: [
+      { labelKey: 'admin.navigationItems.pages', icon: 'article', to: '/admin/pages' },
+      { labelKey: 'admin.navigationItems.blogPosts', icon: 'article', to: '/admin/blog/posts' },
+      { labelKey: 'admin.navigationItems.blogCategories', icon: 'category', to: '/admin/blog/categories' },
+      { labelKey: 'admin.navigationItems.blogTags', icon: 'sell', to: '/admin/blog/tags' },
+      { labelKey: 'admin.navigationItems.featured', icon: 'star', to: '/admin/featured' }
+    ]
+  },
+  {
+    labelKey: 'admin.navigationGroups.profile',
+    items: [
+      { labelKey: 'admin.navigationItems.resume', icon: 'work_history', to: '/admin/resume' },
+      { labelKey: 'admin.navigationItems.publications', icon: 'menu_book', to: '/admin/publications' },
+      { labelKey: 'admin.navigationItems.portfolio', icon: 'folder_open', to: '/admin/portfolio' },
+      { labelKey: 'admin.navigationItems.skills', icon: 'psychology', to: '/admin/skills' }
+    ]
+  },
+  {
+    labelKey: 'admin.navigationGroups.assets',
+    items: [
+      { labelKey: 'admin.navigationItems.media', icon: 'perm_media', to: '/admin/media' },
+      { labelKey: 'admin.navigationItems.socialLinks', icon: 'share', to: '/admin/social-links' },
+      { labelKey: 'admin.navigationItems.contactMessages', icon: 'mail', to: '/admin/contact-messages' }
+    ]
+  }
 ]
 
 async function logout() {
@@ -83,22 +103,24 @@ watch(
       :width="272"
       class="admin-drawer"
     >
-      <q-list data-testid="admin-navigation" padding :aria-label="t('admin.chrome.navigationLabel')">
-        <q-item-label header>{{ t('admin.chrome.content') }}</q-item-label>
-        <q-item
-          v-for="item in navigation"
-          :key="item.to"
-          v-ripple
-          clickable
-          :to="item.to"
-          active-class="admin-navigation__item--active"
-          @click="closeMobileNavigationAfterSelection"
-        >
-          <q-item-section avatar>
-            <q-icon :name="item.icon" />
-          </q-item-section>
-          <q-item-section>{{ t(item.labelKey) }}</q-item-section>
-        </q-item>
+      <q-list data-testid="admin-navigation" class="admin-navigation" :aria-label="t('admin.chrome.navigationLabel')">
+        <section v-for="group in navigationGroups" :key="group.labelKey" class="admin-navigation__group">
+          <q-item-label header class="admin-navigation__group-label">{{ t(group.labelKey) }}</q-item-label>
+          <q-item
+            v-for="item in group.items"
+            :key="item.to"
+            v-ripple
+            clickable
+            :to="item.to"
+            active-class="admin-navigation__item--active"
+            @click="closeMobileNavigationAfterSelection"
+          >
+            <q-item-section avatar>
+              <q-icon :name="item.icon" />
+            </q-item-section>
+            <q-item-section>{{ t(item.labelKey) }}</q-item-section>
+          </q-item>
+        </section>
       </q-list>
     </q-drawer>
 
@@ -126,6 +148,28 @@ watch(
 
 .admin-drawer {
   background: var(--tm-admin-surface);
+}
+
+.admin-navigation {
+  padding-block: var(--tm-space-3) var(--tm-space-6);
+}
+
+.admin-navigation__group + .admin-navigation__group {
+  margin-block-start: var(--tm-space-3);
+}
+
+.admin-navigation__group-label {
+  padding-block: var(--tm-space-3) var(--tm-space-1);
+  color: var(--tm-text-secondary);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.admin-navigation :deep(.q-item) {
+  margin-inline: var(--tm-space-2);
+  border-radius: var(--tm-admin-control-radius);
 }
 
 :deep(.admin-navigation__item--active) {
