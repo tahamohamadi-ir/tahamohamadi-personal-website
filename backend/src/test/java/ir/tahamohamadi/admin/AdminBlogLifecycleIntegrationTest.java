@@ -121,6 +121,43 @@ class AdminBlogLifecycleIntegrationTest {
     }
 
     @Test
+    void supportsReviewTransitionsWithAuditOptimisticLockingAndScheduledApproval() throws Exception {
+        AppUser admin = actor("review-admin");
+        BlogCategory category = categories.saveAndFlush(BlogCategory.create(UUID.randomUUID(), "review-" + UUID.randomUUID(), 0, Instant.now()));
+        String id = createPost(admin, category.getId(), true, List.of(), List.of());
+
+        mvc.perform(post("/api/v1/admin/blog/posts/{id}/submit-for-review", id).param("version", "0")
+                        .with(SecurityMockMvcRequestPostProcessors.user("reviewer@example.test").roles("USER"))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isForbidden());
+        String inReview = mvc.perform(post("/api/v1/admin/blog/posts/{id}/submit-for-review", id).param("version", "0")
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("IN_REVIEW"))
+                .andReturn().getResponse().getContentAsString();
+        long reviewVersion = ((Number) JsonPath.read(inReview, "$.version")).longValue();
+
+        String returned = mvc.perform(post("/api/v1/admin/blog/posts/{id}/return-to-draft", id).param("version", Long.toString(reviewVersion))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DRAFT"))
+                .andReturn().getResponse().getContentAsString();
+        long draftVersion = ((Number) JsonPath.read(returned, "$.version")).longValue();
+        mvc.perform(post("/api/v1/admin/blog/posts/{id}/return-to-draft", id).param("version", Long.toString(draftVersion))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("STATE_CONFLICT"));
+
+        String reviewedAgain = mvc.perform(post("/api/v1/admin/blog/posts/{id}/submit-for-review", id).param("version", Long.toString(draftVersion))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("IN_REVIEW"))
+                .andReturn().getResponse().getContentAsString();
+        long reviewedAgainVersion = ((Number) JsonPath.read(reviewedAgain, "$.version")).longValue();
+        mvc.perform(post("/api/v1/admin/blog/posts/{id}/schedule", id).param("version", Long.toString(reviewedAgainVersion)).param("scheduledFor", Instant.now().plusSeconds(120).toString())
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SCHEDULED"));
+        assertThat(audit.findByActorIdOrderByOccurredAtDesc(admin.getId())).extracting(AuditEvent::getAction)
+                .contains("ADMIN_BLOG_POST_SUBMITTED_FOR_REVIEW", "ADMIN_BLOG_POST_RETURNED_TO_DRAFT", "ADMIN_BLOG_POST_SCHEDULED");
+    }
+
+    @Test
     void schedulesCancelsAndIdempotentlyPublishesDuePosts() throws Exception {
         AppUser admin = actor("schedule-admin");
         BlogCategory category = categories.saveAndFlush(BlogCategory.create(UUID.randomUUID(), "schedule-" + UUID.randomUUID(), 0, Instant.now()));

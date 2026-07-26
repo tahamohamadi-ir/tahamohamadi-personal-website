@@ -19,8 +19,18 @@ the snapshot, derives unique localized slugs, retains the snapshot's managed
 media and document data, and leaves the source post (including a published
 post) unchanged. The operation is version-checked and audited.
 
+The Blog lifecycle also supports `IN_REVIEW`. Admins can submit a draft for
+review, return it to draft, or publish/schedule it after review. Every review
+transition is version-checked, audited, and rejected with the standard
+`STATE_CONFLICT` response when it is not valid for the current state.
+
+Admin endpoints:
+
+- `POST /api/v1/admin/blog/posts/{id}/submit-for-review?version={version}`
+- `POST /api/v1/admin/blog/posts/{id}/return-to-draft?version={version}`
+
 ## Remaining Release 5 work
 
 - Extend the same immutable model to Pages and Portfolio case studies.
-- Add lifecycle states, scheduled publishing, and translation freshness.
+- Add translation freshness.
 - Add revision timeline, compare, and restore controls to the Admin UI.

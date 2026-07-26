@@ -61,6 +61,16 @@ public class AdminBlogService {
         replaceTags(post,request.tagIds()); replaceMedia(post,request.media()); save(post,request.fa(),request.en()); posts.flush(); record("ADMIN_BLOG_POST_UPDATED",id); return response(post);
     }
 
+    public AdminBlogResponse submitForReview(UUID id, long version) {
+        BlogPost post=post(id); version(post,version); snapshot(post,"BEFORE_REVIEW"); post.submitForReview(Instant.now());
+        posts.flush(); record("ADMIN_BLOG_POST_SUBMITTED_FOR_REVIEW",id); return response(post);
+    }
+
+    public AdminBlogResponse returnToDraft(UUID id, long version) {
+        BlogPost post=post(id); version(post,version); snapshot(post,"BEFORE_RETURN_TO_DRAFT"); post.returnToDraft(Instant.now());
+        posts.flush(); record("ADMIN_BLOG_POST_RETURNED_TO_DRAFT",id); return response(post);
+    }
+
     public AdminBlogResponse publish(UUID id,long version) {
         BlogPost post=post(id); version(post,version); snapshot(post,"BEFORE_PUBLISH"); requirePublishable(post); post.publish(Instant.now());
         posts.flush(); record("ADMIN_BLOG_POST_PUBLISHED",id); return response(post);

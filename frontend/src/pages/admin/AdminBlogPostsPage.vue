@@ -267,10 +267,15 @@ onMounted(() => { void load() })
           <p v-else-if="!revisionsLoading" class="text-caption q-mb-none">{{ t('admin.blogPosts.noRevisions') }}</p>
         </div>
       </q-expansion-item>
-      <section v-if="form.id && (form.status === 'DRAFT' || form.status === 'SCHEDULED')" class="admin-schedule q-gutter-sm" :aria-label="t('admin.blogPosts.schedule')">
-        <q-input v-if="form.status === 'DRAFT'" v-model="form.scheduledFor" type="datetime-local" :label="t('admin.blogPosts.scheduledFor')" :disable="saving" />
+      <section v-if="form.id && (form.status === 'DRAFT' || form.status === 'IN_REVIEW')" class="admin-review q-gutter-sm" :aria-label="t('admin.blogPosts.review')">
+        <p class="text-caption q-mb-none">{{ t('admin.blogPosts.reviewHelp') }}</p>
+        <q-btn v-if="form.status === 'DRAFT'" outline no-caps icon="rate_review" :disable="saving" :label="t('admin.blogPosts.submitForReview')" @click="transition('submit-for-review')" />
+        <q-btn v-else outline no-caps icon="undo" :disable="saving" :label="t('admin.blogPosts.returnToDraft')" @click="transition('return-to-draft')" />
+      </section>
+      <section v-if="form.id && (form.status === 'DRAFT' || form.status === 'IN_REVIEW' || form.status === 'SCHEDULED')" class="admin-schedule q-gutter-sm" :aria-label="t('admin.blogPosts.schedule')">
+        <q-input v-if="form.status === 'DRAFT' || form.status === 'IN_REVIEW'" v-model="form.scheduledFor" type="datetime-local" :label="t('admin.blogPosts.scheduledFor')" :disable="saving" />
         <p v-else class="text-caption q-mb-none">{{ t('admin.blogPosts.scheduledFor') }}: <time :datetime="form.scheduledFor">{{ form.scheduledFor }}</time></p>
-        <q-btn v-if="form.status === 'DRAFT'" outline no-caps icon="schedule" :disable="saving || !form.scheduledFor" :label="t('admin.blogPosts.schedule')" @click="schedule" />
+        <q-btn v-if="form.status === 'DRAFT' || form.status === 'IN_REVIEW'" outline no-caps icon="schedule" :disable="saving || !form.scheduledFor" :label="t('admin.blogPosts.schedule')" @click="schedule" />
         <q-btn v-else outline no-caps icon="event_busy" :disable="saving" :label="t('admin.blogPosts.cancelSchedule')" @click="transition('cancel-schedule')" />
       </section>
       <div class="admin-form-actions"><q-btn type="submit" color="primary" no-caps :loading="saving" :label="t('admin.blogPosts.save')" /><AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" /></div>
