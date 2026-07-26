@@ -4,6 +4,7 @@ import com.jayway.jsonpath.JsonPath;
 import ir.tahamohamadi.blog.category.BlogCategory;
 import ir.tahamohamadi.blog.category.BlogCategoryRepository;
 import ir.tahamohamadi.blog.post.BlogPostRepository;
+import ir.tahamohamadi.blog.post.BlogScheduledPublisher;
 import ir.tahamohamadi.blog.post.BlogPostMediaUsage;
 import ir.tahamohamadi.blog.tag.Tag;
 import ir.tahamohamadi.blog.tag.TagRepository;
@@ -47,6 +48,7 @@ class AdminBlogLifecycleIntegrationTest {
     @Autowired AuditEventRepository audit;
     @Autowired AppUserRepository users;
     @Autowired JdbcTemplate jdbc;
+    @Autowired BlogScheduledPublisher scheduledPublisher;
 
     @Test
     void enforcesLifecycleRulesSecurityCsrfAndOptimisticVersions() throws Exception {
@@ -116,6 +118,36 @@ class AdminBlogLifecycleIntegrationTest {
         mvc.perform(post("/api/v1/admin/blog/posts/{id}/publish", post).param("version", "0")
                         .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isUnprocessableEntity()).andExpect(jsonPath("$.code").value("PUBLISH_VALIDATION_FAILED"));
+    }
+
+    @Test
+    void schedulesCancelsAndIdempotentlyPublishesDuePosts() throws Exception {
+        AppUser admin = actor("schedule-admin");
+        BlogCategory category = categories.saveAndFlush(BlogCategory.create(UUID.randomUUID(), "schedule-" + UUID.randomUUID(), 0, Instant.now()));
+        String id = createPost(admin, category.getId(), true, List.of(), List.of());
+        Instant later = Instant.now().plusSeconds(120);
+        String scheduled = mvc.perform(post("/api/v1/admin/blog/posts/{id}/schedule", id).param("version", "0").param("scheduledFor", later.toString())
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SCHEDULED"))
+                .andExpect(jsonPath("$.scheduledFor").value(later.toString()))
+                .andReturn().getResponse().getContentAsString();
+        long scheduledVersion = ((Number) JsonPath.read(scheduled, "$.version")).longValue();
+        String cancelled = mvc.perform(post("/api/v1/admin/blog/posts/{id}/cancel-schedule", id).param("version", Long.toString(scheduledVersion))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DRAFT"))
+                .andExpect(jsonPath("$.scheduledFor").doesNotExist())
+                .andReturn().getResponse().getContentAsString();
+        long cancelledVersion = ((Number) JsonPath.read(cancelled, "$.version")).longValue();
+        mvc.perform(post("/api/v1/admin/blog/posts/{id}/schedule", id).param("version", Long.toString(cancelledVersion)).param("scheduledFor", Instant.now().plusSeconds(120).toString())
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SCHEDULED"));
+        jdbc.update("UPDATE blog_post SET scheduled_for = ? WHERE id = ?", java.sql.Timestamp.from(Instant.now().minusSeconds(1)), UUID.fromString(id));
+        scheduledPublisher.publishDue();
+        scheduledPublisher.publishDue();
+        mvc.perform(get("/api/v1/admin/blog/posts/{id}", id).with(adminUser(admin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PUBLISHED"))
+                .andExpect(jsonPath("$.scheduledFor").doesNotExist());
+        assertThat(audit.findAll()).extracting(AuditEvent::getAction).contains("SYSTEM_BLOG_POST_SCHEDULED_PUBLISHED");
     }
 
     private String createPost(AppUser admin, UUID categoryId, boolean seo, List<UUID> tagIds, List<MediaReference> mediaReferences) throws Exception {
