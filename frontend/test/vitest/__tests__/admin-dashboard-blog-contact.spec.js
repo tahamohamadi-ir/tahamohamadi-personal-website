@@ -28,6 +28,18 @@ describe('admin source-backed dashboard', () => {
     expect(dashboard).toContain('newContactMessages')
     expect(dashboard).not.toContain('missingTranslations')
   })
+
+  it('keeps site settings as a dense, localized operational form', () => {
+    const settings = source('src/pages/admin/AdminSiteSettingsPage.vue')
+
+    expect(settings).toContain('admin-site-settings__panel')
+    expect(settings).toContain("t('admin.siteSettings.identity')")
+    expect(settings).toContain("t('admin.siteSettings.footer')")
+    expect(settings).toContain("t('admin.siteSettings.presentation')")
+    expect(settings).toContain('outlined')
+    expect(settings).toContain(':rows="3"')
+    expect(settings).toContain('changes.isDirty')
+  })
 })
 
 describe('admin blog and contact workflows', () => {
