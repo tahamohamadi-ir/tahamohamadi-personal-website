@@ -48,6 +48,7 @@ function createForm(value = {}) {
     id: value.id ?? null,
     categoryId: value.categoryId ?? null,
     status: value.status ?? 'DRAFT',
+    scheduledFor: value.scheduledFor ?? '',
     version: value.version ?? null,
     tagIds: value.tagIds ?? [],
     media: value.media ?? [],
@@ -165,6 +166,23 @@ async function transition(action) {
   finally { saving.value = false }
 }
 
+async function schedule() {
+  if (!form.value.id || !form.value.scheduledFor) return
+  saving.value = true
+  error.value = null
+  try {
+    await primeCsrfToken(httpClient)
+    const scheduledFor = new Date(form.value.scheduledFor).toISOString()
+    const response = await httpClient.post(`/api/v1/admin/blog/posts/${form.value.id}/schedule`, null, {
+      params: { version: form.value.version, scheduledFor }
+    })
+    form.value = createForm(response.data)
+    await load(page.value)
+  }
+  catch (cause) { error.value = normalizeApiError(cause) }
+  finally { saving.value = false }
+}
+
 async function loadRevisions(id = form.value.id) {
   if (!id) { revisions.value = []; return }
   revisionsLoading.value = true
@@ -249,6 +267,12 @@ onMounted(() => { void load() })
           <p v-else-if="!revisionsLoading" class="text-caption q-mb-none">{{ t('admin.blogPosts.noRevisions') }}</p>
         </div>
       </q-expansion-item>
+      <section v-if="form.id && (form.status === 'DRAFT' || form.status === 'SCHEDULED')" class="admin-schedule q-gutter-sm" :aria-label="t('admin.blogPosts.schedule')">
+        <q-input v-if="form.status === 'DRAFT'" v-model="form.scheduledFor" type="datetime-local" :label="t('admin.blogPosts.scheduledFor')" :disable="saving" />
+        <p v-else class="text-caption q-mb-none">{{ t('admin.blogPosts.scheduledFor') }}: <time :datetime="form.scheduledFor">{{ form.scheduledFor }}</time></p>
+        <q-btn v-if="form.status === 'DRAFT'" outline no-caps icon="schedule" :disable="saving || !form.scheduledFor" :label="t('admin.blogPosts.schedule')" @click="schedule" />
+        <q-btn v-else outline no-caps icon="event_busy" :disable="saving" :label="t('admin.blogPosts.cancelSchedule')" @click="transition('cancel-schedule')" />
+      </section>
       <div class="admin-form-actions"><q-btn type="submit" color="primary" no-caps :loading="saving" :label="t('admin.blogPosts.save')" /><AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" /></div>
     </q-form>
     <q-dialog v-model="revisionDialog">
@@ -272,4 +296,5 @@ onMounted(() => { void load() })
 .admin-revision-dialog dl { display: grid; gap: var(--tm-space-1); margin: 0; }
 .admin-revision-dialog dt { font-weight: 600; }
 .admin-revision-dialog dd { margin: 0; overflow-wrap: anywhere; }
+.admin-schedule { border-block: 1px solid var(--tm-admin-border); display: grid; padding-block: var(--tm-space-4); }
 </style>
