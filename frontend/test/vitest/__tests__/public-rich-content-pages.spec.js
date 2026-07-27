@@ -7,7 +7,19 @@ import { Quasar } from 'quasar'
 import { createSSRApp, h } from 'vue'
 import { renderToString } from '@vue/server-renderer'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+beforeEach(() => {
+  if (typeof globalThis.document === 'undefined') {
+    globalThis.document = { title: '', querySelector: () => null, createElement: () => ({ setAttribute: () => {} }) }
+  }
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.clearAllTimers()
+})
+
 
 import { i18n } from 'src/boot/i18n'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'
