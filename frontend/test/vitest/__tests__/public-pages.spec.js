@@ -487,6 +487,41 @@ describe('public page introduction contract', () => {
     wrapper.unmount()
   })
 
+  it('adds the visual Home collections only for published API data', async () => {
+    const wrapper = await mountPublicPage(PublicHomePage, {
+      props: {
+        initialData: {
+          ...homeResponse,
+          latestPosts: [{
+            slug: 'published-note',
+            title: 'Published note',
+            excerpt: 'An API-backed excerpt.',
+            canonicalPath: '/fa/blog/published-note'
+          }],
+          selectedProjects: [{
+            slug: 'published-project',
+            title: 'Published project',
+            summary: 'An API-backed project summary.',
+            canonicalPath: '/fa/portfolio/published-project'
+          }],
+          selectedPublications: [{
+            slug: 'published-paper',
+            title: 'Published paper',
+            abstractText: 'An API-backed abstract.',
+            year: 2026,
+            stage: 'PUBLISHED'
+          }]
+        }
+      }
+    })
+
+    expect(wrapper.findAll('.public-home__collection')).toHaveLength(3)
+    expect(wrapper.get('.public-home__hero')).toBeTruthy()
+    expect(wrapper.get('.public-home__publication-item').text()).toContain('Published paper')
+    expect(wrapper.findAll('h1')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
   it('renders exactly one H1 for each supported Home ownership state', async () => {
     const scenarios = [
       {
