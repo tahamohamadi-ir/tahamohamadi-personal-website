@@ -59,8 +59,10 @@
   --tm-editorial-rule: var(--tm-border-subtle);
   --tm-editorial-card-surface: var(--tm-surface);
   --tm-editorial-card-border: var(--tm-border-subtle);
+  --tm-editorial-card-hover-border: var(--tm-action-primary);
   --tm-editorial-link-hover: var(--tm-interactive-hover);
   --tm-editorial-shadow: 0 10px 28px rgb(20 32 51 / 8%);
+  --tm-editorial-shadow-hover: 0 16px 36px rgb(20 32 51 / 12%);
   --tm-editorial-aside-surface: var(--tm-slate-100);
   --tm-footer-surface: var(--tm-navy-950);
   --tm-footer-text: var(--tm-canvas);
