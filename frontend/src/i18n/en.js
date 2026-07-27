@@ -182,7 +182,7 @@ export default {
     portfolio: {
       title: 'Portfolio projects', description: 'Translations stay independent and project media is a supported cover asset.', create: 'Create project', edit: 'Edit project', save: 'Save project',
       discard: 'Discard unsaved portfolio changes?', conflict: 'This project changed elsewhere. Reload it before saving.', key: 'Project key', startDate: 'Start date', endDate: 'End date', projectUrl: 'Project URL', repositoryUrl: 'Repository URL', sortOrder: 'Sort order', coverMedia: 'Cover media', gallery: 'Project gallery', associatedSkills: 'Associated skills',
-      translationTitle: 'Title', slug: 'Slug', summary: 'Summary', seoTitle: 'SEO title', seoDescription: 'SEO description'
+      translationTitle: 'Title', slug: 'Slug', summary: 'Summary', seoTitle: 'SEO title', seoDescription: 'SEO description', schedule: 'Schedule publication', scheduledFor: 'Publish at (your local time)', cancelSchedule: 'Cancel schedule'
     },
     skills: {
       title: 'Skills', description: 'Manage categories and skills with independent Persian and English labels.', categories: 'Categories', skills: 'Skills', active: 'Active', inactive: 'Inactive',

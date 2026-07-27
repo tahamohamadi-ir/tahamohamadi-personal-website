@@ -173,7 +173,7 @@ export default {
     portfolio: {
       title: 'نمونه‌کارها', description: 'ترجمه‌ها مستقل هستند و رسانهٔ پروژه به‌عنوان تصویر جلد پشتیبانی می‌شود.', create: 'ایجاد پروژه', edit: 'ویرایش پروژه', save: 'ذخیرهٔ پروژه',
       discard: 'تغییرات ذخیره‌نشدهٔ نمونه‌کارها حذف شود؟', conflict: 'این پروژه در جای دیگری تغییر کرده است. پیش از ذخیره دوباره بارگیری کنید.', key: 'کلید پروژه', startDate: 'تاریخ شروع', endDate: 'تاریخ پایان', projectUrl: 'نشانی پروژه', repositoryUrl: 'نشانی مخزن', sortOrder: 'ترتیب نمایش', coverMedia: 'رسانهٔ جلد', gallery: 'گالری پروژه', associatedSkills: 'مهارت‌های مرتبط',
-      translationTitle: 'عنوان', slug: 'نامک', summary: 'خلاصه', seoTitle: 'عنوان SEO', seoDescription: 'توضیح SEO'
+      translationTitle: 'عنوان', slug: 'نامک', summary: 'خلاصه', seoTitle: 'عنوان SEO', seoDescription: 'توضیح SEO', schedule: 'زمان‌بندی انتشار', scheduledFor: 'زمان انتشار (به وقت محلی شما)', cancelSchedule: 'لغو زمان‌بندی'
     },
     skills: {
       title: 'مهارت‌ها', description: 'دسته‌بندی‌ها و مهارت‌ها را با برچسب‌های مستقل فارسی و انگلیسی مدیریت کنید.', categories: 'دسته‌بندی‌ها', skills: 'مهارت‌ها', active: 'فعال', inactive: 'غیرفعال',
