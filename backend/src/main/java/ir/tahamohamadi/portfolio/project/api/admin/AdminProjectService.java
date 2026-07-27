@@ -82,10 +82,29 @@ public class AdminProjectService {
     public AdminProjectResponse publish(UUID id, long version) {
         PortfolioProject project = project(id);
         version(project, version);
-        if (project.getStartedOn() == null) throw new IllegalArgumentException("startedOn is required before publishing");
+        requirePublishable(project);
         project.publish(Instant.now());
         projects.flush();
         record("ADMIN_PROJECT_PUBLISHED", id);
+        return response(project);
+    }
+
+    public AdminProjectResponse schedule(UUID id, long version, Instant scheduledFor) {
+        PortfolioProject project = project(id);
+        version(project, version);
+        requirePublishable(project);
+        project.schedule(Instant.now(), scheduledFor);
+        projects.flush();
+        record("ADMIN_PROJECT_SCHEDULED", id);
+        return response(project);
+    }
+
+    public AdminProjectResponse cancelSchedule(UUID id, long version) {
+        PortfolioProject project = project(id);
+        version(project, version);
+        project.cancelSchedule(Instant.now());
+        projects.flush();
+        record("ADMIN_PROJECT_SCHEDULE_CANCELLED", id);
         return response(project);
     }
 
@@ -166,7 +185,7 @@ public class AdminProjectService {
         List<AdminProjectSkillResponse> references = projectSkills.findByProjectIdWithSkillOrderBySortOrder(project.getId()).stream()
                 .map(value -> new AdminProjectSkillResponse(value.getSkill().getId(), value.getSortOrder())).toList();
         List<AdminProjectMediaResponse> gallery = projectMedia.findByProjectIdWithAssetOrderBySortOrder(project.getId()).stream().map(value -> new AdminProjectMediaResponse(value.getMediaAsset().getId(), value.getSortOrder())).toList();
-        return new AdminProjectResponse(project.getId(), project.getProjectKey(), project.getCoverMedia() == null ? null : project.getCoverMedia().getId(), project.getStatus().name(), project.getStartedOn(), project.getEndedOn(), project.getProjectUrl(), project.getRepositoryUrl(), project.getSortOrder(), translation(localized, LanguageCode.fa), translation(localized, LanguageCode.en), references, gallery, project.getVersion());
+        return new AdminProjectResponse(project.getId(), project.getProjectKey(), project.getCoverMedia() == null ? null : project.getCoverMedia().getId(), project.getStatus().name(), project.getScheduledFor(), project.getStartedOn(), project.getEndedOn(), project.getProjectUrl(), project.getRepositoryUrl(), project.getSortOrder(), translation(localized, LanguageCode.fa), translation(localized, LanguageCode.en), references, gallery, project.getVersion());
     }
 
     private AdminProjectTranslationRequest translation(List<PortfolioProjectTranslation> values, LanguageCode language) {
@@ -176,6 +195,10 @@ public class AdminProjectService {
 
     private static void version(PortfolioProject project, long requested) {
         if (project.getVersion() != requested) throw new ObjectOptimisticLockingFailureException(PortfolioProject.class, project.getId());
+    }
+
+    private static void requirePublishable(PortfolioProject project) {
+        if (project.getStartedOn() == null) throw new IllegalArgumentException("startedOn is required before publishing");
     }
 
     private void record(String action, UUID id) {

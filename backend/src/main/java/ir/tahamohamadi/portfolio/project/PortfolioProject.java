@@ -22,6 +22,7 @@ public class PortfolioProject extends AuditedSoftDeletableEntity {
     @Column(name = "project_url") private String projectUrl;
     @Column(name = "repository_url") private String repositoryUrl;
     @Column(name = "sort_order", nullable = false) private int sortOrder;
+    @Column(name = "scheduled_for") private Instant scheduledFor;
 
     private PortfolioProject(UUID id, String key, MediaAsset coverMedia, LocalDate started, LocalDate ended, String projectUrl, String repositoryUrl, int order, Instant at) {
         initialize(id, at);
@@ -40,6 +41,29 @@ public class PortfolioProject extends AuditedSoftDeletableEntity {
     public void publish(Instant at) {
         if (status != ContentStatus.DRAFT) throw new IllegalStateException("Only draft projects can be published");
         status = ContentStatus.PUBLISHED;
+        scheduledFor = null;
+        updatedAt = at;
+    }
+
+    public void schedule(Instant at, Instant value) {
+        if (status != ContentStatus.DRAFT) throw new IllegalStateException("Only draft projects can be scheduled");
+        if (!value.isAfter(at)) throw new IllegalArgumentException("scheduledFor must be in the future");
+        status = ContentStatus.SCHEDULED;
+        scheduledFor = value;
+        updatedAt = at;
+    }
+
+    public void cancelSchedule(Instant at) {
+        if (status != ContentStatus.SCHEDULED) throw new IllegalStateException("Only scheduled projects can be cancelled");
+        status = ContentStatus.DRAFT;
+        scheduledFor = null;
+        updatedAt = at;
+    }
+
+    public void publishScheduled(Instant at) {
+        if (status != ContentStatus.SCHEDULED) throw new IllegalStateException("Only scheduled projects can be published");
+        status = ContentStatus.PUBLISHED;
+        scheduledFor = null;
         updatedAt = at;
     }
 

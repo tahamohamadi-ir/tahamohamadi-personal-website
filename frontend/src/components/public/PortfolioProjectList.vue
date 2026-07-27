@@ -1,4 +1,5 @@
 <script setup>
+import { useI18n } from 'vue-i18n'
 import CollectionMedia from 'src/components/public/CollectionMedia.vue'
 
 defineProps({
@@ -7,6 +8,8 @@ defineProps({
     required: true
   }
 })
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -32,6 +35,9 @@ defineProps({
           >
             {{ project.summary }}
           </p>
+          <span class="portfolio-project-list__action">
+            {{ t('public.caseStudy.viewProject') }}
+          </span>
         </article>
       </router-link>
     </li>
@@ -41,8 +47,9 @@ defineProps({
 <style scoped lang="scss">
 .portfolio-project-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
-  gap: var(--tm-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--tm-space-5);
+  max-inline-size: 76rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -55,11 +62,11 @@ defineProps({
 .portfolio-project-list__card {
   display: block;
   block-size: 100%;
-  min-block-size: 15rem;
-  padding: var(--tm-space-6);
-  border: 1px solid var(--tm-border-subtle);
+  min-block-size: 17rem;
+  padding: var(--tm-space-5);
+  border: 1px solid var(--tm-editorial-card-border);
   border-radius: var(--tm-radius-card);
-  background: var(--tm-surface);
+  background: var(--tm-editorial-card-surface);
   color: inherit;
   text-decoration: none;
   transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
@@ -79,6 +86,7 @@ defineProps({
 .portfolio-project-list__article {
   display: grid;
   gap: var(--tm-space-3);
+  block-size: 100%;
 }
 
 .portfolio-project-list__title,
@@ -88,12 +96,27 @@ defineProps({
 
 .portfolio-project-list__title {
   color: var(--tm-text-primary);
-  font-size: 1.25rem;
-  line-height: 1.3;
+  font-size: 1.375rem;
+  line-height: 1.25;
 }
 
 .portfolio-project-list__summary {
   color: var(--tm-text-secondary);
+}
+
+.portfolio-project-list__action {
+  align-self: end;
+  min-block-size: var(--tm-control-min-size);
+  margin-block-start: auto;
+  padding-block-start: var(--tm-space-3);
+  border-block-start: 1px solid var(--tm-editorial-rule);
+  color: var(--tm-link);
+  font-size: .9375rem;
+  font-weight: 700;
+}
+
+.portfolio-project-list__card:hover .portfolio-project-list__action {
+  color: var(--tm-text-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {
