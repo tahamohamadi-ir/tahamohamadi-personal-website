@@ -140,6 +140,13 @@ export default {
     }
   },
   admin: {
+    schedulePanel: {
+      schedule: 'Schedule publication',
+      help: 'Schedule publication for a future date (in your local time).',
+      scheduledFor: 'Scheduled for',
+      cancelSchedule: 'Cancel schedule',
+      locale: 'en-US'
+    },
     placeholder: 'Admin page placeholder',
     state: {
       loading: 'Loading content…',

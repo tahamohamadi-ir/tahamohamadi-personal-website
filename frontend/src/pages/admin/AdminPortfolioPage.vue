@@ -8,6 +8,7 @@ import AdminLocaleTabs from 'src/components/admin/AdminLocaleTabs.vue'
 import AdminMarkdownPreview from 'src/components/admin/AdminMarkdownPreview.vue'
 import AdminMediaSelector from 'src/components/admin/AdminMediaSelector.vue'
 import AdminPaginatedTable from 'src/components/admin/AdminPaginatedTable.vue'
+import AdminSchedulePanel from 'src/components/admin/AdminSchedulePanel.vue'
 import AdminStatePanel from 'src/components/admin/AdminStatePanel.vue'
 import {
   createUnsavedChangesGuard,
@@ -258,12 +259,14 @@ onMounted(() => { void load() })
       <AdminMarkdownPreview v-model="activeTranslation.bodyMarkdown" />
       <q-input v-model="activeTranslation.seoTitle" :label="t('admin.portfolio.seoTitle')" :disable="saving" />
       <q-input v-model="activeTranslation.seoDescription" type="textarea" :label="t('admin.portfolio.seoDescription')" :disable="saving" />
-      <section v-if="form.id && (form.status === 'DRAFT' || form.status === 'SCHEDULED')" class="admin-schedule q-gutter-sm" :aria-label="t('admin.portfolio.schedule')">
-        <q-input v-if="form.status === 'DRAFT'" v-model="form.scheduledFor" type="datetime-local" :label="t('admin.portfolio.scheduledFor')" :disable="saving" />
-        <p v-else class="text-caption q-mb-none">{{ t('admin.portfolio.scheduledFor') }}: <time :datetime="form.scheduledFor">{{ form.scheduledFor }}</time></p>
-        <q-btn v-if="form.status === 'DRAFT'" outline no-caps icon="schedule" :disable="saving || !form.scheduledFor" :label="t('admin.portfolio.schedule')" @click="schedule" />
-        <q-btn v-else outline no-caps icon="event_busy" :disable="saving" :label="t('admin.portfolio.cancelSchedule')" @click="transition('cancel-schedule')" />
-      </section>
+      <AdminSchedulePanel
+        v-if="form.id"
+        v-model="form.scheduledFor"
+        :status="form.status"
+        :disable="saving"
+        @schedule="schedule"
+        @cancel="transition('cancel-schedule')"
+      />
       <div class="row q-gutter-sm"><q-btn type="submit" color="primary" :loading="saving" :label="t('admin.portfolio.save')" /><AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" /></div>
     </q-form>
   </q-page>

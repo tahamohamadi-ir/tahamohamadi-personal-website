@@ -9,6 +9,7 @@ import ArticleBlockEditor from 'src/components/admin/ArticleBlockEditor.vue'
 import AdminMarkdownPreview from 'src/components/admin/AdminMarkdownPreview.vue'
 import AdminMediaSelector from 'src/components/admin/AdminMediaSelector.vue'
 import AdminPaginatedTable from 'src/components/admin/AdminPaginatedTable.vue'
+import AdminSchedulePanel from 'src/components/admin/AdminSchedulePanel.vue'
 import AdminStatePanel from 'src/components/admin/AdminStatePanel.vue'
 import {
   isVersionConflict,
@@ -287,12 +288,14 @@ onMounted(() => { void load() })
         <q-btn v-if="form.status === 'DRAFT'" outline no-caps icon="rate_review" :disable="saving" :label="t('admin.blogPosts.submitForReview')" @click="transition('submit-for-review')" />
         <q-btn v-else outline no-caps icon="undo" :disable="saving" :label="t('admin.blogPosts.returnToDraft')" @click="transition('return-to-draft')" />
       </section>
-      <section v-if="form.id && (form.status === 'DRAFT' || form.status === 'IN_REVIEW' || form.status === 'SCHEDULED')" class="admin-schedule q-gutter-sm" :aria-label="t('admin.blogPosts.schedule')">
-        <q-input v-if="form.status === 'DRAFT' || form.status === 'IN_REVIEW'" v-model="form.scheduledFor" type="datetime-local" :label="t('admin.blogPosts.scheduledFor')" :disable="saving" />
-        <p v-else class="text-caption q-mb-none">{{ t('admin.blogPosts.scheduledFor') }}: <time :datetime="form.scheduledFor">{{ form.scheduledFor }}</time></p>
-        <q-btn v-if="form.status === 'DRAFT' || form.status === 'IN_REVIEW'" outline no-caps icon="schedule" :disable="saving || !form.scheduledFor" :label="t('admin.blogPosts.schedule')" @click="schedule" />
-        <q-btn v-else outline no-caps icon="event_busy" :disable="saving" :label="t('admin.blogPosts.cancelSchedule')" @click="transition('cancel-schedule')" />
-      </section>
+      <AdminSchedulePanel
+        v-if="form.id && (form.status === 'DRAFT' || form.status === 'IN_REVIEW' || form.status === 'SCHEDULED')"
+        v-model="form.scheduledFor"
+        :status="form.status"
+        :disable="saving"
+        @schedule="schedule"
+        @cancel="transition('cancel-schedule')"
+      />
       <div class="admin-form-actions"><q-btn type="submit" color="primary" no-caps :loading="saving" :label="t('admin.blogPosts.save')" /><AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" /></div>
     </q-form>
     <q-dialog v-model="revisionDialog">
@@ -316,7 +319,6 @@ onMounted(() => { void load() })
 .admin-revision-dialog dl { display: grid; gap: var(--tm-space-1); margin: 0; }
 .admin-revision-dialog dt { font-weight: 600; }
 .admin-revision-dialog dd { margin: 0; overflow-wrap: anywhere; }
-.admin-schedule { border-block: 1px solid var(--tm-admin-border); display: grid; padding-block: var(--tm-space-4); }
 .admin-blog-posts__translation-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--tm-space-3); }
 .admin-blog-posts__translation-controls :deep(.q-field) { min-inline-size: 12rem; }
 </style>

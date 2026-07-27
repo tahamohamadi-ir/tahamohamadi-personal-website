@@ -197,9 +197,14 @@ public class AdminProjectService {
         if (project.getVersion() != requested) throw new ObjectOptimisticLockingFailureException(PortfolioProject.class, project.getId());
     }
 
-    private static void requirePublishable(PortfolioProject project) {
+    private void requirePublishable(PortfolioProject project) {
         if (project.getStartedOn() == null) throw new IllegalArgumentException("startedOn is required before publishing");
+        List<PortfolioProjectTranslation> values = translations.findByProjectIdAndDeletedAtIsNull(project.getId());
+        boolean hasCompleteTranslations = java.util.Arrays.stream(LanguageCode.values()).allMatch(language -> values.stream().filter(value -> value.getLanguageCode() == language).anyMatch(value -> nonBlank(value.getSeoTitle()) && nonBlank(value.getSeoDescription())));
+        if (!hasCompleteTranslations) throw new IllegalArgumentException("Complete translations with SEO metadata are required before publishing");
     }
+
+    private static boolean nonBlank(String value) { return value != null && !value.isBlank(); }
 
     private void record(String action, UUID id) {
         audit.save(AuditEvent.record(UUID.randomUUID(), Instant.now(), actor.required(), action, "PORTFOLIO_PROJECT", id, "SUCCESS", null, null, mapper.createObjectNode().put("changedFields", "managed")));
