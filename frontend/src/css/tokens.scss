@@ -86,6 +86,8 @@
   --tm-motion-state: 160ms;
   --tm-motion-enter: 220ms;
   --tm-motion-loading: 720ms;
+  --tm-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --tm-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
   --tm-gutter-mobile: 16px;
   --tm-gutter-tablet: 24px;
@@ -94,6 +96,20 @@
   --tm-header-height: 68px;
   --tm-content-block-start: 64px;
   --tm-content-block-end: 96px;
+
+  /* Section layout tokens for CMS page builder. Sections support configurable
+     padding levels, background presets and column grid layouts. */
+  --tm-section-padding-none: 0;
+  --tm-section-padding-compact: clamp(var(--tm-space-4), 3vw, var(--tm-space-8));
+  --tm-section-padding-standard: clamp(var(--tm-space-8), 8vw, var(--tm-space-16));
+  --tm-section-padding-spacious: clamp(var(--tm-space-12), 12vw, var(--tm-space-24));
+
+  --tm-section-bg-transparent: transparent;
+  --tm-section-bg-light: var(--tm-surface);
+  --tm-section-bg-subtle: var(--tm-editorial-muted-surface);
+  --tm-section-bg-dark: var(--tm-navy-950);
+  --tm-section-bg-accent: var(--tm-teal-900);
+  --tm-section-dark-text: var(--tm-canvas);
 }
 
 @media (min-width: 600px) {

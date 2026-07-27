@@ -157,9 +157,13 @@ describe('admin media upload limits', () => {
           QSelect: { props: ['options'], template: '<output>{{ options[0]?.label }}</output>' },
           QInput: { props: ['modelValue'], emits: ['update:modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">' },
           QBtn: { template: '<button><slot /></button>' },
+          QIcon: true,
+          QSpinner: true,
+          QChip: true,
           QForm: qFormStub,
           QFile: qFileStub,
-          QLinearProgress: true
+          QLinearProgress: true,
+          AdminMediaPickerModal: true
         }
       }
     })
@@ -196,7 +200,11 @@ describe('admin media upload limits', () => {
           QInput: { template: '<input>' },
           QSelect: { template: '<div />' },
           QBtn: { template: '<button><slot /></button>' },
-          QLinearProgress: true
+          QIcon: true,
+          QSpinner: true,
+          QChip: true,
+          QLinearProgress: true,
+          AdminMediaPickerModal: true
         }
       }
     })

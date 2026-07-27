@@ -1,7 +1,9 @@
 <script setup>
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { onBeforeRouteLeave } from 'vue-router'
+import { onBeforeRouteLeave, useRouter } from 'vue-router'
+
+const router = useRouter()
 
 import AdminLifecycleActions from 'src/components/admin/AdminLifecycleActions.vue'
 import AdminLocaleTabs from 'src/components/admin/AdminLocaleTabs.vue'
@@ -261,16 +263,17 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
     <AdminStatePanel v-if="state !== 'ready'" :state="state" @retry="load" />
     <template v-else>
       <q-list bordered separator class="admin-pages__list">
-        <q-item v-for="item in items" :key="item.id" clickable @click="select(item)">
+        <q-item v-for="item in items" :key="item.id" clickable @click="router.push(`/admin/pages/${item.id}/edit`)">
           <q-item-section>
-            <q-item-label>{{ item.pageKey }}</q-item-label>
+            <q-item-label class="text-weight-bold">{{ item.pageKey }}</q-item-label>
             <q-item-label caption class="admin-pages__translation-summary">
-              <span>{{ item.fa?.title || t('admin.pages.missingTranslation') }}</span>
-              <span>{{ item.en?.title || t('admin.pages.missingTranslation') }}</span>
+              <span>fa: {{ item.fa?.title || t('admin.pages.missingTranslation') }}</span>
+              <span>en: {{ item.en?.title || t('admin.pages.missingTranslation') }}</span>
             </q-item-label>
           </q-item-section>
-          <q-item-section side>
-            <q-badge :label="item.status" :color="item.status === 'PUBLISHED' ? 'positive' : 'grey-7'" />
+          <q-item-section side class="row items-center">
+            <q-badge :label="item.status" :color="item.status === 'PUBLISHED' ? 'positive' : 'grey-7'" class="q-mr-sm" />
+            <q-btn flat round dense icon="edit" color="primary" :to="`/admin/pages/${item.id}/edit`" @click.stop />
           </q-item-section>
         </q-item>
       </q-list>

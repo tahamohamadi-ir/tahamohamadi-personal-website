@@ -11,13 +11,15 @@ const props = defineProps({
   collectionItems: { type: Object, default: () => ({}) },
   skills: { type: Array, default: () => [] },
   socialLinks: { type: Array, default: () => [] },
-  heroHeadingLevel: { type: Number, default: 2 }
+  heroHeadingLevel: { type: Number, default: 2 },
+  sections: { type: Array, default: () => [] }
 })
 const { t } = useI18n()
 
 const supportedBlocks = new Set([
   'hero', 'rich-text', 'media', 'media-text', 'call-to-action', 'collection',
-  'skills', 'resume', 'social-links', 'contact'
+  'skills', 'resume', 'social-links', 'contact', 'divider', 'spacer',
+  'gallery', 'stats', 'quote'
 ])
 
 const visibleBlocks = computed(() => {
@@ -47,6 +49,56 @@ const visibleBlocks = computed(() => {
       return { ...block, headingLevel }
     })
 })
+
+/* Section layout helpers */
+const sectionMap = computed(() => {
+  const map = {}
+  props.sections.forEach((section, index) => {
+    let settings = {}
+    try { settings = section.settingsJson ? JSON.parse(section.settingsJson) : {} }
+    catch { settings = {} }
+    map[index] = {
+      layout: section.layout || 'SINGLE_COLUMN',
+      ratio: settings.ratio || 'EQUAL',
+      padding: settings.padding || 'STANDARD',
+      background: settings.background || 'TRANSPARENT',
+      fullWidth: Boolean(settings.fullWidth),
+      enabled: section.enabled !== false
+    }
+  })
+  return map
+})
+
+function sectionStyle(sectionIndex) {
+  const section = sectionMap.value[sectionIndex]
+  if (!section) return {}
+  const style = {}
+  const paddingVar = `var(--tm-section-padding-${(section.padding || 'standard').toLowerCase()})`
+  style.paddingBlock = paddingVar
+  const bgVar = `var(--tm-section-bg-${(section.background || 'transparent').toLowerCase()})`
+  style.background = bgVar
+  if (['DARK', 'ACCENT'].includes(section.background)) {
+    style.color = 'var(--tm-section-dark-text)'
+  }
+  return style
+}
+
+function sectionContentClass(sectionIndex) {
+  const section = sectionMap.value[sectionIndex]
+  if (!section) return ['tm-container']
+  const classes = []
+  if (!section.fullWidth) classes.push('tm-container')
+  const layout = section.layout || 'SINGLE_COLUMN'
+  if (layout !== 'SINGLE_COLUMN') {
+    classes.push('page-section__grid')
+    classes.push(`page-section__grid--${layout.toLowerCase().replace(/_/g, '-')}`)
+    const ratio = section.ratio || 'EQUAL'
+    if (ratio !== 'EQUAL') {
+      classes.push(`page-section__ratio--${ratio.toLowerCase().replace(/_/g, '-')}`)
+    }
+  }
+  return classes
+}
 
 function isSafePath(value) {
   return typeof value === 'string' && (/^\/(fa|en)(?:\/|$)/.test(value) || /^https:\/\//.test(value))
@@ -117,8 +169,9 @@ function entrySummary(entry) {
       :key="block.id ?? `${block.type}-${index}`"
       class="page-block"
       :class="blockClasses(block)"
+      :style="block.sectionIndex !== undefined ? sectionStyle(block.sectionIndex) : {}"
     >
-      <div class="tm-container page-block__content">
+      <div :class="block.sectionIndex !== undefined ? sectionContentClass(block.sectionIndex) : ['tm-container']" class="page-block__content">
         <template v-if="block.type === 'hero'">
           <div class="page-block__hero-copy">
             <div v-if="block.eyebrow" class="page-block__hero-badge">
@@ -238,6 +291,24 @@ function entrySummary(entry) {
           </div>
         </template>
 
+        <!-- Decorative: Divider -->
+        <template v-else-if="block.type === 'divider'">
+          <hr class="page-block__divider" aria-hidden="true">
+        </template>
+
+        <!-- Decorative: Spacer -->
+        <template v-else-if="block.type === 'spacer'">
+          <div class="page-block__spacer" :style="{ blockSize: `${block.height ?? 48}px` }" aria-hidden="true" />
+        </template>
+
+        <!-- Quote block -->
+        <template v-else-if="block.type === 'quote'">
+          <blockquote class="page-block__quote">
+            <p v-if="block.lead" class="page-block__quote-text">{{ block.lead }}</p>
+            <footer v-if="block.title" class="page-block__quote-attribution">— {{ block.title }}</footer>
+          </blockquote>
+        </template>
+
         <template v-else>
           <slot :name="block.type" :block="block">
             <h2 v-if="block.title" class="page-block__title">{{ block.title }}</h2>
@@ -287,6 +358,43 @@ function entrySummary(entry) {
 .page-block__social-links { display: flex; flex-wrap: wrap; gap: var(--tm-space-3); }
 .page-block__social-item { display: inline-flex; align-items: center; min-block-size: var(--tm-control-min-size); padding-inline: var(--tm-space-4); border: 1px solid var(--tm-border-subtle); border-radius: var(--tm-radius-control); color: var(--tm-action-primary); font-weight: 700; text-decoration: none; transition: border-color var(--tm-motion-state) ease, background-color var(--tm-motion-state) ease; }
 .page-block__social-item:hover { border-color: var(--tm-action-primary); background: var(--tm-interactive-surface-hover); }
+
+/* New block types */
+.page-block--divider { padding-block: 0; border-block-end: none; }
+.page-block__divider { border: none; border-block-start: 1px solid var(--tm-editorial-rule); margin: 0; }
+
+.page-block--spacer { padding-block: 0; border-block-end: none; }
+.page-block__spacer { display: block; }
+
+.page-block__quote { border-inline-start: 4px solid var(--tm-action-primary); margin: 0; padding: var(--tm-space-6); padding-inline-start: var(--tm-space-8); background: var(--tm-editorial-muted-surface); border-radius: var(--tm-radius-card); }
+.page-block__quote-text { font-size: clamp(1.125rem, 2.5vw, 1.5rem); line-height: 1.6; margin: 0; font-style: italic; color: var(--tm-text-primary); }
+.page-block__quote-attribution { margin-block-start: var(--tm-space-3); color: var(--tm-text-secondary); font-size: .95rem; font-style: normal; }
+
+/* Section grid layouts */
+.page-section__grid { display: grid; gap: var(--tm-space-6); }
+.page-section__grid--two-column { grid-template-columns: repeat(2, 1fr); }
+.page-section__grid--three-column { grid-template-columns: repeat(3, 1fr); }
+.page-section__grid--four-column { grid-template-columns: repeat(4, 1fr); }
+
+/* Column ratio presets (only apply to 2-column) */
+.page-section__ratio--wide-narrow { grid-template-columns: 2fr 1fr; }
+.page-section__ratio--narrow-wide { grid-template-columns: 1fr 2fr; }
+.page-section__ratio--golden { grid-template-columns: 61fr 39fr; }
+.page-section__ratio--quarter-three { grid-template-columns: 1fr 3fr; }
+
 @media (prefers-reduced-motion: reduce) { .page-block__collection-link, .page-block__hero-media img { transition: none; } .page-block__collection-link:hover, .page-block__hero-media:hover img { transform: none; } }
+@media (max-width: 599px) {
+  .page-section__grid--two-column,
+  .page-section__grid--three-column,
+  .page-section__grid--four-column,
+  .page-section__ratio--wide-narrow,
+  .page-section__ratio--narrow-wide,
+  .page-section__ratio--golden,
+  .page-section__ratio--quarter-three { grid-template-columns: 1fr; }
+}
+@media (min-width: 600px) and (max-width: 899px) {
+  .page-section__grid--three-column { grid-template-columns: repeat(2, 1fr); }
+  .page-section__grid--four-column { grid-template-columns: repeat(2, 1fr); }
+}
 @media (min-width: 900px) { .page-block--has-hero-media .page-block__content { grid-template-columns: minmax(0, .88fr) minmax(24rem, 1.12fr); align-items: end; } .page-block__media-layout { grid-template-columns: minmax(0, 1fr) minmax(18rem, .8fr); } }
 </style>

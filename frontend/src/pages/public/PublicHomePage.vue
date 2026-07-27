@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import PageBlockRenderer from 'src/components/public/PageBlockRenderer.vue'
 import PageState from 'src/components/public/PageState.vue'
 import TranslationUnavailable from 'src/components/public/TranslationUnavailable.vue'
+import HomeHero from 'src/components/public/HomeHero.vue'
 import MarkdownContent from 'src/components/content/MarkdownContent.vue'
 import { useAsyncPage } from 'src/composables/useAsyncPage'
 import { usePublicSeoMeta } from 'src/composables/usePublicSeoMeta'
@@ -108,15 +109,30 @@ onMounted(() => {
       />
     </div>
 
-    <section v-else-if="hasLegacyManagedContent" class="tm-container public-home__legacy-content">
-      <h1 v-if="page?.title">{{ page.title }}</h1>
-      <p v-if="page?.summary" class="public-home__summary">{{ page.summary }}</p>
-      <MarkdownContent v-if="page?.bodyMarkdown" :markdown="page.bodyMarkdown" />
-    </section>
+    <HomeHero
+      v-else-if="page && !hasHero && !hasLegacyManagedContent"
+      :page="page"
+      :locale="locale"
+    />
 
-    <header v-else-if="page?.title && !hasHero" class="tm-container public-home__title">
-      <h1>{{ page.title }}</h1>
-    </header>
+    <div
+      v-else-if="hasLegacyManagedContent"
+      class="tm-container tm-rich-content"
+    >
+      <h1 class="tm-page-title">
+        {{ page.title }}
+      </h1>
+      <p
+        v-if="page.summary"
+        class="public-home__summary"
+      >
+        {{ page.summary }}
+      </p>
+      <MarkdownContent
+        v-if="page.bodyMarkdown"
+        :markdown="page.bodyMarkdown"
+      />
+    </div>
 
     <PageBlockRenderer
       v-if="homeBlocks.length"
@@ -139,25 +155,6 @@ onMounted(() => {
   padding-block: var(--tm-space-5);
 }
 
-.public-home__title {
-  padding-block: clamp(var(--tm-space-10), 10vw, var(--tm-space-18));
-}
-
-.public-home__title h1,
-.public-home__legacy-content h1 {
-  margin: 0;
-  max-inline-size: 13ch;
-  font-size: clamp(2.625rem, 6.1vw, 5.25rem);
-  letter-spacing: -0.04em;
-}
-
-.public-home__legacy-content {
-  display: grid;
-  gap: var(--tm-space-5);
-  max-inline-size: 72rem;
-  padding-block: clamp(var(--tm-space-10), 10vw, var(--tm-space-18));
-}
-
 .public-home__summary {
   color: var(--tm-text-secondary);
   font-size: clamp(1.125rem, 2vw, 1.375rem);
@@ -165,4 +162,5 @@ onMounted(() => {
   margin: 0;
   max-inline-size: 58ch;
 }
+
 </style>

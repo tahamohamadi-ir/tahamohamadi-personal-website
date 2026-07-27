@@ -242,6 +242,12 @@ const routes = [
         }
       },
       {
+        path: 'pages/:id/edit',
+        name: 'admin-pages-edit',
+        component: () => import('pages/admin/AdminPageEditPage.vue'),
+        meta: { requiresAdmin: true, noindex: true }
+      },
+      {
         path: 'blog/posts',
         name: 'admin-blog-posts',
         component: () => import('pages/admin/AdminBlogPostsPage.vue'),

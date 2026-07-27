@@ -39,6 +39,7 @@ const history = ref([])
 const historyIndex = ref(-1)
 const operationStatus = ref('')
 const autosaveState = ref('idle')
+const settingsDrawerIndex = ref(null)
 let autosaveTimer = null
 const changes = createUnsavedChangesGuard(() => Promise.resolve(window.confirm(t('admin.unsaved.discard'))))
 const removalOpen = computed({
@@ -47,7 +48,7 @@ const removalOpen = computed({
 })
 
 const blockOptions = computed(() => [
-  'HERO', 'RICH_TEXT', 'MEDIA', 'MEDIA_TEXT', 'CALL_TO_ACTION', 'COLLECTION', 'SKILLS', 'RESUME', 'SOCIAL_LINKS', 'CONTACT'
+  'HERO', 'RICH_TEXT', 'MEDIA', 'MEDIA_TEXT', 'CALL_TO_ACTION', 'COLLECTION', 'SKILLS', 'RESUME', 'SOCIAL_LINKS', 'CONTACT', 'DIVIDER', 'SPACER', 'GALLERY', 'STATS', 'QUOTE'
 ].map((value) => ({ value, label: t(`admin.composer.blockTypes.${value}`) })))
 const collectionOptions = computed(() => [
   'BLOG', 'PORTFOLIO', 'PUBLICATIONS'
@@ -59,6 +60,27 @@ const previewWidth = computed(() => ({ mobile: '375px', tablet: '768px', desktop
 const isDraft = computed(() => props.pageStatus === 'DRAFT')
 const autosaveLabel = computed(() => t(`admin.composer.autosave.${autosaveState.value}`))
 const sectionOptions = computed(() => sections.value.map((section, index) => ({ value: index, label: t('admin.composer.sectionHeading', { index: index + 1 }) })))
+
+const layoutOptions = computed(() => [
+  'SINGLE_COLUMN', 'TWO_COLUMN', 'THREE_COLUMN', 'FOUR_COLUMN'
+].map((value) => ({ value, label: t(`admin.composer.sectionLayoutOptions.${value}`) })))
+
+const ratioOptions = computed(() => [
+  'EQUAL', 'WIDE_NARROW', 'NARROW_WIDE', 'GOLDEN', 'QUARTER_THREE'
+].map((value) => ({ value, label: t(`admin.composer.sectionRatioOptions.${value}`) })))
+
+const paddingOptions = computed(() => [
+  'NONE', 'COMPACT', 'STANDARD', 'SPACIOUS'
+].map((value) => ({ value, label: t(`admin.composer.sectionPaddingOptions.${value}`) })))
+
+const backgroundOptions = computed(() => [
+  'TRANSPARENT', 'LIGHT', 'SUBTLE', 'DARK', 'ACCENT'
+].map((value) => ({ value, label: t(`admin.composer.sectionBackgroundOptions.${value}`) })))
+
+const settingsDrawerOpen = computed({
+  get: () => settingsDrawerIndex.value !== null,
+  set: (value) => { if (!value) settingsDrawerIndex.value = null }
+})
 
 function supportsEyebrow(type) {
   return ['HERO', 'CALL_TO_ACTION', 'COLLECTION', 'SKILLS', 'RESUME', 'SOCIAL_LINKS', 'CONTACT'].includes(type)
@@ -80,6 +102,14 @@ function supportsAlt(type) {
   return ['HERO', 'MEDIA', 'MEDIA_TEXT'].includes(type)
 }
 
+function isDecorativeBlock(type) {
+  return ['DIVIDER', 'SPACER'].includes(type)
+}
+
+function showMultiColumn(layout) {
+  return layout && layout !== 'SINGLE_COLUMN'
+}
+
 const activeTranslations = computed(() => blocks.value.map((block) => ({
   fa: complete(block, block.fa),
   en: complete(block, block.en)
@@ -92,6 +122,7 @@ const previewBlocks = computed(() => serverPreviewBlocks.value ?? blocks.value.m
 })))
 
 function complete(block, value = {}) {
+  if (isDecorativeBlock(block.type)) return true
   const hasEditorialText = Boolean(value.title || value.lead || value.bodyMarkdown)
   if (block.type === 'MEDIA') return Boolean(value.alt)
   if (block.type === 'CALL_TO_ACTION') return Boolean(value.actionLabel && value.actionPath)
@@ -117,7 +148,7 @@ function defaultBlock() {
 }
 
 function defaultSection(value = {}) {
-  return { type: 'STANDARD', layout: 'SINGLE_COLUMN', enabled: true, settingsJson: null, ...value }
+  return { type: 'STANDARD', layout: 'SINGLE_COLUMN', ratio: 'EQUAL', padding: 'STANDARD', background: 'TRANSPARENT', fullWidth: false, enabled: true, settingsJson: null, ...value }
 }
 
 function normalize(block) {
@@ -231,13 +262,26 @@ function move(index, offset) {
   announce(t('admin.composer.moved', { from: index + 1, to: target + 1 }))
   nextTick(() => document.querySelector(`[data-composer-block-index="${target}"]`)?.focus())
 }
+function duplicate(index) {
+  const original = blocks.value[index]
+  if (!original) return
+  const clone = JSON.parse(JSON.stringify(original))
+  clone.id = null
+  blocks.value.splice(index + 1, 0, clone)
+  announce(t('admin.composer.duplicated', { index: index + 2 }))
+}
+function openSettingsDrawer(index) {
+  settingsDrawerIndex.value = index
+}
 
 function onBlockTypeChange(block) {
   const allowed = block.type === 'COLLECTION'
     ? new Set(['source', 'limit'])
     : ['HERO', 'MEDIA', 'MEDIA_TEXT'].includes(block.type)
       ? new Set(['mediaId'])
-      : new Set()
+      : block.type === 'SPACER'
+        ? new Set(['height'])
+        : new Set()
   block.settings = Object.fromEntries(Object.entries(block.settings ?? {}).filter(([key]) => allowed.has(key)))
 }
 
@@ -269,13 +313,22 @@ function settingsPayload(settings) {
   return Object.keys(compact).length ? JSON.stringify(compact) : null
 }
 
+function sectionSettingsPayload(section) {
+  const data = {}
+  if (section.ratio && section.ratio !== 'EQUAL') data.ratio = section.ratio
+  if (section.padding && section.padding !== 'STANDARD') data.padding = section.padding
+  if (section.background && section.background !== 'TRANSPARENT') data.background = section.background
+  if (section.fullWidth) data.fullWidth = true
+  return Object.keys(data).length ? JSON.stringify(data) : null
+}
+
 function compositionPayload() {
   const activeSections = sections.value.length ? sections.value : [defaultSection()]
   return activeSections.map((section, sectionIndex) => ({
     type: section.type,
     layout: section.layout,
     enabled: section.enabled,
-    settingsJson: section.settingsJson ?? null,
+    settingsJson: sectionSettingsPayload(section),
     blocks: blocks.value.filter((block) => (block.sectionIndex ?? 0) === sectionIndex).map((block) => ({
       type: block.type,
       enabled: block.enabled,
@@ -363,8 +416,10 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
     </q-banner>
 
     <q-inner-loading :showing="loading" />
-    <q-card v-for="(section, sectionIndex) in sections" :key="`section-${sectionIndex}`" flat bordered class="q-mb-sm bg-grey-1">
-      <q-card-section class="row items-center q-col-gutter-sm q-py-sm">
+
+    <!-- Section cards with layout controls -->
+    <q-card v-for="(section, sectionIndex) in sections" :key="`section-${sectionIndex}`" flat bordered class="admin-composer__section q-mb-sm">
+      <q-card-section class="admin-composer__section-header row items-center q-col-gutter-sm q-py-sm">
         <div class="col"><h3 class="text-subtitle2 q-my-none">{{ t('admin.composer.sectionHeading', { index: sectionIndex + 1 }) }}</h3></div>
         <div class="col-auto"><q-toggle v-model="section.enabled" :label="t('admin.composer.visible')" :disable="disable || saving" /></div>
         <div class="col-auto q-gutter-xs">
@@ -373,10 +428,38 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
           <q-btn flat round color="negative" icon="delete" :aria-label="t('admin.composer.removeSection', { index: sectionIndex + 1 })" :disable="sections.length <= 1 || disable || saving" @click="removeSection(sectionIndex)" />
         </div>
       </q-card-section>
+
+      <!-- Section layout controls -->
+      <q-card-section class="admin-composer__section-controls q-pt-none">
+        <div class="row q-col-gutter-sm">
+          <div class="col-12 col-sm-3">
+            <q-select v-model="section.layout" :options="layoutOptions" emit-value map-options dense outlined :label="t('admin.composer.sectionLayout')" :disable="disable || saving" />
+          </div>
+          <div v-if="showMultiColumn(section.layout)" class="col-12 col-sm-3">
+            <q-select v-model="section.ratio" :options="ratioOptions" emit-value map-options dense outlined :label="t('admin.composer.sectionRatio')" :disable="disable || saving" />
+          </div>
+          <div class="col-12 col-sm-2">
+            <q-select v-model="section.padding" :options="paddingOptions" emit-value map-options dense outlined :label="t('admin.composer.sectionPadding')" :disable="disable || saving" />
+          </div>
+          <div class="col-12 col-sm-2">
+            <q-select v-model="section.background" :options="backgroundOptions" emit-value map-options dense outlined :label="t('admin.composer.sectionBackground')" :disable="disable || saving" />
+          </div>
+          <div class="col-12 col-sm-2">
+            <q-toggle v-model="section.fullWidth" :label="section.fullWidth ? t('admin.composer.sectionFullWidth') : t('admin.composer.sectionContained')" :disable="disable || saving" dense />
+          </div>
+        </div>
+      </q-card-section>
     </q-card>
+
     <p v-if="!loading && blocks.length === 0" class="text-grey-8">{{ t('admin.composer.empty') }}</p>
+
+    <!-- Block cards with drag handle, duplicate, settings drawer -->
     <q-card v-for="(block, index) in blocks" :key="block.id ?? `new-${index}`" flat bordered tabindex="-1" class="admin-composer__block q-mb-md" :data-composer-block-index="index" :aria-labelledby="`composer-block-${index}`">
       <q-card-section class="admin-composer__block-header row items-center q-col-gutter-sm">
+        <!-- Drag handle -->
+        <div class="col-auto">
+          <q-icon name="drag_indicator" class="admin-composer__drag-handle" :aria-label="t('admin.composer.dragHandle')" />
+        </div>
         <div class="col-12 col-md">
           <h3 :id="`composer-block-${index}`" class="text-subtitle1 q-my-none">
             {{ t('admin.composer.blockHeading', { type: t(`admin.composer.blockTypes.${block.type}`), index: index + 1 }) }}
@@ -388,14 +471,21 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
         <div class="col-auto q-gutter-xs">
           <q-btn class="admin-composer__move" flat round icon="keyboard_arrow_up" :disable="index === 0 || disable || saving" :aria-label="t('admin.composer.moveUp', { index: index + 1 })" @click="move(index, -1)" />
           <q-btn class="admin-composer__move" flat round icon="keyboard_arrow_down" :disable="index === blocks.length - 1 || disable || saving" :aria-label="t('admin.composer.moveDown', { index: index + 1 })" @click="move(index, 1)" />
+          <q-btn flat round icon="content_copy" :aria-label="t('admin.composer.duplicate', { index: index + 1 })" :disable="disable || saving" @click="duplicate(index)" />
+          <q-btn v-if="!isDecorativeBlock(block.type)" flat round icon="settings" :aria-label="t('admin.composer.blockSettings')" :disable="disable || saving" @click="openSettingsDrawer(index)" />
           <q-btn flat round color="negative" icon="delete" :aria-label="t('admin.composer.remove', { index: index + 1 })" :disable="disable || saving" @click="requestRemove(index)" />
         </div>
       </q-card-section>
-      <q-card-section class="q-pt-none">
+
+      <!-- Block content (skip for decorative types) -->
+      <q-card-section v-if="!isDecorativeBlock(block.type)" class="q-pt-none">
         <AdminMediaSelector v-if="['HERO', 'MEDIA', 'MEDIA_TEXT'].includes(block.type)" v-model="block.settings.mediaId" :allowed-types="['image']" :label="t('admin.composer.media')" :disable="disable || saving" />
         <template v-if="block.type === 'COLLECTION'">
           <q-select v-model="block.settings.source" :options="collectionOptions" emit-value map-options :label="t('admin.composer.collection')" :disable="disable || saving" />
           <q-input v-model.number="block.settings.limit" type="number" min="1" max="12" :label="t('admin.composer.limit')" :disable="disable || saving" />
+        </template>
+        <template v-if="block.type === 'SPACER'">
+          <q-input v-model.number="block.settings.height" type="number" min="8" max="200" label="Height (px)" :disable="disable || saving" />
         </template>
         <AdminLocaleTabs v-model="locale" :translations="activeTranslations[index]" />
         <template v-if="locale === 'fa'">
@@ -417,15 +507,30 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
           <q-input v-if="supportsAlt(block.type)" v-model="block.en.alt" :label="t('admin.composer.altEn')" :disable="disable || saving" />
         </template>
       </q-card-section>
+
+      <!-- Decorative block placeholder -->
+      <q-card-section v-else class="admin-composer__decorative-placeholder q-pt-none">
+        <div v-if="block.type === 'DIVIDER'" class="admin-composer__divider-preview"><hr></div>
+        <div v-else-if="block.type === 'SPACER'" class="admin-composer__spacer-preview">
+          <span class="text-caption text-grey-7">{{ block.settings?.height ?? 48 }}px</span>
+        </div>
+      </q-card-section>
     </q-card>
+
     <q-btn color="primary" :label="t('admin.composer.save')" :loading="saving" :disable="disable || loading" @click="save" />
+
+    <!-- Preview Dialog with enhanced viewport controls -->
     <q-dialog v-model="previewOpen" maximized>
       <q-card class="admin-composer__preview" role="document">
         <q-card-section class="row items-center justify-between">
           <h3 class="text-h6 q-my-none">{{ t('admin.composer.previewTitle') }}</h3>
           <div class="row items-center q-gutter-sm">
             <q-btn-toggle v-model="locale" unelevated toggle-color="primary" :options="[{ label: 'FA', value: 'fa' }, { label: 'EN', value: 'en' }]" aria-label="Preview language" />
-            <q-btn-toggle v-model="previewViewport" unelevated toggle-color="primary" :options="[{ label: '375', value: 'mobile' }, { label: '768', value: 'tablet' }, { label: '1440', value: 'desktop' }]" aria-label="Preview viewport" />
+            <q-btn-toggle v-model="previewViewport" unelevated toggle-color="primary" :options="[
+              { icon: 'phone_iphone', value: 'mobile', label: t('admin.composer.previewMobile') },
+              { icon: 'tablet_mac', value: 'tablet', label: t('admin.composer.previewTablet') },
+              { icon: 'desktop_windows', value: 'desktop', label: t('admin.composer.previewDesktop') }
+            ]" aria-label="Preview viewport" />
             <q-btn flat round icon="close" :aria-label="t('admin.composer.closePreview')" @click="previewOpen = false" />
           </div>
         </q-card-section>
@@ -441,6 +546,24 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
         </q-card-section>
       </q-card>
     </q-dialog>
+
+    <!-- Block Settings Drawer -->
+    <q-dialog v-model="settingsDrawerOpen" position="right">
+      <q-card v-if="settingsDrawerIndex !== null && blocks[settingsDrawerIndex]" class="admin-composer__settings-drawer">
+        <q-card-section class="row items-center justify-between">
+          <h3 class="text-subtitle1 q-my-none">{{ t('admin.composer.blockSettings') }}</h3>
+          <q-btn flat round icon="close" :aria-label="t('admin.composer.closeSettings')" @click="settingsDrawerIndex = null" />
+        </q-card-section>
+        <q-separator />
+        <q-card-section>
+          <q-select v-model="blocks[settingsDrawerIndex].type" :options="blockOptions" emit-value map-options :label="t('admin.composer.type')" :disable="disable || saving" @update:model-value="onBlockTypeChange(blocks[settingsDrawerIndex])" />
+          <q-select v-model="blocks[settingsDrawerIndex].sectionIndex" :options="sectionOptions" emit-value map-options :label="t('admin.composer.section')" :disable="disable || saving" class="q-mt-md" />
+          <q-toggle v-model="blocks[settingsDrawerIndex].enabled" :label="t('admin.composer.visible')" :disable="disable || saving" class="q-mt-md" />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <!-- Removal Confirmation -->
     <q-dialog v-model="removalOpen" persistent>
       <q-card>
         <q-card-section class="text-h6">{{ t('admin.composer.removeTitle') }}</q-card-section>
@@ -469,12 +592,70 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
   white-space: nowrap;
 }
 
-.admin-composer__preview-canvas { background: var(--tm-admin-surface-subtle); overflow: auto; padding: var(--tm-space-4); }
-.admin-composer__preview-viewport { background: var(--tm-surface); box-shadow: var(--tm-shadow-sm); margin-inline: auto; min-inline-size: min(100%, 20rem); transition: max-width 160ms ease; }
+.admin-composer__section {
+  background: var(--tm-admin-surface-subtle);
+}
+
+.admin-composer__section-header {
+  border-block-end: 1px solid var(--tm-admin-border);
+}
+
+.admin-composer__section-controls {
+  padding-block-start: var(--tm-space-2);
+}
 
 .admin-composer__block-header {
   background: var(--tm-admin-surface-subtle);
   border-block-end: 1px solid var(--tm-admin-border);
+}
+
+.admin-composer__drag-handle {
+  cursor: grab;
+  color: var(--tm-text-secondary);
+  font-size: 1.25rem;
+  opacity: .6;
+  transition: opacity var(--tm-motion-state) ease;
+}
+
+.admin-composer__drag-handle:hover {
+  opacity: 1;
+}
+
+.admin-composer__decorative-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--tm-space-4);
+}
+
+.admin-composer__divider-preview {
+  inline-size: 100%;
+}
+
+.admin-composer__divider-preview hr {
+  border: none;
+  border-block-start: 1px solid var(--tm-border-subtle);
+  margin: 0;
+}
+
+.admin-composer__spacer-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 48px;
+  border: 1px dashed var(--tm-border-subtle);
+  border-radius: var(--tm-radius-card);
+  padding: var(--tm-space-2);
+}
+
+.admin-composer__preview-canvas { background: var(--tm-admin-surface-subtle); overflow: auto; padding: var(--tm-space-4); }
+.admin-composer__preview-viewport { background: var(--tm-surface); box-shadow: var(--tm-shadow-sm); margin-inline: auto; min-inline-size: min(100%, 20rem); transition: max-width 160ms ease; }
+
+.admin-composer__settings-drawer {
+  min-inline-size: 320px;
+  max-inline-size: 420px;
+  block-size: 100vh;
+  border-radius: 0;
 }
 
 .admin-composer__move:focus-visible {
