@@ -23,6 +23,9 @@ export function mapValidationErrors(error) {
   }, {})
 }
 
+export const formatFieldErrors = mapValidationErrors
+
+
 export function isMissingTranslation(translations, locale) {
   return translations?.[locale] !== true
 }
@@ -54,11 +57,15 @@ export function createUnsavedChangesGuard(confirmDiscard) {
     isDirty,
     markDirty: () => { isDirty.value = true },
     markSaved: () => { isDirty.value = false },
+    trackInitialState: () => { isDirty.value = false },
     async confirmLeave() {
-      return !isDirty.value || await confirmDiscard()
+      return !isDirty.value || (typeof confirmDiscard === 'function' ? await confirmDiscard() : window.confirm('Discard unsaved changes?'))
     }
   }
 }
+
+export const useUnsavedChangesGuard = createUnsavedChangesGuard
+
 
 export function useAdminNotifications() {
   const notification = ref(null)

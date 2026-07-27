@@ -7,15 +7,15 @@ import AdminEditorShell from 'src/components/admin/AdminEditorShell.vue'
 import AdminLocaleTabs from 'src/components/admin/AdminLocaleTabs.vue'
 import AdminMediaSelector from 'src/components/admin/AdminMediaSelector.vue'
 
-import { useUnsavedChangesGuard } from 'src/composables/useUnsavedChangesGuard'
-import { HTTP_CLIENT_KEY } from 'src/services/apiContext'
-import { primeCsrfToken } from 'src/services/csrf'
-
 import {
   formatFieldErrors,
   isVersionConflict,
-  normalizeApiError
-} from 'src/services/httpClient'
+  useUnsavedChangesGuard
+} from 'src/composables/adminContentInteractions'
+import { HTTP_CLIENT_KEY } from 'src/services/apiContext'
+import { primeCsrfToken } from 'src/services/csrf'
+import { normalizeApiError } from 'src/services/httpClient'
+
 
 const httpClient = inject(HTTP_CLIENT_KEY)
 const { t } = useI18n()
