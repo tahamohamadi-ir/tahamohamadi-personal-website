@@ -50,3 +50,11 @@ docs/ui-ux/*.jpeg
 docs/ui-ux/*.webp
 docs/ui-ux/*.svg
 
+# Assistant & Scratch Files
+.claude/
+CLAUDE.md
+cookies.txt
+recent_changes.diff
+*.temporary.compiled.*.mjs
+
+
