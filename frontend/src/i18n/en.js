@@ -220,7 +220,7 @@ export default {
     pages: {
       title: 'Managed pages', description: 'Page translations and approved block composition are edited independently.', create: 'Create page', edit: 'Edit page',
       pageKey: 'Page key', titleField: 'Title', slug: 'Slug', summary: 'Summary', seoTitle: 'SEO title', seoDescription: 'SEO description', canonicalPath: 'Canonical path',
-      save: 'Save page', missingTranslation: 'Missing translation', reload: 'Reload page'
+      save: 'Save page', missingTranslation: 'Missing translation', reload: 'Reload page', revisions: 'Revision history', revision: 'Revision {number}', revisionHelp: 'Restoring creates a separate Draft and never overwrites this page.', refreshRevisions: 'Refresh revisions', noRevisions: 'No revisions yet.', revisionCompare: 'Compare revision', compareCurrent: 'Current page', snapshotComposition: '{sections} sections · {blocks} blocks', restoreAsDraft: 'Restore as Draft', restoreTitle: 'Restore this revision as a Draft?', restoreDescription: 'Revision {number} will create a separate editable Draft. The current page will not be changed.'
     },
     contact: {
       title: 'Contact messages', description: 'Read messages safely as plain text and archive them when handled.', selected: 'Selected contact message', markRead: 'Mark as read', archive: 'Archive message', archiveTitle: 'Archive this message?', archiveDescription: 'It will remain in the archived queue for reference.'
