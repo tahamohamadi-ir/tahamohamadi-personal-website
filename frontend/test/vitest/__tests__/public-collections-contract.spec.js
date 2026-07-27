@@ -361,6 +361,26 @@ describe('localized public collection route contract', () => {
     }
   })
 
+  it('gives every portfolio card a localized, visible case-study destination', async () => {
+    const collection = COLLECTIONS.find(({ name }) => name === 'portfolio')
+    const Page = await loadComponent(collection.pagePath)
+
+    for (const locale of ['en', 'fa']) {
+      const response = localizedResponse(collection, locale)
+      const api = { [collection.apiMethod]: vi.fn().mockResolvedValue(response) }
+      const wrapper = await mountLocalized(Page, collection, api, { locale })
+
+      await flushPromises()
+
+      const actions = wrapper.findAll('.portfolio-project-list__action')
+      expect(actions).toHaveLength(response.items.length)
+      expect(actions.map((action) => action.text())).toEqual(
+        Array(response.items.length).fill(i18n.global.t('public.caseStudy.viewProject'))
+      )
+      wrapper.unmount()
+    }
+  })
+
   it('uses items alone for emptiness and keeps initial SSR data from causing a duplicate request', async () => {
     for (const collection of COLLECTIONS) {
       const Page = await loadComponent(collection.pagePath)
