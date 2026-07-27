@@ -26,6 +26,12 @@ const selectedLocale = ref('fa')
 const form = ref(createForm())
 const replacing = ref(false)
 const fieldErrors = ref({})
+const revisions = ref([])
+const revisionsLoading = ref(false)
+const revisionDetail = ref(null)
+const revisionDialog = ref(false)
+const restoreCandidate = ref(null)
+const restoreConfirmationOpen = ref(false)
 const changes = createUnsavedChangesGuard(() => Promise.resolve(window.confirm(t('admin.unsaved.discard'))))
 
 function translation() {
@@ -104,6 +110,7 @@ async function select(item) {
     const response = await httpClient.get(`/api/v1/admin/pages/${item.id}`)
     replaceForm(response.data)
     selectedLocale.value = 'fa'
+    await loadRevisions(response.data.id)
   }
   catch (cause) {
     error.value = normalizeApiError(cause)
@@ -114,6 +121,7 @@ function create() {
   replaceForm()
   selectedLocale.value = 'fa'
   error.value = null
+  revisions.value = []
 }
 
 function payload() {
@@ -182,6 +190,52 @@ async function transition(action) {
   }
 }
 
+async function loadRevisions(id = form.value.id) {
+  if (!id) { revisions.value = []; return }
+  revisionsLoading.value = true
+  try {
+    revisions.value = (await httpClient.get(`/api/v1/admin/pages/${id}/revisions`)).data ?? []
+  }
+  catch (cause) { error.value = normalizeApiError(cause) }
+  finally { revisionsLoading.value = false }
+}
+
+async function viewRevision(revision) {
+  if (!form.value.id) return
+  revisionsLoading.value = true
+  error.value = null
+  try {
+    revisionDetail.value = (await httpClient.get(`/api/v1/admin/pages/${form.value.id}/revisions/${revision.id}`)).data
+    revisionDialog.value = true
+  }
+  catch (cause) { error.value = normalizeApiError(cause) }
+  finally { revisionsLoading.value = false }
+}
+
+function requestRestore(revision) {
+  restoreCandidate.value = revision
+  restoreConfirmationOpen.value = true
+}
+
+async function restoreRevision() {
+  const revision = restoreCandidate.value
+  if (!revision || !form.value.id || form.value.version == null) return
+  saving.value = true
+  error.value = null
+  try {
+    await primeCsrfToken(httpClient)
+    const response = await httpClient.post(`/api/v1/admin/pages/${form.value.id}/revisions/${revision.id}/restore-as-draft`, null, { params: { version: form.value.version } })
+    restoreConfirmationOpen.value = false
+    restoreCandidate.value = null
+    replaceForm(response.data)
+    selectedLocale.value = 'fa'
+    await load(page.value)
+    await loadRevisions(response.data.id)
+  }
+  catch (cause) { error.value = normalizeApiError(cause) }
+  finally { saving.value = false }
+}
+
 onMounted(() => {
   void load()
 })
@@ -228,6 +282,22 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
         <div class="admin-pages__panel-header"><h2 class="text-h6 q-my-none">{{ form.id ? t('admin.pages.edit') : t('admin.pages.create') }}</h2><AdminLocaleTabs v-model="selectedLocale" :translations="translations" /></div>
         <q-input v-model="form.pageKey" outlined :label="t('admin.pages.pageKey')" :error="Boolean(fieldErrors.pageKey)" :error-message="fieldErrors.pageKey" :disable="saving" />
       </section>
+      <section v-if="form.id" class="admin-panel admin-pages__panel admin-pages__revisions" :aria-label="t('admin.pages.revisions')">
+        <div class="admin-pages__panel-header">
+          <div><h2 class="text-h6 q-my-none">{{ t('admin.pages.revisions') }}</h2><p class="text-caption q-mb-none">{{ t('admin.pages.revisionHelp') }}</p></div>
+          <q-btn flat no-caps icon="refresh" :loading="revisionsLoading" :label="t('admin.pages.refreshRevisions')" @click="loadRevisions()" />
+        </div>
+        <q-list v-if="revisions.length" bordered separator>
+          <q-item v-for="revision in revisions" :key="revision.id">
+            <q-item-section clickable @click="viewRevision(revision)">
+              <q-item-label>{{ t('admin.pages.revision', { number: revision.revisionNumber }) }}</q-item-label>
+              <q-item-label caption><time :datetime="revision.createdAt">{{ revision.createdAt }}</time> — {{ revision.reason }}</q-item-label>
+            </q-item-section>
+            <q-item-section side><q-btn outline no-caps icon="restore" :disable="saving" :label="t('admin.pages.restoreAsDraft')" @click="requestRestore(revision)" /></q-item-section>
+          </q-item>
+        </q-list>
+        <p v-else-if="!revisionsLoading" class="text-caption q-mb-none">{{ t('admin.pages.noRevisions') }}</p>
+      </section>
       <section class="admin-panel admin-pages__panel">
         <div class="admin-pages__fields">
           <q-input v-model="activeTranslation.title" outlined :label="t('admin.pages.titleField')" :error="Boolean(fieldErrors[`${selectedLocale}.title`])" :error-message="fieldErrors[`${selectedLocale}.title`]" :disable="saving" />
@@ -266,6 +336,26 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
         </div>
       </footer>
     </q-form>
+    <q-dialog v-model="revisionDialog">
+      <q-card class="admin-page-revision-dialog">
+        <q-card-section class="row items-center q-pb-none"><h2 class="text-h6 q-my-none">{{ t('admin.pages.revisionCompare') }}</h2><q-space /><q-btn flat round icon="close" :aria-label="t('admin.actions.cancel')" v-close-popup /></q-card-section>
+        <q-card-section v-if="revisionDetail?.snapshot" class="q-gutter-md">
+          <p class="text-caption q-mb-none">{{ t('admin.pages.revision', { number: revisionDetail.revisionNumber }) }} — {{ revisionDetail.reason }}</p>
+          <div v-for="locale in ['fa', 'en']" :key="locale" class="admin-page-revision-dialog__locale">
+            <h3 class="text-subtitle2 q-my-none">{{ locale.toUpperCase() }}</h3>
+            <dl><dt>{{ t('admin.pages.titleField') }}</dt><dd>{{ revisionDetail.snapshot.page?.[locale]?.title }}</dd><dt>{{ t('admin.pages.slug') }}</dt><dd>{{ revisionDetail.snapshot.page?.[locale]?.slug }}</dd><dt>{{ t('admin.pages.compareCurrent') }}</dt><dd>{{ form[locale]?.title }} — {{ form[locale]?.slug }}</dd></dl>
+          </div>
+          <p class="text-caption q-mb-none">{{ t('admin.pages.snapshotComposition', { sections: revisionDetail.snapshot.sections?.length ?? 0, blocks: revisionDetail.snapshot.sections?.reduce((count, section) => count + (section.blocks?.length ?? 0), 0) ?? 0 }) }}</p>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+    <q-dialog v-model="restoreConfirmationOpen">
+      <q-card class="admin-page-restore-dialog">
+        <q-card-section><h2 class="text-h6 q-my-none">{{ t('admin.pages.restoreTitle') }}</h2></q-card-section>
+        <q-card-section class="q-pt-none">{{ t('admin.pages.restoreDescription', { number: restoreCandidate?.revisionNumber }) }}</q-card-section>
+        <q-card-actions align="right"><q-btn flat no-caps :label="t('admin.actions.cancel')" v-close-popup /><q-btn color="primary" no-caps :loading="saving" :label="t('admin.pages.restoreAsDraft')" @click="restoreRevision" /></q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -284,5 +374,10 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
 .admin-pages__actions { position: sticky; inset-block-end: var(--tm-space-3); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--tm-space-3); padding: var(--tm-space-3) var(--tm-space-4); border: 1px solid var(--tm-admin-border); border-radius: var(--tm-admin-panel-radius); background: var(--tm-admin-surface); }
 .admin-pages__actions span { color: var(--tm-text-secondary); }
 .admin-pages__actions-buttons { display: flex; flex-wrap: wrap; gap: var(--tm-space-2); }
+.admin-page-revision-dialog, .admin-page-restore-dialog { inline-size: min(42rem, calc(100vw - 2 * var(--tm-space-4))); }
+.admin-page-revision-dialog__locale { border-block-start: 1px solid var(--tm-admin-border); display: grid; gap: var(--tm-space-2); padding-block-start: var(--tm-space-3); }
+.admin-page-revision-dialog dl { display: grid; gap: var(--tm-space-1); margin: 0; }
+.admin-page-revision-dialog dt { font-weight: 600; }
+.admin-page-revision-dialog dd { margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 599px) { .admin-pages__fields { grid-template-columns: 1fr; } .admin-pages__fields > :nth-child(2n + 1):last-child { grid-column: auto; } }
 </style>
