@@ -17,8 +17,8 @@ const mediaUrl = (mediaId) => typeof mediaId === 'string' && UUID.test(mediaId) 
       <p v-if="block?.type === 'paragraph'">{{ block.value }}</p>
       <component :is="headingTag(block.level)" v-else-if="block?.type === 'heading'" :id="headingId(index)">{{ block.value }}</component>
       <blockquote v-else-if="block?.type === 'quote'"><p>{{ block.value }}</p></blockquote>
-      <pre v-else-if="block?.type === 'code'"><code>{{ block.value }}</code></pre>
-      <figure v-else-if="block?.type === 'image' && mediaUrl(block.mediaId)">
+      <pre v-else-if="block?.type === 'code'" dir="ltr" :data-language="block.language || undefined"><code :class="block.language ? `language-${block.language}` : undefined">{{ block.value }}</code></pre>
+      <figure v-else-if="block?.type === 'image' && mediaUrl(block.mediaId)" class="article-document-content__figure">
         <img :src="mediaUrl(block.mediaId)" :alt="block.alt || ''" loading="lazy">
         <figcaption v-if="block.caption">{{ block.caption }}</figcaption>
       </figure>
@@ -29,10 +29,11 @@ const mediaUrl = (mediaId) => typeof mediaId === 'string' && UUID.test(mediaId) 
 </template>
 
 <style scoped>
-.article-document-content { display: grid; gap: var(--tm-space-4); }
+.article-document-content { display: grid; gap: var(--tm-space-5); }
 .article-document-content > :is(p, h2, h3, h4, h5, h6, blockquote, pre, figure, hr) { margin: 0; }
-.article-document-content blockquote { border-inline-start: 3px solid var(--tm-color-border-strong); padding-inline-start: var(--tm-space-4); }
-.article-document-content pre { overflow-x: auto; padding: var(--tm-space-4); }
-.article-document-content figure { display: grid; gap: var(--tm-space-2); }
-.article-document-content img { block-size: auto; inline-size: 100%; }
+.article-document-content blockquote { border-inline-start: 3px solid var(--tm-action-primary); padding-inline-start: var(--tm-space-4); color: var(--tm-text-secondary); font-style: italic; }
+.article-document-content pre { dir: ltr; direction: ltr; text-align: left; overflow-x: auto; padding: var(--tm-space-4); background: var(--tm-editorial-muted-surface); border-radius: var(--tm-radius-card); border: 1px solid var(--tm-border-subtle); font-family: monospace; font-size: .9rem; }
+.article-document-content figure { display: grid; gap: var(--tm-space-2); margin: 0; }
+.article-document-content img { block-size: auto; inline-size: 100%; border-radius: var(--tm-radius-card); object-fit: cover; }
+.article-document-content figcaption { color: var(--tm-text-secondary); font-size: .875rem; text-align: center; }
 </style>
