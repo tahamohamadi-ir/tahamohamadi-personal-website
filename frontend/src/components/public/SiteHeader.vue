@@ -57,7 +57,7 @@ const navigationItems = [
 ]
 
 const localizedNavigationItems = computed(() => {
-  if (Array.isArray(props.navigation)) {
+  if (Array.isArray(props.navigation) && props.navigation[0]) {
     return props.navigation.map((item) => ({
       key: item.key,
       label: item.label,

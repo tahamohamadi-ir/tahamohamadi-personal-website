@@ -55,9 +55,9 @@ function formatFileSize(bytes) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
 }
 
-function getMediaUrl(storagePath) {
-  if (!storagePath) return ''
-  return `/api/v1/media/${storagePath}`
+function getMediaUrl(item) {
+  if (!item?.id) return ''
+  return `/api/v1/admin/media/${item.id}/content`
 }
 
 async function load(requestedPage = 0) {
@@ -105,19 +105,13 @@ function closeModal() {
 }
 
 function acceptsUpload(file) {
-  if (!file) return true
-  return props.allowedTypes.some((allowed) => allowed === 'image'
-    ? file.type.startsWith('image/')
-    : file.type === 'application/pdf')
+  if (!file) return false
+  const policyResult = validateMediaUpload(file)
+  return policyResult.valid
 }
 
-async function uploadInModal() {
+async function handleUpload() {
   if (!uploadFile.value) return
-  const validationError = validateMediaUpload(uploadFile.value)
-  if (validationError) {
-    error.value = { message: validationError }
-    return
-  }
   if (!acceptsUpload(uploadFile.value)) {
     error.value = { message: t('admin.mediaSelector.invalidType') }
     return
@@ -180,9 +174,9 @@ watch(() => props.modelValue, (isOpen) => {
           outlined
           dense
           clearable
-          :disable="uploading"
-          :label="t('admin.mediaSelector.uploadPrompt')"
-          @update:model-value="uploadInModal"
+          :label="t('admin.mediaSelector.uploadFile')"
+          class="full-width"
+          @update:model-value="handleUpload"
         >
           <template #prepend>
             <q-icon name="cloud_upload" />
@@ -191,8 +185,8 @@ watch(() => props.modelValue, (isOpen) => {
         <q-linear-progress v-if="uploading" :value="uploadProgress / 100" color="primary" class="q-mt-xs" />
       </div>
 
-      <!-- Filters & Search -->
-      <div class="media-picker-modal__toolbar q-pa-md">
+      <!-- Search & Filter Bar -->
+      <div class="media-picker-modal__toolbar q-px-md q-py-sm">
         <q-input
           v-model="query"
           outlined
@@ -240,15 +234,15 @@ watch(() => props.modelValue, (isOpen) => {
               <div class="media-picker-modal__card-thumb">
                 <img
                   v-if="item.mimeType.startsWith('image/')"
-                  :src="getMediaUrl(item.storagePath)"
-                  :alt="item.altTextFa || item.originalFilename"
+                  :src="getMediaUrl(item)"
+                  :alt="item.faAlt || item.originalFilename"
                   loading="lazy"
                 />
                 <q-icon v-else name="insert_drive_file" size="40px" color="primary" />
               </div>
               <div class="media-picker-modal__card-meta">
                 <span class="media-picker-modal__filename" :title="item.originalFilename">{{ item.originalFilename }}</span>
-                <span class="media-picker-modal__size">{{ formatFileSize(item.fileSizeBytes) }}</span>
+                <span class="media-picker-modal__size">{{ formatFileSize(item.sizeBytes) }}</span>
               </div>
             </article>
           </div>
@@ -260,7 +254,7 @@ watch(() => props.modelValue, (isOpen) => {
             <div class="media-picker-modal__preview">
               <img
                 v-if="activeAsset.mimeType.startsWith('image/')"
-                :src="getMediaUrl(activeAsset.storagePath)"
+                :src="getMediaUrl(activeAsset)"
                 :alt="activeAsset.originalFilename"
               />
               <q-icon v-else name="description" size="64px" color="primary" />
@@ -271,28 +265,28 @@ watch(() => props.modelValue, (isOpen) => {
                 {{ activeAsset.originalFilename }}
               </div>
               <div class="text-caption text-grey-7">
-                {{ activeAsset.mimeType }} • {{ formatFileSize(activeAsset.fileSizeBytes) }}
+                {{ activeAsset.mimeType }} • {{ formatFileSize(activeAsset.sizeBytes) }}
               </div>
-              <div v-if="activeAsset.widthPx && activeAsset.heightPx" class="text-caption text-grey-7">
-                {{ activeAsset.widthPx }} × {{ activeAsset.heightPx }} px
+              <div v-if="activeAsset.width && activeAsset.height" class="text-caption text-grey-7">
+                {{ activeAsset.width }} × {{ activeAsset.height }} px
               </div>
 
               <div class="q-mt-sm">
                 <q-chip
                   dense
-                  :color="activeAsset.altTextFa ? 'positive' : 'warning'"
+                  :color="activeAsset.faAlt ? 'positive' : 'warning'"
                   text-color="white"
                   size="11px"
                 >
-                  FA: {{ activeAsset.altTextFa ? '✓' : '●' }}
+                  FA: {{ activeAsset.faAlt ? '✓' : '●' }}
                 </q-chip>
                 <q-chip
                   dense
-                  :color="activeAsset.altTextEn ? 'positive' : 'warning'"
+                  :color="activeAsset.enAlt ? 'positive' : 'warning'"
                   text-color="white"
                   size="11px"
                 >
-                  EN: {{ activeAsset.altTextEn ? '✓' : '●' }}
+                  EN: {{ activeAsset.enAlt ? '✓' : '●' }}
                 </q-chip>
               </div>
             </div>

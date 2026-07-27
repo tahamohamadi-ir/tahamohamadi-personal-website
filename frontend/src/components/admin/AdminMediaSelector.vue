@@ -114,9 +114,9 @@ function clearSelection() {
   selectedAsset.value = null
 }
 
-function getMediaUrl(storagePath) {
-  if (!storagePath) return ''
-  return `/api/v1/media/${storagePath}`
+function getMediaUrl(asset) {
+  if (!asset?.id) return ''
+  return `/api/v1/admin/media/${asset.id}/content`
 }
 
 async function uploadInFlow() {
@@ -208,7 +208,7 @@ onMounted(() => {
       <div class="admin-media-selector__preview">
         <img
           v-if="selectedAsset.mimeType?.startsWith('image/')"
-          :src="getMediaUrl(selectedAsset.storagePath)"
+          :src="getMediaUrl(selectedAsset)"
           :alt="selectedAsset.originalFilename"
         />
         <q-icon v-else name="insert_drive_file" size="36px" color="primary" />
@@ -219,8 +219,8 @@ onMounted(() => {
         </div>
         <div class="text-caption text-grey-7">
           {{ selectedAsset.mimeType }}
-          <span v-if="selectedAsset.widthPx && selectedAsset.heightPx">
-            • {{ selectedAsset.widthPx }}×{{ selectedAsset.heightPx }}px
+          <span v-if="selectedAsset.width && selectedAsset.height">
+            • {{ selectedAsset.width }}×{{ selectedAsset.height }}px
           </span>
         </div>
         <div class="q-mt-xs">

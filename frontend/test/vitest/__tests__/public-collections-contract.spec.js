@@ -424,6 +424,48 @@ describe('localized public collection route contract', () => {
 })
 
 describe('collection states and pagination contract', () => {
+  it('keeps Blog discovery filters localized, URL-driven, and reset to the first result page', async () => {
+    const collection = COLLECTIONS[0]
+    const Page = await loadComponent(collection.pagePath)
+    const api = {
+      listPosts: vi.fn().mockResolvedValue({ ...collection.response, page: 1 }),
+      listCategories: vi.fn().mockResolvedValue({
+        items: [{ slug: 'systems', name: 'Systems', postCount: 4 }]
+      }),
+      listTags: vi.fn().mockResolvedValue({
+        items: [{ slug: 'design', name: 'Design', postCount: 2 }]
+      })
+    }
+    const wrapper = await mountLocalized(Page, collection, api, {
+      query: '?q=research&category=systems&tag=design&page=1'
+    })
+
+    await flushPromises()
+
+    expect(api.listPosts).toHaveBeenCalledWith('en', {
+      page: 1,
+      size: 20,
+      q: 'research',
+      category: 'systems',
+      tag: 'design'
+    })
+    expect(api.listCategories).toHaveBeenCalledWith('en')
+    expect(api.listTags).toHaveBeenCalledWith('en')
+
+    await wrapper.get('button[aria-pressed="false"]').trigger('click')
+    await flushPromises()
+
+    expect(api.listPosts).toHaveBeenLastCalledWith('en', {
+      page: 0,
+      size: 20,
+      q: 'research',
+      tag: 'design'
+    })
+    expect(wrapper.vm.$route.query.page).toBeUndefined()
+    expect(wrapper.vm.$route.query.category).toBeUndefined()
+    wrapper.unmount()
+  })
+
   it('shows loading, stale content, recoverable failure, and offline states through PageState', async () => {
     const collection = COLLECTIONS[0]
     const Page = await loadComponent(collection.pagePath)
