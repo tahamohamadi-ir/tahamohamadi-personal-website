@@ -228,7 +228,7 @@ export default {
     navigationDialog: {
       invalidTarget: 'Use an HTTPS URL or localized internal route.', removeTitle: 'Remove this navigation item?', removeDescription: 'The item will be removed when you save navigation.', removeConfirm: 'Remove item'
     },
-    caseStudy: { role: 'Role', client: 'Client', team: 'Team', outcome: 'Outcome' },
+    caseStudy: { title: 'Case study', role: 'Role', client: 'Client', team: 'Team', outcome: 'Outcome' },
     composer: {
       title: 'Page composer', description: 'Approved blocks only. Each translation remains independent.', add: 'Add block', addSection: 'Add section', section: 'Section', sectionHeading: 'Section {index}', sectionAdded: 'Section {index} added.', sectionRemoved: 'Section {index} removed; its blocks moved to the first section.', sectionMoved: 'Section moved from {from} to {to}.', moveSectionUp: 'Move section {index} up', moveSectionDown: 'Move section {index} down', removeSection: 'Remove section {index}', preview: 'Preview composition', previewTitle: 'Composition preview', previewSavedDraft: 'Preview reflects the last saved Draft.', closePreview: 'Close composition preview', save: 'Save composition', reload: 'Reload blocks', autosave: { idle: '', pending: 'Draft changes will save shortly.', saving: 'Saving draft…', saved: 'Draft saved.', error: 'Draft was not saved. Review the fields and retry.', conflict: 'Draft changed elsewhere. Reload before saving again.' },
       empty: 'No blocks yet. Add a block to compose this page.', type: 'Block type', visible: 'Visible', media: 'Media asset', collection: 'Collection', limit: 'Items to show',
