@@ -38,6 +38,10 @@ describe('admin portfolio presentation', () => {
     expect(portfolio).toContain('AdminLifecycleActions')
     expect(portfolio).toContain('isVersionConflict')
     expect(portfolio).toContain('/portfolio/')
+    expect(portfolio).toContain('scheduledFor')
+    expect(portfolio).toContain('/schedule')
+    expect(portfolio).toContain("transition('cancel-schedule')")
+    expect(portfolio).toContain('toLocalDateTimeValue')
   })
 })
 
