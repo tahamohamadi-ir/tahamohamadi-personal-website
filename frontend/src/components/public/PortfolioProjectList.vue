@@ -20,22 +20,20 @@ const { t } = useI18n()
       class="portfolio-project-list__item"
     >
       <router-link
-        class="portfolio-project-list__card tm-interactive"
+        class="portfolio-project-list__link tm-interactive"
         :to="project.canonicalPath"
       >
         <article class="portfolio-project-list__article">
-          <CollectionMedia
-            v-if="project.ogMedia"
-            :media="project.ogMedia"
-          />
-          <h2 class="portfolio-project-list__title">{{ project.title }}</h2>
-          <p
-            v-if="project.summary"
-            class="portfolio-project-list__summary"
-          >
-            {{ project.summary }}
-          </p>
-          <span class="portfolio-project-list__action">
+          <div class="portfolio-project-list__content">
+            <h2 class="portfolio-project-list__title">{{ project.title }}</h2>
+            <p
+              v-if="project.summary"
+              class="portfolio-project-list__summary"
+            >
+              {{ project.summary }}
+            </p>
+          </div>
+          <span class="portfolio-project-list__action tm-mono">
             {{ t('public.caseStudy.viewProject') }}
           </span>
         </article>
@@ -46,86 +44,95 @@ const { t } = useI18n()
 
 <style scoped lang="scss">
 .portfolio-project-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-  gap: var(--tm-space-5);
-  max-inline-size: 76rem;
+  display: flex;
+  flex-direction: column;
   margin: 0;
   padding: 0;
   list-style: none;
+  max-inline-size: 64rem;
 }
 
 .portfolio-project-list__item {
-  min-inline-size: 0;
+  border-bottom: 1px solid var(--tm-editorial-rule);
 }
 
-.portfolio-project-list__card {
+.portfolio-project-list__item:first-child {
+  border-top: 1px solid var(--tm-editorial-rule);
+}
+
+.portfolio-project-list__link {
   display: block;
-  block-size: 100%;
-  min-block-size: 17rem;
-  padding: var(--tm-space-5);
-  border: 1px solid var(--tm-editorial-card-border);
-  border-radius: var(--tm-radius-card);
-  background: var(--tm-editorial-card-surface);
+  padding-block: var(--tm-space-6);
+  padding-inline: var(--tm-space-4);
   color: inherit;
   text-decoration: none;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  transition: background-color 180ms ease, transform 180ms ease;
+  margin-inline: calc(var(--tm-space-4) * -1); /* Negative margin to let hover bleed */
+  border-radius: var(--tm-radius-card);
 }
 
-.portfolio-project-list__card:hover {
-  border-color: var(--tm-link);
-  box-shadow: var(--tm-editorial-shadow);
-  transform: translateY(-2px);
+.portfolio-project-list__link:hover {
+  background-color: var(--tm-editorial-muted-surface);
 }
 
-.portfolio-project-list__card:focus-visible {
+.portfolio-project-list__link:focus-visible {
   outline: 3px solid var(--tm-focus-ring);
-  outline-offset: 3px;
+  outline-offset: -3px;
+  background-color: var(--tm-editorial-muted-surface);
 }
 
 .portfolio-project-list__article {
   display: grid;
-  gap: var(--tm-space-3);
-  block-size: 100%;
+  gap: var(--tm-space-4);
+  align-items: center;
 }
 
-.portfolio-project-list__title,
-.portfolio-project-list__summary {
-  margin: 0;
+@media (min-width: 768px) {
+  .portfolio-project-list__article {
+    grid-template-columns: 1fr auto;
+    gap: var(--tm-space-8);
+  }
+}
+
+.portfolio-project-list__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-2);
 }
 
 .portfolio-project-list__title {
+  margin: 0;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 500;
   color: var(--tm-text-primary);
-  font-size: 1.375rem;
-  line-height: 1.25;
+  letter-spacing: -0.02em;
 }
 
 .portfolio-project-list__summary {
+  margin: 0;
   color: var(--tm-text-secondary);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  max-inline-size: 65ch;
 }
 
 .portfolio-project-list__action {
-  align-self: end;
-  min-block-size: var(--tm-control-min-size);
-  margin-block-start: auto;
-  padding-block-start: var(--tm-space-3);
-  border-block-start: 1px solid var(--tm-editorial-rule);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--tm-link);
-  font-size: .9375rem;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
 }
 
-.portfolio-project-list__card:hover .portfolio-project-list__action {
+.portfolio-project-list__link:hover .portfolio-project-list__action {
   color: var(--tm-text-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .portfolio-project-list__card {
+  .portfolio-project-list__link {
     transition: none;
-  }
-
-  .portfolio-project-list__card:hover {
-    transform: none;
   }
 }
 </style>

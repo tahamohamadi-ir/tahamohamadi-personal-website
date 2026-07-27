@@ -81,9 +81,9 @@ const { locale } = useI18n()
 }
 
 .blog-post-list__card:hover {
-  border-color: var(--tm-link);
-  box-shadow: var(--tm-editorial-shadow);
-  transform: translateY(-2px);
+  border-color: var(--tm-editorial-card-hover-border, var(--tm-link));
+  box-shadow: var(--tm-editorial-shadow-hover, var(--tm-editorial-shadow));
+  transform: translateY(-3px);
 }
 
 .blog-post-list__card:focus-visible {

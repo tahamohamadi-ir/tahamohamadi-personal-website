@@ -41,3 +41,22 @@ logs/
 tmp/
 temp/
 /frontend/test-results/
+
+# UI UX Design samples & html prototypes
+docs/ui-ux/*.html
+docs/ui-ux/*.png
+docs/ui-ux/*.jpg
+docs/ui-ux/*.jpeg
+docs/ui-ux/*.webp
+docs/ui-ux/*.svg
+
+# Assistant & Scratch Files
+.claude/
+.kiro/
+CLAUDE.md
+cookies.txt
+recent_changes.diff
+*.temporary.compiled.*.mjs
+
+
+

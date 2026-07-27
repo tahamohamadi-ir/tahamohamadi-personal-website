@@ -127,6 +127,8 @@ MVP باید در کمترین زمان ممکن قابل Launch باشد، ام
 - Kubernetes
 - Drag-and-drop Layout Builder
 - Multi-tenant SaaS کامل
+- System Map (Knowledge Graph visualization)
+- Ask AI (LLM integration for querying profile and portfolio)
 
 ## 1.6 تصمیم‌های نهایی سطح بالا
 

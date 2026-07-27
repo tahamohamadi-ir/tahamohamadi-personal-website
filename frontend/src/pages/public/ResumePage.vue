@@ -75,24 +75,27 @@ onMounted(() => {
       v-if="showsContent"
       class="resume-page__content"
     >
-      <h1 class="tm-page-title">{{ t('shell.navigation.resume') }}</h1>
+      <header class="resume-page__header">
+        <h1 class="tm-page-title">{{ t('shell.navigation.resume') }}</h1>
+        <div class="resume-page__actions">
+          <button
+            class="resume-page__refresh tm-interactive"
+            type="button"
+            @click="refresh"
+          >
+            {{ t('pageState.refresh') }}
+          </button>
 
-      <button
-        class="resume-page__refresh tm-interactive"
-        type="button"
-        @click="refresh"
-      >
-        {{ t('pageState.refresh') }}
-      </button>
-
-      <a
-        v-if="resumeFile"
-        class="resume-page__file tm-interactive"
-        :href="resumeFile.mediaUrl"
-        :aria-label="t('resume.fileAction')"
-      >
-        {{ t('resume.fileAction') }}
-      </a>
+          <a
+            v-if="resumeFile"
+            class="resume-page__file tm-interactive"
+            :href="resumeFile.mediaUrl"
+            :aria-label="t('resume.fileAction')"
+          >
+            {{ t('resume.fileAction') }}
+          </a>
+        </div>
+      </header>
 
       <ResumeTimeline
         v-if="entries.length > 0"
@@ -112,48 +115,52 @@ onMounted(() => {
   gap: var(--tm-space-8);
 }
 
-.resume-page__file {
+.resume-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tm-space-4);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.resume-page__actions {
+  display: flex;
+  gap: var(--tm-space-2);
+}
+
+.resume-page__file,
+.resume-page__refresh {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  justify-self: start;
   min-inline-size: var(--tm-control-min-size);
   min-block-size: var(--tm-control-min-size);
   padding-inline: var(--tm-space-3);
-  border: 1px solid var(--tm-link);
-  border-radius: var(--tm-radius-control);
-  color: var(--tm-link);
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.resume-page__refresh {
-  justify-self: start;
-  min-inline-size: var(--tm-control-min-size);
-  min-block-size: var(--tm-control-min-size);
-  padding-inline: var(--tm-space-3);
-  border: 1px solid var(--tm-link);
+  border: 1px solid var(--tm-border-subtle);
   border-radius: var(--tm-radius-control);
   background: var(--tm-surface);
-  color: var(--tm-link);
-  font: inherit;
-  font-weight: 700;
+  color: var(--tm-text-primary);
+  font-family: inherit;
+  font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
+  transition: transform var(--tm-motion-press) var(--tm-ease-out),
+              background-color var(--tm-motion-state) var(--tm-ease-out),
+              border-color var(--tm-motion-state) var(--tm-ease-out);
 }
 
-.resume-page__file:hover {
-  color: var(--tm-text-primary);
-}
-
-.resume-page__file:focus-visible {
-  outline: 2px solid var(--tm-focus-ring);
-  outline-offset: 2px;
-}
-
+.resume-page__file:hover,
 .resume-page__refresh:hover {
-  color: var(--tm-text-primary);
+  background-color: var(--tm-editorial-muted-surface);
+  border-color: var(--tm-text-secondary);
 }
 
+.resume-page__file:active,
+.resume-page__refresh:active {
+  transform: scale(0.97);
+}
+
+.resume-page__file:focus-visible,
 .resume-page__refresh:focus-visible {
   outline: 2px solid var(--tm-focus-ring);
   outline-offset: 2px;

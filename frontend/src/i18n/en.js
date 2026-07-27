@@ -20,7 +20,8 @@ export default {
       year: 'Year',
       stage: 'Stage',
       doi: 'DOI',
-      externalLink: 'Open publication'
+      externalLink: 'Open publication',
+      readingTime: 'Reading time'
     },
     pageIntroduction: {
       about: {
@@ -41,7 +42,19 @@ export default {
     translationUnavailableDescription: 'This content is not available in the requested language.',
     notFound: 'Page not found',
     notFoundDescription: 'The requested localized page does not exist.',
-    returnHome: 'Return to the home page'
+    returnHome: 'Return to the home page',
+    homeHero: {
+      greeting: 'Hi — I’m Taha.',
+      statement: 'I turn human signals into interpretable systems.',
+      summary: 'A researcher and developer building complex human-centered systems.',
+      eyebrow: 'OPEN TO PhD RESEARCH · HUMAN-CENTERED AI',
+      status: {
+        currently: { label: 'CURRENTLY', value: 'Building mental-health platforms' },
+        researching: { label: 'RESEARCHING', value: 'XAI in Wearables' },
+        basedIn: { label: 'BASED IN', value: 'Tehran, Iran' },
+        availableFor: { label: 'AVAILABLE FOR', value: 'PhD / Research collaboration' }
+      }
+    }
   },
   pageState: {
     loading: 'Loading content.',
@@ -150,6 +163,13 @@ export default {
     }
   },
   admin: {
+    schedulePanel: {
+      schedule: 'Schedule publication',
+      help: 'Schedule publication for a future date (in your local time).',
+      scheduledFor: 'Scheduled for',
+      cancelSchedule: 'Cancel schedule',
+      locale: 'en-US'
+    },
     placeholder: 'Admin page placeholder',
     state: {
       loading: 'Loading content…',
@@ -195,7 +215,7 @@ export default {
     login: { productName: 'TahaMohamadi.ir', title: 'Admin sign in', description: 'Use your administrator account to manage presentation content.', email: 'Email address', emailRequired: 'Enter your email address.', password: 'Password', passwordRequired: 'Enter your password.', submit: 'Sign in' },
     dashboard: { title: 'Dashboard', description: 'A source-backed view of your current content operations.', createPage: 'Create page', summary: 'Content summary', pages: 'Pages', posts: 'Blog posts', media: 'Media assets', contactMessages: 'New contact messages', manage: 'Manage', nextActions: 'Next actions', continueEditing: 'Continue editing', managePages: 'Manage pages', managePosts: 'Manage blog posts', manageMedia: 'Manage media', translationWorkflow: 'Translation workflow', translationWorkflowDescription: 'Translation completeness is shown on each content record so missing work is never inferred from incomplete aggregate data.' },
     notFound: { title: 'Admin page not found', description: 'The requested administration page does not exist.', backToDashboard: 'Back to dashboard' },
-    actions: { lifecycle: 'Content lifecycle actions', activation: 'Activation controls', publish: 'Publish', archive: 'Archive', activate: 'Activate', deactivate: 'Deactivate', preview: 'Preview public page', saving: 'Saving…', cancel: 'Cancel', confirm: 'Confirm {action}?', deactivateConfirmTitle: 'Deactivate this item?', deactivateConfirmDescription: 'This removes it from its public placement.' },
+    actions: { lifecycle: 'Content lifecycle actions', activation: 'Activation controls', publish: 'Publish', archive: 'Archive', activate: 'Activate', deactivate: 'Deactivate', preview: 'Preview public page', saving: 'Saving…', cancel: 'Cancel', confirm: 'Confirm {action}?', deactivateConfirmTitle: 'Deactivate this item?', deactivateConfirmDescription: 'This removes it from its public placement.', remove: 'Remove' },
     chrome: { productName: 'TahaMohamadi.ir', name: 'Admin', logout: 'Log out', openNavigation: 'Open administration navigation', closeNavigation: 'Close administration navigation', toggleNavigation: 'Toggle administration navigation', navigationLabel: 'Administration navigation', content: 'Content' },
     navigationGroups: { workspace: 'Workspace', publishing: 'Publishing', profile: 'Profile', assets: 'Assets and inbox' },
     navigationItems: { dashboard: 'Dashboard', siteSettings: 'Site settings', navigation: 'Navigation', pages: 'Pages', blogPosts: 'Blog posts', blogCategories: 'Blog categories', blogTags: 'Blog tags', translationQueue: 'Translation queue', resume: 'Resume', publications: 'Publications', portfolio: 'Portfolio', skills: 'Skills', media: 'Media', socialLinks: 'Social links', featured: 'Featured content', contactMessages: 'Contact messages' },
@@ -220,7 +240,7 @@ export default {
     media: { title: 'Media', description: 'Upload approved assets, maintain bilingual metadata, and review orphaned files before archiving.', uploadTitle: 'Upload media', file: 'Media file', faAlt: 'Persian alt text', enAlt: 'English alt text', faCaption: 'Persian caption', enCaption: 'English caption', uploadProgress: 'Upload progress', upload: 'Upload media', orphanNotice: '{count} orphaned media assets can be reviewed below before archiving.', bytes: '{count} bytes', orphaned: 'Orphaned asset', localizedMetadata: 'Metadata is localized independently for public image use.', documentRepresentation: 'Document representation: {mimeType}', saveMetadata: 'Save metadata', archiveOrphan: 'Archive orphaned asset', archiveTitle: 'Archive this orphaned asset?', archiveDescription: 'It will no longer be available for public or CMS use.', usageNotice: 'This asset is used by {count} content item(s) and cannot be archived.', usageTypes: { PAGE_OPEN_GRAPH: 'Page Open Graph', BLOG_COVER: 'Blog cover', BLOG_INLINE: 'Blog content', PORTFOLIO_COVER: 'Portfolio cover', PUBLICATION_COVER: 'Publication cover', RESUME_DOCUMENT: 'Resume document' }, status: 'Status', allStatuses: 'All statuses', active: 'Active', archived: 'Archived' },
     mediaUsage: { notice: 'This asset is used by {count} content item(s) and cannot be archived.', types: { PAGE_OPEN_GRAPH: 'Page Open Graph', SETTINGS_LOGO: 'Site logo', SETTINGS_OPEN_GRAPH: 'Site Open Graph', COMPOSER_BLOCK: 'Page composer block', BLOG_COVER: 'Blog cover', BLOG_INLINE: 'Blog content', PORTFOLIO_COVER: 'Portfolio cover', PUBLICATION_COVER: 'Publication cover', RESUME_DOCUMENT: 'Resume document' } },
     mediaReplace: { action: 'Replace asset', title: 'Replace this asset?', description: 'Every registered use will move to the selected active asset, then this asset will be archived.', replacement: 'Replacement asset', confirm: 'Replace asset' },
-    mediaSelector: { selection: 'Media selection', label: 'Media asset', optionLabel: '{name} ({mimeType})', retry: 'Retry media list', search: 'Search media', type: 'Type', allTypes: 'All supported types', types: { image: 'Images', document: 'PDF documents' }, selected: 'Selected: {name}', empty: 'No matching active media.', pagination: 'Media result pages', uploadFile: 'Upload a new file', upload: 'Upload and select', uploadProgress: 'Upload progress', invalidType: 'This file type is not allowed for this field.' },
+    mediaSelector: { selection: 'Media selection', label: 'Media asset', optionLabel: '{name} ({mimeType})', retry: 'Retry media list', search: 'Search media', type: 'Type', allTypes: 'All supported types', types: { image: 'Images', document: 'PDF documents' }, selected: 'Selected: {name}', empty: 'No matching active media.', pagination: 'Media result pages', uploadFile: 'Upload a new file', upload: 'Upload and select', uploadProgress: 'Upload progress', invalidType: 'This file type is not allowed for this field.', dialogTitle: 'Media Library', searchPlaceholder: 'Search filename or title...', uploadPrompt: 'Upload new media', emptyHelp: 'Upload a file to add media.', selectPrompt: 'Select Media', clickToOpen: 'Click to open media library', change: 'Change Media', confirm: 'Confirm Selection' },
     navigation: {
       title: 'Navigation', description: 'Each visible item must have separate Persian and English labels.', add: 'Add item', save: 'Save navigation',
       empty: 'No managed navigation items yet. The public fallback remains active until you save items.', key: 'Stable key', visible: 'Visible', external: 'External HTTPS link',
@@ -245,8 +265,17 @@ export default {
       eyebrowFa: 'Eyebrow (fa)', titleFa: 'Title (fa)', leadFa: 'Lead (fa)', actionLabelFa: 'Action label (fa)', actionPathFa: 'Action path (fa)', altFa: 'Media alt text (fa)',
       eyebrowEn: 'Eyebrow (en)', titleEn: 'Title (en)', leadEn: 'Lead (en)', actionLabelEn: 'Action label (en)', actionPathEn: 'Action path (en)', altEn: 'Media alt text (en)',
       actionHint: '/fa, /en, or HTTPS only', invalidActionPath: 'Use a localized internal path or HTTPS URL.', moveUp: 'Move block {index} up', moveDown: 'Move block {index} down', remove: 'Remove block {index}', removeTitle: 'Remove this block?', removeDescription: 'Its content will be removed when you save the composition.', cancel: 'Cancel', removeConfirm: 'Remove block', blockHeading: '{type} block {index}', added: 'Added block at position {index}.', removed: 'Removed block {index}.', moved: 'Moved block from position {from} to {to}.',
-      blockTypes: { HERO: 'Hero', RICH_TEXT: 'Rich text', MEDIA: 'Media', MEDIA_TEXT: 'Text and media', CALL_TO_ACTION: 'Call to action', COLLECTION: 'Collection grid', SKILLS: 'Skills', RESUME: 'Resume', SOCIAL_LINKS: 'Social links', CONTACT: 'Contact' },
-      collectionSources: { BLOG: 'Blog posts', PORTFOLIO: 'Portfolio projects', PUBLICATIONS: 'Publications' }
+      blockTypes: { HERO: 'Hero', RICH_TEXT: 'Rich text', MEDIA: 'Media', MEDIA_TEXT: 'Text and media', CALL_TO_ACTION: 'Call to action', COLLECTION: 'Collection grid', SKILLS: 'Skills', RESUME: 'Resume', SOCIAL_LINKS: 'Social links', CONTACT: 'Contact', DIVIDER: 'Divider', SPACER: 'Spacer', GALLERY: 'Gallery', STATS: 'Statistics', QUOTE: 'Quote' },
+      collectionSources: { BLOG: 'Blog posts', PORTFOLIO: 'Portfolio projects', PUBLICATIONS: 'Publications' },
+      sectionLayout: 'Layout', sectionLayoutOptions: { SINGLE_COLUMN: '1 Column', TWO_COLUMN: '2 Columns', THREE_COLUMN: '3 Columns', FOUR_COLUMN: '4 Columns' },
+      sectionRatio: 'Column ratio', sectionRatioOptions: { EQUAL: 'Equal', WIDE_NARROW: '2/3 + 1/3', NARROW_WIDE: '1/3 + 2/3', GOLDEN: '61/39', QUARTER_THREE: '1/4 + 3/4' },
+      sectionPadding: 'Vertical padding', sectionPaddingOptions: { COMPACT: 'Compact', STANDARD: 'Standard', SPACIOUS: 'Spacious', NONE: 'None' },
+      sectionBackground: 'Background', sectionBackgroundOptions: { TRANSPARENT: 'Transparent', LIGHT: 'Light', SUBTLE: 'Subtle', DARK: 'Dark', ACCENT: 'Accent' },
+      sectionFullWidth: 'Full width', sectionContained: 'Contained',
+      duplicate: 'Duplicate block {index}', duplicated: 'Block duplicated at position {index}.',
+      blockSettings: 'Block settings', closeSettings: 'Close block settings',
+      previewDesktop: 'Desktop', previewTablet: 'Tablet', previewMobile: 'Mobile',
+      dragHandle: 'Drag to reorder'
     }
   }
 }
