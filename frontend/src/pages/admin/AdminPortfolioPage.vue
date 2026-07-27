@@ -40,12 +40,21 @@ function translation() {
   }
 }
 
+function toLocalDateTimeValue(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (part) => String(part).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 function createForm(value = {}) {
   return {
     id: value.id ?? null,
     projectKey: value.projectKey ?? '',
     coverMediaId: value.coverMediaId ?? null,
     status: value.status ?? 'DRAFT',
+    scheduledFor: toLocalDateTimeValue(value.scheduledFor),
     startedOn: value.startedOn ?? '',
     endedOn: value.endedOn ?? '',
     projectUrl: value.projectUrl ?? '',
@@ -192,6 +201,24 @@ async function transition(action) {
   finally { saving.value = false }
 }
 
+async function schedule() {
+  if (!form.value.id || !form.value.scheduledFor) return
+  saving.value = true
+  error.value = null
+  try {
+    await primeCsrfToken(httpClient)
+    const response = await httpClient.post(
+      `/api/v1/admin/portfolio/projects/${form.value.id}/schedule`,
+      null,
+      { params: { version: form.value.version, scheduledFor: new Date(form.value.scheduledFor).toISOString() } }
+    )
+    replaceForm(response.data)
+    await load(page.value)
+  }
+  catch (cause) { error.value = normalizeApiError(cause) }
+  finally { saving.value = false }
+}
+
 onMounted(() => { void load() })
 </script>
 
@@ -231,6 +258,12 @@ onMounted(() => { void load() })
       <AdminMarkdownPreview v-model="activeTranslation.bodyMarkdown" />
       <q-input v-model="activeTranslation.seoTitle" :label="t('admin.portfolio.seoTitle')" :disable="saving" />
       <q-input v-model="activeTranslation.seoDescription" type="textarea" :label="t('admin.portfolio.seoDescription')" :disable="saving" />
+      <section v-if="form.id && (form.status === 'DRAFT' || form.status === 'SCHEDULED')" class="admin-schedule q-gutter-sm" :aria-label="t('admin.portfolio.schedule')">
+        <q-input v-if="form.status === 'DRAFT'" v-model="form.scheduledFor" type="datetime-local" :label="t('admin.portfolio.scheduledFor')" :disable="saving" />
+        <p v-else class="text-caption q-mb-none">{{ t('admin.portfolio.scheduledFor') }}: <time :datetime="form.scheduledFor">{{ form.scheduledFor }}</time></p>
+        <q-btn v-if="form.status === 'DRAFT'" outline no-caps icon="schedule" :disable="saving || !form.scheduledFor" :label="t('admin.portfolio.schedule')" @click="schedule" />
+        <q-btn v-else outline no-caps icon="event_busy" :disable="saving" :label="t('admin.portfolio.cancelSchedule')" @click="transition('cancel-schedule')" />
+      </section>
       <div class="row q-gutter-sm"><q-btn type="submit" color="primary" :loading="saving" :label="t('admin.portfolio.save')" /><AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" /></div>
     </q-form>
   </q-page>
