@@ -8,7 +8,7 @@ export default {
   public: {
     temporaryPage: 'Public page',
     tableOfContents: 'On this page',
-    caseStudy: { role: 'Role', client: 'Client', team: 'Team', outcome: 'Outcome', gallery: 'Project gallery' },
+    caseStudy: { role: 'Role', client: 'Client', team: 'Team', outcome: 'Outcome', gallery: 'Project gallery', viewProject: 'View case study' },
     richContent: {
       renderingFailure: 'This content cannot be displayed safely right now.'
     },

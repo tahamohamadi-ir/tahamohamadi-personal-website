@@ -65,7 +65,7 @@ onMounted(() => {
 
 <template>
   <section class="tm-detail-page tm-container" aria-labelledby="portfolio-project-title">
-    <header class="tm-detail-page__header">
+    <header class="tm-detail-page__header portfolio-project-detail__header">
       <h1 id="portfolio-project-title" class="tm-page-title">
         {{ data?.title ?? t('shell.navigation.portfolio') }}
       </h1>
@@ -88,14 +88,14 @@ onMounted(() => {
       {{ t('public.notFoundDescription') }}
     </p>
 
-    <article v-if="showsContent" class="tm-detail-page__content">
-      <dl v-if="data?.roleText || data?.clientLabel || data?.teamDescription || data?.outcomeText" class="tm-detail-page__metadata">
+    <article v-if="showsContent" class="tm-detail-page__content portfolio-project-detail__content">
+      <dl v-if="data?.roleText || data?.clientLabel || data?.teamDescription || data?.outcomeText" class="tm-detail-page__metadata portfolio-project-detail__facts">
         <div v-if="data?.roleText"><dt>{{ t('public.caseStudy.role') }}</dt><dd>{{ data.roleText }}</dd></div>
         <div v-if="data?.clientLabel"><dt>{{ t('public.caseStudy.client') }}</dt><dd>{{ data.clientLabel }}</dd></div>
         <div v-if="data?.teamDescription"><dt>{{ t('public.caseStudy.team') }}</dt><dd>{{ data.teamDescription }}</dd></div>
         <div v-if="data?.outcomeText"><dt>{{ t('public.caseStudy.outcome') }}</dt><dd>{{ data.outcomeText }}</dd></div>
       </dl>
-      <dl v-if="data?.lastModified" class="tm-detail-page__metadata">
+      <dl v-if="data?.lastModified" class="tm-detail-page__metadata portfolio-project-detail__updated">
         <div>
           <dt>{{ t('public.detail.updated') }}</dt>
           <dd><time :datetime="data.lastModified"><bdi>{{ data.lastModified }}</bdi></time></dd>
@@ -103,7 +103,7 @@ onMounted(() => {
       </dl>
 
       <section v-if="data?.gallery?.length" class="tm-detail-page__gallery" :aria-label="t('public.caseStudy.gallery')">
-        <img v-for="item in data.gallery" :key="item.mediaAssetId" :src="item.url" alt="" loading="lazy">
+        <img v-for="item in data.gallery" :key="item.mediaAssetId" :src="item.url" alt="" loading="lazy" decoding="async">
       </section>
 
       <MarkdownContent v-if="data?.bodyMarkdown" :markdown="data.bodyMarkdown">
@@ -118,6 +118,64 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.tm-detail-page__gallery { display: grid; gap: var(--tm-space-3); grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); margin-block: var(--tm-space-6); }
-.tm-detail-page__gallery img { aspect-ratio: 4 / 3; background: var(--tm-surface-subtle); display: block; inline-size: 100%; object-fit: cover; }
+.portfolio-project-detail__header {
+  gap: var(--tm-space-5);
+  padding-block-end: var(--tm-space-6);
+  border-block-end: 1px solid var(--tm-editorial-rule);
+}
+
+.portfolio-project-detail__content {
+  gap: var(--tm-space-6);
+}
+
+.portfolio-project-detail__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--tm-editorial-rule);
+  border-radius: var(--tm-radius-card);
+  background: var(--tm-editorial-rule);
+}
+
+.portfolio-project-detail__facts > div,
+.portfolio-project-detail__updated > div {
+  display: grid;
+  gap: var(--tm-space-1);
+  padding: var(--tm-space-4);
+  background: var(--tm-editorial-card-surface);
+}
+
+.portfolio-project-detail__facts dt,
+.portfolio-project-detail__updated dt {
+  color: var(--tm-text-secondary);
+  font-size: .875rem;
+  font-weight: 650;
+}
+
+.portfolio-project-detail__facts dd,
+.portfolio-project-detail__updated dd {
+  color: var(--tm-text-primary);
+}
+
+.portfolio-project-detail__updated {
+  border-inline-start: 2px solid var(--tm-navigation-current-indicator);
+}
+
+.tm-detail-page__gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--tm-space-3);
+  margin: 0;
+}
+
+.tm-detail-page__gallery img {
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--tm-editorial-rule);
+  border-radius: var(--tm-radius-card);
+  background: var(--tm-editorial-muted-surface);
+  object-fit: cover;
+}
 </style>
