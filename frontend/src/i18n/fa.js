@@ -20,7 +20,8 @@ export default {
       year: '\u0633\u0627\u0644',
       stage: '\u0645\u0631\u062d\u0644\u0647',
       doi: 'DOI',
-      externalLink: '\u0645\u0634\u0627\u0647\u062f\u0647 \u0627\u0646\u062a\u0634\u0627\u0631'
+      externalLink: '\u0645\u0634\u0627\u0647\u062f\u0647 \u0627\u0646\u062a\u0634\u0627\u0631',
+      readingTime: '\u0632\u0645\u0627\u0646 \u0645\u0637\u0627\u0644\u0639\u0647'
     },
     pageIntroduction: {
       about: {

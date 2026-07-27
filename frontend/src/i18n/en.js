@@ -20,7 +20,8 @@ export default {
       year: 'Year',
       stage: 'Stage',
       doi: 'DOI',
-      externalLink: 'Open publication'
+      externalLink: 'Open publication',
+      readingTime: 'Reading time'
     },
     pageIntroduction: {
       about: {

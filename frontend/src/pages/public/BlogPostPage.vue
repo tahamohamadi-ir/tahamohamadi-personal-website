@@ -9,6 +9,7 @@ import TranslationUnavailable from 'src/components/public/TranslationUnavailable
 import { useAsyncPage } from 'src/composables/useAsyncPage'
 import { usePublicSeoMeta } from 'src/composables/usePublicSeoMeta'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'
+import { readingTimeMinutes } from 'src/services/articleDocument'
 import { formatLocalizedDate } from 'src/utils/formatDate'
 
 const props = defineProps({
@@ -53,6 +54,7 @@ const isNotFound = computed(() => (
 const seoState = computed(() => isNotFound.value ? 'not-found' : state.value)
 usePublicSeoMeta({ data, state: seoState })
 const alternatePath = computed(() => error.value?.alternatePaths?.[0] ?? null)
+const estimatedReadingTime = computed(() => readingTimeMinutes(data.value?.bodyMarkdown || data.value?.excerpt || ''))
 const tableOfContents = computed(() => (data.value?.articleDocument?.blocks ?? [])
   .map((block, index) => ({ block, index }))
   .filter(({ block }) => block?.type === 'heading' && typeof block.value === 'string' && block.value.trim())
@@ -103,6 +105,10 @@ onMounted(() => {
         <div v-if="data?.lastModified">
           <dt>{{ t('public.detail.updated') }}</dt>
           <dd><time :datetime="data.lastModified"><bdi>{{ formatLocalizedDate(data.lastModified, locale) }}</bdi></time></dd>
+        </div>
+        <div>
+          <dt>{{ t('public.detail.readingTime') }}</dt>
+          <dd><bdi>{{ t('admin.articleEditor.readingTime', { minutes: estimatedReadingTime }) }}</bdi></dd>
         </div>
       </dl>
 
