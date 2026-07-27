@@ -8,6 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.time.Instant;
 
 @RestController
 @Validated
@@ -26,6 +27,8 @@ public class AdminProjectController {
     @PostMapping public ResponseEntity<AdminProjectResponse> create(@Valid @RequestBody AdminProjectCreateRequest request) { return ResponseEntity.status(HttpStatus.CREATED).body(projects.create(request)); }
     @PutMapping("/{id}") public AdminProjectResponse update(@PathVariable UUID id, @Valid @RequestBody AdminProjectUpdateRequest request) { return projects.update(id, request); }
     @PostMapping("/{id}/publish") public AdminProjectResponse publish(@PathVariable UUID id, @RequestParam long version) { return projects.publish(id, version); }
+    @PostMapping("/{id}/schedule") public AdminProjectResponse schedule(@PathVariable UUID id, @RequestParam long version, @RequestParam Instant scheduledFor) { return projects.schedule(id, version, scheduledFor); }
+    @PostMapping("/{id}/cancel-schedule") public AdminProjectResponse cancelSchedule(@PathVariable UUID id, @RequestParam long version) { return projects.cancelSchedule(id, version); }
     @PostMapping("/{id}/archive") public AdminProjectResponse archive(@PathVariable UUID id, @RequestParam long version) { return projects.archive(id, version); }
     @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) public void delete(@PathVariable UUID id, @RequestParam long version) { projects.delete(id, version); }
 }
