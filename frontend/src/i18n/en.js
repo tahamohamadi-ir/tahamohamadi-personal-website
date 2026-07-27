@@ -93,6 +93,10 @@ export default {
     }
   },
   collections: {
+    portfolio: {
+      filterLabel: 'Filter portfolio projects by skill',
+      all: 'All projects'
+    },
     pagination: {
       navigationLabel: 'Collection pagination',
       previous: 'Previous page',
