@@ -113,8 +113,8 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
       <section class="admin-panel admin-site-settings__panel">
         <div class="admin-site-settings__panel-header"><div><h2 class="text-h6 q-my-none">{{ t('admin.siteSettings.presentation') }}</h2><p>{{ t('admin.siteSettings.presentationHelp') }}</p></div></div>
         <div class="admin-site-settings__fields">
-          <AdminMediaSelector v-model="form.logoMediaId" :label="t('admin.siteSettings.logo')" :disable="saving" />
-          <AdminMediaSelector v-model="form.ogMediaId" :label="t('admin.siteSettings.ogMedia')" :disable="saving" />
+          <AdminMediaSelector v-model="form.logoMediaId" :allowed-types="['image']" :label="t('admin.siteSettings.logo')" :disable="saving" />
+          <AdminMediaSelector v-model="form.ogMediaId" :allowed-types="['image']" :label="t('admin.siteSettings.ogMedia')" :disable="saving" />
           <q-select v-model="form.themePreset" outlined :options="themeOptions" emit-value map-options :label="t('admin.siteSettings.theme')" :disable="saving" />
           <q-select v-model="form.layoutDensity" outlined :options="densityOptions" emit-value map-options :label="t('admin.siteSettings.density')" :disable="saving" />
         </div>

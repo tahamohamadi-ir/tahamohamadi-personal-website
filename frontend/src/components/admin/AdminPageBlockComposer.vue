@@ -423,7 +423,8 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
       <q-card class="admin-composer__preview" role="document">
         <q-card-section class="row items-center justify-between">
           <h3 class="text-h6 q-my-none">{{ t('admin.composer.previewTitle') }}</h3>
-          <div class="q-gutter-xs">
+          <div class="row items-center q-gutter-sm">
+            <q-btn-toggle v-model="locale" unelevated toggle-color="primary" :options="[{ label: 'FA', value: 'fa' }, { label: 'EN', value: 'en' }]" aria-label="Preview language" />
             <q-btn-toggle v-model="previewViewport" unelevated toggle-color="primary" :options="[{ label: '375', value: 'mobile' }, { label: '768', value: 'tablet' }, { label: '1440', value: 'desktop' }]" aria-label="Preview viewport" />
             <q-btn flat round icon="close" :aria-label="t('admin.composer.closePreview')" @click="previewOpen = false" />
           </div>

@@ -235,7 +235,11 @@ onMounted(() => { void load() })
       </q-banner>
       <div class="admin-page__header">
         <div><h2 class="text-h5 q-my-none">{{ form.originalFilename }}</h2><p class="admin-page__description">{{ form.mimeType }} · {{ t('admin.media.bytes', { count: form.sizeBytes }) }}</p></div>
-        <q-badge v-if="selectedIsOrphan" color="warning" :label="t('admin.media.orphaned')" />
+        <div class="row items-center q-gutter-xs">
+          <q-badge :color="form.faAlt ? 'positive' : 'grey-6'" :label="`FA ${form.faAlt ? '✓' : '—'}`" />
+          <q-badge :color="form.enAlt ? 'positive' : 'grey-6'" :label="`EN ${form.enAlt ? '✓' : '—'}`" />
+          <q-badge v-if="selectedIsOrphan" color="warning" :label="t('admin.media.orphaned')" />
+        </div>
       </div>
       <p v-if="isImage" class="text-body2">{{ t('admin.media.localizedMetadata') }}</p>
       <img v-if="isImage" class="admin-media__preview" :src="`/api/v1/admin/media/${selected.id}/content`" :alt="form.originalFilename">
