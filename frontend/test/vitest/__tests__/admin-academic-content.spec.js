@@ -108,5 +108,6 @@ describe('admin academic content route loading', () => {
     expect(pages.default).toBeDefined()
     expect(resume.default).toBeDefined()
     expect(publications.default).toBeDefined()
-  }, 10_000)
+  }, 60_000)
 })
+

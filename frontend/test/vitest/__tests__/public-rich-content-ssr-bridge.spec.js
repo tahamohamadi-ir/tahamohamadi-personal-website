@@ -7,9 +7,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 beforeEach(() => {
   if (typeof globalThis.document === 'undefined') {
-    globalThis.document = { title: '', querySelector: () => null, createElement: () => ({ setAttribute: () => {} }) }
+    globalThis.document = {
+      title: '',
+      head: { querySelector: () => null, querySelectorAll: () => [] },
+      querySelector: () => null,
+      querySelectorAll: () => [],
+      createElement: () => ({ setAttribute: () => {}, remove: () => {} })
+    }
   }
 })
+
 
 afterEach(() => {
   vi.restoreAllMocks()

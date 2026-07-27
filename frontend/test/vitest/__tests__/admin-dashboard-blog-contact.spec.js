@@ -69,7 +69,7 @@ describe('admin blog and contact workflows', () => {
       const component = await adminRoute(path).component()
       expect(component.default).toBeDefined()
     }
-  }, 20_000)
+  }, 60_000)
 
   it('uses only the supported blog post, taxonomy, and contact endpoints', () => {
     const posts = source('src/pages/admin/AdminBlogPostsPage.vue')

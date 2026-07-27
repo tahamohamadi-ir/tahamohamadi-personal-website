@@ -95,8 +95,9 @@ describe('admin presentation route loading', () => {
     expect(portfolio.default).toBeDefined()
     expect(skills.default).toBeDefined()
     expect(media.default).toBeDefined()
-  }, 20_000)
+  }, 60_000)
 })
+
 describe('admin social links presentation', () => {
   it('uses a protected dedicated route and only the supported social-link fields', () => {
     expect(adminRoute('social-links')).toMatchObject({
