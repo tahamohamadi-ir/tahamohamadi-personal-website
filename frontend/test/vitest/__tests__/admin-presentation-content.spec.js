@@ -38,6 +38,11 @@ describe('admin portfolio presentation', () => {
     expect(portfolio).toContain('AdminLifecycleActions')
     expect(portfolio).toContain('isVersionConflict')
     expect(portfolio).toContain('/portfolio/')
+    expect(portfolio).toContain('admin-portfolio__form')
+    expect(portfolio).toContain('admin-portfolio__identity')
+    expect(portfolio).toContain('admin-portfolio__case-study')
+    expect(portfolio).toContain('admin-portfolio__actions')
+    expect(portfolio).toContain("t('admin.caseStudy.title')")
   })
 })
 

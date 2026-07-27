@@ -196,7 +196,7 @@ onMounted(() => { void load() })
 </script>
 
 <template>
-  <q-page class="q-pa-md q-pa-lg-md">
+  <q-page class="admin-page admin-portfolio">
     <div class="row items-center justify-between q-col-gutter-md q-mb-lg">
       <div class="col"><h1 class="text-h5 q-my-none">{{ t('admin.portfolio.title') }}</h1><p class="text-body2 text-grey-8 q-mb-none">{{ t('admin.portfolio.description') }}</p></div>
       <div class="col-auto"><q-btn color="primary" :label="t('admin.portfolio.create')" @click="create" /></div>
@@ -209,29 +209,57 @@ onMounted(() => { void load() })
       <q-list bordered separator class="q-mb-lg"><q-item v-for="item in items" :key="item.id" clickable @click="select(item)"><q-item-section><q-item-label>{{ item.projectKey }}</q-item-label><q-item-label caption>{{ item.fa?.title || 'Missing translation' }} · {{ item.en?.title || 'Missing translation' }}</q-item-label></q-item-section><q-item-section side><q-badge :label="item.status" :color="item.status === 'PUBLISHED' ? 'positive' : 'grey-7'" /></q-item-section></q-item></q-list>
       <AdminPaginatedTable :page="page" :total-pages="totalPages" @change-page="load" />
     </template>
-    <q-form class="q-mt-xl q-gutter-md" @submit.prevent="save">
+    <q-form class="admin-portfolio__form" @submit.prevent="save">
       <h2 class="text-h6 q-my-none">{{ form.id ? t('admin.portfolio.edit') : t('admin.portfolio.create') }}</h2>
-      <q-input v-model="form.projectKey" :label="t('admin.portfolio.key')" :disable="saving" :error="Boolean(fieldErrors.projectKey)" :error-message="fieldErrors.projectKey" />
-      <q-input v-model="form.startedOn" type="date" :label="t('admin.portfolio.startDate')" :disable="saving" />
-      <q-input v-model="form.endedOn" type="date" :label="t('admin.portfolio.endDate')" :disable="saving" />
-      <q-input v-model="form.projectUrl" type="url" :label="t('admin.portfolio.projectUrl')" :disable="saving" />
-      <q-input v-model="form.repositoryUrl" type="url" :label="t('admin.portfolio.repositoryUrl')" :disable="saving" />
-      <q-input v-model.number="form.sortOrder" type="number" min="0" :label="t('admin.portfolio.sortOrder')" :disable="saving" />
+      <section class="admin-panel admin-portfolio__panel admin-portfolio__identity">
+      <div class="admin-portfolio__fields">
+      <q-input v-model="form.projectKey" outlined :label="t('admin.portfolio.key')" :disable="saving" :error="Boolean(fieldErrors.projectKey)" :error-message="fieldErrors.projectKey" />
+      <q-input v-model="form.startedOn" outlined type="date" :label="t('admin.portfolio.startDate')" :disable="saving" />
+      <q-input v-model="form.endedOn" outlined type="date" :label="t('admin.portfolio.endDate')" :disable="saving" />
+      <q-input v-model="form.projectUrl" outlined type="url" :label="t('admin.portfolio.projectUrl')" :disable="saving" />
+      <q-input v-model="form.repositoryUrl" outlined type="url" :label="t('admin.portfolio.repositoryUrl')" :disable="saving" />
+      <q-input v-model.number="form.sortOrder" outlined type="number" min="0" :label="t('admin.portfolio.sortOrder')" :disable="saving" />
+      </div>
+      </section>
+      <section class="admin-panel admin-portfolio__panel">
       <AdminMediaSelector v-model="form.coverMediaId" :label="t('admin.portfolio.coverMedia')" :disable="saving" />
       <AdminMediaSelector v-model="galleryMediaIds" multiple :allowed-types="['image']" :label="t('admin.portfolio.gallery')" :disable="saving" />
-      <q-select v-model="selectedSkillIds" :options="skillOptions" option-label="label" option-value="value" emit-value map-options multiple use-chips :label="t('admin.portfolio.associatedSkills')" :disable="saving" />
+      <q-select v-model="selectedSkillIds" outlined :options="skillOptions" option-label="label" option-value="value" emit-value map-options multiple use-chips :label="t('admin.portfolio.associatedSkills')" :disable="saving" />
+      </section>
+      <section class="admin-panel admin-portfolio__panel">
       <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />
-      <q-input v-model="activeTranslation.title" :label="t('admin.portfolio.translationTitle')" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.title`])" :error-message="fieldErrors[`${selectedLocale}.title`]" />
-      <q-input v-model="activeTranslation.slug" :label="t('admin.portfolio.slug')" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.slug`])" :error-message="fieldErrors[`${selectedLocale}.slug`]" />
-      <q-input v-model="activeTranslation.summary" type="textarea" :label="t('admin.portfolio.summary')" :disable="saving" />
-      <q-input v-model="activeTranslation.roleText" :label="t('admin.caseStudy.role')" :disable="saving" />
-      <q-input v-model="activeTranslation.clientLabel" :label="t('admin.caseStudy.client')" :disable="saving" />
-      <q-input v-model="activeTranslation.teamDescription" type="textarea" :label="t('admin.caseStudy.team')" :disable="saving" />
-      <q-input v-model="activeTranslation.outcomeText" type="textarea" :label="t('admin.caseStudy.outcome')" :disable="saving" />
+      <div class="admin-portfolio__fields">
+      <q-input v-model="activeTranslation.title" outlined :label="t('admin.portfolio.translationTitle')" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.title`])" :error-message="fieldErrors[`${selectedLocale}.title`]" />
+      <q-input v-model="activeTranslation.slug" outlined :label="t('admin.portfolio.slug')" :disable="saving" :error="Boolean(fieldErrors[`${selectedLocale}.slug`])" :error-message="fieldErrors[`${selectedLocale}.slug`]" />
+      <q-input v-model="activeTranslation.summary" outlined type="textarea" :label="t('admin.portfolio.summary')" :disable="saving" />
+      </div>
+      </section>
+      <section class="admin-panel admin-portfolio__panel admin-portfolio__case-study">
+      <h3 class="text-subtitle1 q-my-none">{{ t('admin.caseStudy.title') }}</h3>
+      <div class="admin-portfolio__fields">
+      <q-input v-model="activeTranslation.roleText" outlined :label="t('admin.caseStudy.role')" :disable="saving" />
+      <q-input v-model="activeTranslation.clientLabel" outlined :label="t('admin.caseStudy.client')" :disable="saving" />
+      <q-input v-model="activeTranslation.teamDescription" outlined type="textarea" :label="t('admin.caseStudy.team')" :disable="saving" />
+      <q-input v-model="activeTranslation.outcomeText" outlined type="textarea" :label="t('admin.caseStudy.outcome')" :disable="saving" />
+      </div>
       <AdminMarkdownPreview v-model="activeTranslation.bodyMarkdown" />
-      <q-input v-model="activeTranslation.seoTitle" :label="t('admin.portfolio.seoTitle')" :disable="saving" />
-      <q-input v-model="activeTranslation.seoDescription" type="textarea" :label="t('admin.portfolio.seoDescription')" :disable="saving" />
-      <div class="row q-gutter-sm"><q-btn type="submit" color="primary" :loading="saving" :label="t('admin.portfolio.save')" /><AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" /></div>
+      </section>
+      <section class="admin-panel admin-portfolio__panel">
+      <div class="admin-portfolio__fields">
+      <q-input v-model="activeTranslation.seoTitle" outlined :label="t('admin.portfolio.seoTitle')" :disable="saving" />
+      <q-input v-model="activeTranslation.seoDescription" outlined type="textarea" :label="t('admin.portfolio.seoDescription')" :disable="saving" />
+      </div>
+      </section>
+      <footer class="admin-portfolio__actions"><q-btn type="submit" color="primary" no-caps icon="save" :loading="saving" :label="t('admin.portfolio.save')" /><AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" /></footer>
     </q-form>
   </q-page>
 </template>
+
+<style scoped>
+.admin-portfolio__form { display: grid; gap: var(--tm-admin-panel-gap); margin-block-start: var(--tm-space-10); max-inline-size: 1040px; }
+.admin-portfolio__panel { display: grid; gap: var(--tm-space-5); padding: var(--tm-space-5); }
+.admin-portfolio__fields { display: grid; gap: var(--tm-space-4); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.admin-portfolio__fields > :nth-child(2n + 1):last-child { grid-column: 1 / -1; }
+.admin-portfolio__actions { align-items: center; background: var(--tm-admin-surface); border: 1px solid var(--tm-admin-border); border-radius: var(--tm-admin-panel-radius); display: flex; flex-wrap: wrap; gap: var(--tm-space-3); inset-block-end: var(--tm-space-3); padding: var(--tm-space-3) var(--tm-space-4); position: sticky; }
+@media (max-width: 599px) { .admin-portfolio__fields { grid-template-columns: 1fr; } .admin-portfolio__fields > :nth-child(2n + 1):last-child { grid-column: auto; } }
+</style>
