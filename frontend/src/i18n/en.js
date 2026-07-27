@@ -93,6 +93,16 @@ export default {
     }
   },
   collections: {
+    blog: {
+      discoveryLabel: 'Browse blog posts',
+      searchLabel: 'Search writing',
+      searchAction: 'Search',
+      topicsLabel: 'Filter by topic',
+      categoriesLabel: 'Categories',
+      tagsLabel: 'Tags',
+      allTopics: 'All topics',
+      clearFilters: 'Clear filters'
+    },
     pagination: {
       navigationLabel: 'Collection pagination',
       previous: 'Previous page',
