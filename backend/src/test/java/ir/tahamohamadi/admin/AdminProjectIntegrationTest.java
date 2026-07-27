@@ -8,6 +8,7 @@ import ir.tahamohamadi.identity.user.AppUserRepository;
 import ir.tahamohamadi.media.asset.MediaAsset;
 import ir.tahamohamadi.media.asset.MediaAssetRepository;
 import ir.tahamohamadi.portfolio.project.PortfolioProjectRepository;
+import ir.tahamohamadi.portfolio.project.PortfolioScheduledPublisher;
 import ir.tahamohamadi.skill.Skill;
 import ir.tahamohamadi.skill.SkillCategory;
 import ir.tahamohamadi.skill.SkillCategoryRepository;
@@ -23,6 +24,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -46,6 +48,8 @@ class AdminProjectIntegrationTest {
     @Autowired SkillCategoryRepository skillCategories;
     @Autowired SkillRepository skills;
     @Autowired PortfolioProjectRepository projects;
+    @Autowired PortfolioScheduledPublisher scheduledPublisher;
+    @Autowired JdbcTemplate jdbc;
     @Autowired AuditEventRepository audit;
     @Autowired EntityManagerFactory entityManagerFactory;
 
@@ -180,6 +184,44 @@ class AdminProjectIntegrationTest {
                 .andExpect(status().isNoContent());
         assertThat(projects.findById(UUID.fromString(projectId)).orElseThrow().getDeletedAt()).isNotNull();
         assertAudits(admin, "ADMIN_PROJECT_CREATED", "ADMIN_PROJECT_UPDATED", "ADMIN_PROJECT_PUBLISHED", "ADMIN_PROJECT_ARCHIVED", "ADMIN_PROJECT_DELETED");
+    }
+
+    @Test
+    void schedulesCancelsAndIdempotentlyPublishesDueProjects() throws Exception {
+        AppUser admin = actor("project-schedule-admin");
+        MediaAsset cover = asset("scheduled-cover");
+        String created = mvc.perform(post("/api/v1/admin/portfolio/projects").contentType(MediaType.APPLICATION_JSON)
+                        .content(payload("scheduled", cover.getId(), List.of(), null, 0)).with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(created, "$.id");
+
+        mvc.perform(post("/api/v1/admin/portfolio/projects/{id}/schedule", id).param("version", "0").param("scheduledFor", Instant.now().minusSeconds(1).toString())
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isBadRequest());
+
+        String scheduled = mvc.perform(post("/api/v1/admin/portfolio/projects/{id}/schedule", id).param("version", "0").param("scheduledFor", Instant.now().plusSeconds(120).toString())
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SCHEDULED")).andExpect(jsonPath("$.scheduledFor").exists())
+                .andReturn().getResponse().getContentAsString();
+        long scheduledVersion = ((Number) JsonPath.read(scheduled, "$.version")).longValue();
+
+        String cancelled = mvc.perform(post("/api/v1/admin/portfolio/projects/{id}/cancel-schedule", id).param("version", Long.toString(scheduledVersion))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DRAFT")).andExpect(jsonPath("$.scheduledFor").doesNotExist())
+                .andReturn().getResponse().getContentAsString();
+        long cancelledVersion = ((Number) JsonPath.read(cancelled, "$.version")).longValue();
+
+        mvc.perform(post("/api/v1/admin/portfolio/projects/{id}/schedule", id).param("version", Long.toString(cancelledVersion)).param("scheduledFor", Instant.now().plusSeconds(120).toString())
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SCHEDULED"));
+        jdbc.update("UPDATE portfolio_project SET scheduled_for = ? WHERE id = ?", java.sql.Timestamp.from(Instant.now().minusSeconds(1)), UUID.fromString(id));
+        scheduledPublisher.publishDue();
+        scheduledPublisher.publishDue();
+
+        mvc.perform(get("/api/v1/admin/portfolio/projects/{id}", id).with(adminUser(admin)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("PUBLISHED")).andExpect(jsonPath("$.scheduledFor").doesNotExist());
+        assertThat(audit.findAll()).extracting(AuditEvent::getAction).contains("ADMIN_PROJECT_SCHEDULED", "ADMIN_PROJECT_SCHEDULE_CANCELLED", "SYSTEM_PROJECT_SCHEDULED_PUBLISHED");
+        jdbc.update("DELETE FROM portfolio_project WHERE id = ?", UUID.fromString(id));
     }
 
     private String create(AppUser admin, String body) throws Exception {
