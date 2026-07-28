@@ -364,9 +364,12 @@ docker pull "$BACKEND_IMAGE"
 docker pull "$FRONTEND_IMAGE"
 
 echo
-echo "=== CREATE PRE-DEPLOYMENT BACKUP ==="
+if [ -x /usr/local/sbin/taha-backup ]; then
+    /usr/local/sbin/taha-backup
+else
+    echo "Optional taha-backup script not installed; skipping automated pre-deployment backup."
+fi
 
-/usr/local/sbin/taha-backup
 
 echo
 echo "=== PREPARE DEPLOYMENT STATE ==="
