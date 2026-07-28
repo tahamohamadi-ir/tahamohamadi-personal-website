@@ -60,19 +60,31 @@ cleanup() {
 write_version() {
     local SHA="$1"
     local TEMP_FILE
+    local TARGET_DIR="$(dirname "$VERSION_FILE")"
+
+    mkdir -p "$TARGET_DIR"
 
     TEMP_FILE="$(mktemp)"
     printf '%s\n' "$SHA" > "$TEMP_FILE"
 
-    install \
-        -o caddy \
-        -g caddy \
-        -m 0644 \
-        "$TEMP_FILE" \
-        "$VERSION_FILE"
+    if id caddy &>/dev/null; then
+        chown caddy:caddy "$TARGET_DIR" 2>/dev/null || true
+        install \
+            -o caddy \
+            -g caddy \
+            -m 0644 \
+            "$TEMP_FILE" \
+            "$VERSION_FILE"
+    else
+        install \
+            -m 0644 \
+            "$TEMP_FILE" \
+            "$VERSION_FILE"
+    fi
 
     rm -f "$TEMP_FILE"
 }
+
 
 load_state() {
     local STATE_FILE="$1"
