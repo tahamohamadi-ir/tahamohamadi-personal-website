@@ -1,5 +1,18 @@
 export default {
+  home: {
+    hero: {
+      exploreWork: 'Explore Work',
+      contactMe: 'Contact Me'
+    },
+    collections: {
+      viewAllWork: 'View All Work',
+      viewAllWriting: 'View All Writing',
+      viewAllPublications: 'View All Publications'
+    }
+
+  },
   language: {
+
     title: 'Choose your language',
     introduction: 'Select the language for this public profile.',
     fa: 'Persian',
