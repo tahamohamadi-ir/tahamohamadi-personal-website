@@ -76,6 +76,21 @@
 - **معیار بستن:** یک QA session keyboard-only و component/E2E ثبت‌شده برای delete، move، duplicate، focus و unsaved route leave.
 - **شواهد رفع:** —
 
+### CMS-R2-AUTOSAVE-013 — اعتبارسنجی runtime history و autosave Composer
+
+- **وضعیت:** `OPEN`
+- **شدت:** `P2`
+- **تاریخ ثبت:** `2026-08-08`
+- **Scope / مرجع:** [plan 012، T2.4](../../plans/012-cms-v2-wordpress-capability-task-list.md)؛ `AdminPageBlockComposer.vue`
+- **آنچه انجام شد:** snapshot history برای blocks و sections یکپارچه شد؛ تغییر section اکنون unsaved guard و autosave Draft را فعال می‌کند. Vitest قرارداد (10 test) و build SSR سبز هستند.
+- **آنچه عمداً انجام نشد:** component/E2E برای rapid edits، offline، stale 409، unmount timer cleanup و recovery reload اجرا نشده است.
+- **اثر و ریسک:** مسیر local اکنون دادهٔ section را حذف نمی‌کند، اما timing و conflict واقعی تا اجرای browser/API قابل اعلام عملیاتی نیست.
+- **Mitigation فعلی:** autosave فقط Draft است، debounce دارد و خطای 409 به state conflict بدون overwrite تبدیل می‌شود.
+- **مالک:** owner Composer CMS
+- **Trigger بازگشت:** پیش از فعال‌سازی autosave برای محیط عملیاتی یا تغییر flow Draft
+- **معیار بستن:** اجرای ثبت‌شدهٔ component/E2E برای رفتارهای T2.4 با backend PostgreSQL و session معتبر.
+- **شواهد رفع:** —
+
 ### CMS-R1-VALIDATION-005 — اجرای تازهٔ تست‌ها و QA Release 1 Media
 
 - **وضعیت:** `OPEN`

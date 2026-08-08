@@ -326,6 +326,14 @@
 
 **تست‌ها:** rapid edits، stale version، offline، invalid action path، autosave cleanup در unmount و Draft/PUBLISHED تفاوت رفتار.
 
+**وضعیت اجرا — 2026-08-08:**
+
+- [x] history محلی اکنون snapshot مشترک block و section است و پس از save/load موفق reset می‌شود.
+- [x] تغییر section همانند block unsaved guard را فعال می‌کند و فقط در `DRAFT` با debounce 1500ms وارد autosave می‌شود.
+- [x] حالت‌های pending/saving/saved/error/conflict با `aria-live` موجود هستند و 409 در autosave به conflict تبدیل می‌شود.
+- [x] Vitest قرارداد ابتدا RED و سپس GREEN شد (10 test) و build SSR frontend موفق بود.
+- [ ] بررسی واقعی rapid edit، offline، conflict، unmount و recovery پس از reload در component/E2E باقی مانده است؛ مرجع: `CMS-R2-AUTOSAVE-013` در ledger.
+
 ### T2.5 — library و portable templates
 
 **نوع:** BUILD، بعد از تثبیت T2.1 تا T2.4

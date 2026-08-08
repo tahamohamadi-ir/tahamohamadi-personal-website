@@ -158,16 +158,22 @@ function replaceBlocks(value, composition = []) {
   sections.value = composition.map(defaultSection)
   changes.markSaved()
   queueMicrotask(() => { replacing.value = false })
-  history.value = [JSON.stringify(blocks.value)]
+  history.value = [snapshotComposition()]
   historyIndex.value = 0
   autosaveState.value = 'saved'
 }
 
+function snapshotComposition() {
+  return JSON.stringify({ blocks: blocks.value, sections: sections.value })
+}
+
 function restoreHistory(index) {
-  const snapshot = history.value[index]
-  if (!snapshot) return
+  const serialized = history.value[index]
+  if (!serialized) return
+  const snapshot = JSON.parse(serialized)
   replacing.value = true
-  blocks.value = JSON.parse(snapshot)
+  blocks.value = snapshot.blocks
+  sections.value = snapshot.sections
   historyIndex.value = index
   queueMicrotask(() => { replacing.value = false })
 }
@@ -365,10 +371,10 @@ async function save(automatic = false) {
 
 watch(() => props.pageId, () => { void load() }, { immediate: true })
 watch(locale, () => { if (previewOpen.value) void openPreview() })
-watch(blocks, () => {
+watch([blocks, sections], () => {
   if (replacing.value) return
   changes.markDirty()
-  const snapshot = JSON.stringify(blocks.value)
+  const snapshot = snapshotComposition()
   if (history.value[historyIndex.value] === snapshot) return
   history.value.splice(historyIndex.value + 1)
   history.value.push(snapshot)

@@ -119,6 +119,12 @@ describe('public page block renderer contract', () => {
     expect(composer).toContain('data-composer-block-index="${index + 1}"')
   })
 
+  it('keeps section mutations in the same local history and autosave lifecycle as blocks', () => {
+    expect(composer).toContain('snapshotComposition')
+    expect(composer).toContain('watch([blocks, sections]')
+    expect(composer).toContain('sections.value = snapshot.sections')
+  })
+
   it('fails closed for meaningful media without localized alt and makes decorative media explicit', () => {
     expect(composer).toContain('decorative')
     expect(source).toContain('isDecorativeMedia')
