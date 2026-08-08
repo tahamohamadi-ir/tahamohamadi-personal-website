@@ -76,6 +76,21 @@
 - **معیار بستن:** test قراردادی frontend و integration testهای Page Audit/Concurrency عبور کنند و یک QA session واقعی save/publish/archive را با CSRF معتبر تأیید کند.
 - **شواهد رفع:** —
 
+### CMS-R0-FLAGS-004 — feature flagها هنوز rollout gate نیستند
+
+- **وضعیت:** `OPEN`
+- **شدت:** `P2`
+- **تاریخ ثبت:** `2026-08-08`
+- **Scope / مرجع:** [plan 012، T0.4](../../plans/012-cms-v2-wordpress-capability-task-list.md)؛ `FeatureFlagService` و `/api/v1/public/features`
+- **آنچه انجام شد:** پنج flag و binding محیطی آن‌ها بررسی و در `.env.example` و `docs/ops/feature-flags.md` مستند شدند. test واحد موجود، default و override محدود service را پوشش می‌دهد.
+- **آنچه عمداً انجام نشد:** هیچ controller، SSR renderer، navigation یا Admin workflow هنوز on/off این flagها را مصرف نمی‌کند؛ test رفتار واقعی flag=false/true نیز وجود ندارد.
+- **اثر و ریسک:** تغییر environment variable اکنون rollback یا kill switch واقعی نیست و نباید برای release به آن اتکا شود.
+- **Mitigation فعلی:** runbook صریحاً این محدودیت را اعلام می‌کند؛ rollback قابلیت‌های فعلی با artifact/deployment انجام می‌شود، نه feature flag.
+- **مالک:** owner اجرای Release 0 CMS
+- **Trigger بازگشت:** قبل از rollout نخستین قابلیت با هر یک از این flagها
+- **معیار بستن:** هر flag مصرف‌شده backend و frontend/public امن، test on/off و rollback owner مشخص داشته باشد.
+- **شواهد رفع:** —
+
 ### DEVEX-GRAPH-003 — به‌روزرسانی fail-closed knowledge graph
 
 - **وضعیت:** `OPEN`
