@@ -31,6 +31,66 @@
 
 ## موارد باز
 
+### CMS-R1-VALIDATION-005 — اجرای تازهٔ تست‌ها و QA Release 1 Media
+
+- **وضعیت:** `OPEN`
+- **شدت:** `P1` برای اعلام عملیاتی‌بودن Release 1
+- **تاریخ ثبت:** `2026-08-08`
+- **Scope / مرجع:** [plan 012، T1.1، T1.2 و T1.4](../../plans/012-cms-v2-wordpress-capability-task-list.md)
+- **آنچه انجام شد:** قراردادهای upload/list/select/replace/archive به‌صورت ایستا ممیزی شد؛ testهای منفی type field، انتخاب چندگانهٔ picker و backend type guardهای Portfolio/Resume افزوده شدند. `admin-media-upload.spec.js` با 8 test و `MediaValidationUnitTest` با 5 test عبور کردند.
+- **آنچه عمداً انجام نشد:** `AdminProjectIntegrationTest`، `PublicationResumeIntegrationTest` و `MediaUploadIntegrationTest` تلاش شدند اما پیش از test body به‌دلیل نبود Docker/Testcontainers اجرا نشدند؛ E2E «upload → select → save» و QA session معتبر Admin نیز باقی است.
+- **اثر و ریسک:** تغییرهای selector یا validation ممکن است در integration runtime، CSRF/multipart یا flow واقعی فرم‌ها شکست بخورند؛ Release 1 release-verified نیست.
+- **Mitigation فعلی:** policy server برای محتوای upload و type guardهای domain فعال است؛ تغییرهای frontend کوچک و shared هستند.
+- **مالک:** owner اجرای Release 1 CMS
+- **Trigger بازگشت:** پیش از rollout Media Picker جدید یا اعلام قابلیت Media Library عملیاتی
+- **معیار بستن:** integration testهای backend در محیط Docker سالم عبور کنند و یک flow واقعی upload، multiple select، save، replace و archive با session/CSRF معتبر ثبت شود.
+- **شواهد رفع:** —
+
+### CMS-R1-ALT-006 — تصمیم alt برای تصاویر meaningful و decorative مرکزی نیست
+
+- **وضعیت:** `OPEN`
+- **شدت:** `P1` برای انتشار public imageهای جدید
+- **تاریخ ثبت:** `2026-08-08`
+- **Scope / مرجع:** [plan 012، T1.3](../../plans/012-cms-v2-wordpress-capability-task-list.md)
+- **آنچه انجام شد:** metadata دوزبانهٔ alt/caption در Media Library و alt محلی blockها بررسی شد.
+- **آنچه عمداً انجام نشد:** مدل/flag decorative، publish gate برای تصویر meaningful و test projectionهای هر locale ساخته نشده‌اند.
+- **اثر و ریسک:** تصویر public ممکن است بدون تصمیم روشن accessibility منتشر شود یا caption به‌اشتباه نقش alt بگیرد.
+- **Mitigation فعلی:** Page renderer از alt محلی block استفاده می‌کند و Admin metadata جداگانه نگهداری می‌شود؛ این mitigation gate انتشار نیست.
+- **مالک:** owner مدل محتوای CMS
+- **Trigger بازگشت:** پیش از افزودن image جدید به landing/public page یا انتشار محتوای تصویری تازه
+- **معیار بستن:** decision صریح meaningful/decorative، validation server-side در publish و test فارسی/انگلیسی برای renderer/projection ثبت شود.
+- **شواهد رفع:** —
+
+### CMS-R1-ORPHAN-007 — گزارش orphan هنوز pagination و filter واقعی ندارد
+
+- **وضعیت:** `OPEN`
+- **شدت:** `P2`
+- **تاریخ ثبت:** `2026-08-08`
+- **Scope / مرجع:** [plan 012، T1.4](../../plans/012-cms-v2-wordpress-capability-task-list.md)؛ `MediaOrphanReportService`
+- **آنچه انجام شد:** usage index و نمایش هشدار orphan در Media Library بررسی شد.
+- **آنچه عمداً انجام نشد:** endpoint اکنون فقط 100 candidate اول را بررسی می‌کند و API/UI page/filter/empty-state مستقل ندارد.
+- **اثر و ریسک:** در کتابخانهٔ بزرگ، orphanهای واقعی دیده نمی‌شوند و گزارش برای cleanup کامل قابل اتکا نیست.
+- **Mitigation فعلی:** archive از UI فقط برای orphanهای گزارش‌شده فعال است و server archive asset referenced را رد می‌کند.
+- **مالک:** owner Media Library
+- **Trigger بازگشت:** پیش از cleanup عملیاتی یا زمانی که library از 100 asset فعال فراتر رود
+- **معیار بستن:** PageResponse پایدار، filter مستند، empty state و test حذف reference/صفحه‌بندی اضافه و اجرا شود.
+- **شواهد رفع:** —
+
+### CMS-R1-PUBLICATION-COVER-008 — backend publication cover هنوز image-only نیست
+
+- **وضعیت:** `OPEN`
+- **شدت:** `P1` برای integrity محتوای Publication
+- **تاریخ ثبت:** `2026-08-08`
+- **Scope / مرجع:** [plan 012، T1.2](../../plans/012-cms-v2-wordpress-capability-task-list.md)؛ `AdminPublicationService`
+- **آنچه انجام شد:** picker فیلد cover در Admin Publications با `allowedTypes=['image']` محدود است.
+- **آنچه عمداً انجام نشد:** service backend هنوز asset فعال PDF را برای cover رد نمی‌کند.
+- **اثر و ریسک:** client غیر UI یا درخواست دست‌کاری‌شده می‌تواند cover ناسازگار ایجاد کند و قرارداد public را بشکند.
+- **Mitigation فعلی:** UI shared type policy و status active را اعمال می‌کند؛ این mitigation مرجع نهایی نیست.
+- **مالک:** owner Publication domain
+- **Trigger بازگشت:** پیش از rollout Publications با cover یا هر API-client جدید
+- **معیار بستن:** server image-only را enforce کند و test مثبت/منفی create/update اجرا شود.
+- **شواهد رفع:** —
+
 ### CMS-R0-REVISION-001 — ناسازگاری مسیر restore در Page Edit
 
 - **وضعیت:** `OPEN`
@@ -93,15 +153,15 @@
 
 ### DEVEX-GRAPH-003 — به‌روزرسانی fail-closed knowledge graph
 
-- **وضعیت:** `OPEN`
+- **وضعیت:** `RESOLVED`
 - **شدت:** `P3`
 - **تاریخ ثبت:** `2026-08-08`
 - **Scope / مرجع:** graphify-out پس از تغییر T0.3 Page Revision
-- **آنچه انجام شد:** `graphify update .` اجرا شد؛ AST برای 168 فایل بازاستخراج شد، اما ابزار از overwrite خودداری کرد چون graph جدید 4245 node و graph فعلی 4246 node داشت. همچنین 3 node مربوط به 2 فایل خارج‌شده از corpus را fail-closed نگه داشت و نبود parser SQL را گزارش کرد.
-- **آنچه عمداً انجام نشد:** full re-extraction، نصب dependency اختیاری SQL parser یا اجرای `--force` بدون بازبینی علت اختلاف انجام نشد.
-- **اثر و ریسک:** runtime یا قرارداد محصول متاثر نیست؛ graph برای navigation ممکن است کمی stale بماند.
-- **Mitigation فعلی:** در این slice مسیر controller، service و testها مستقیماً از source بررسی شد و graph موجود overwrite نشد.
+- **آنچه انجام شد:** اجرای بعدی `graphify update .` با موفقیت graph را به 4252 node و 8954 edge بازسازی و `graph.json`، `graph.html` و `GRAPH_REPORT.md` را به‌روز کرد.
+- **آنچه عمداً انجام نشد:** parser اختیاری SQL نصب نشد؛ warning آن اثری بر nodeهای Java/Vue این slice ندارد.
+- **اثر و ریسک:** runtime یا قرارداد محصول متاثر نیست؛ graph فعلی برای navigation هم‌راستاست.
+- **Mitigation فعلی:** graph به‌روز شد؛ warning SQL در maintenance جداگانه بررسی می‌شود.
 - **مالک:** owner tooling/repository maintenance
-- **Trigger بازگشت:** پیش از task بعدی که به graph traversal متکی است یا در maintenance دوره‌ای graph
+- **Trigger بازگشت:** در صورت تغییر دوبارهٔ ignore rules یا نیاز به semantic SQL graph
 - **معیار بستن:** اختلاف node و تغییر ignore rules بررسی شود، سپس full/incremental update سالم با manifest سازگار اجرا و evidence ثبت شود.
-- **شواهد رفع:** —
+- **شواهد رفع:** `graphify update .` در 2026-08-08 با exit code 0 و بازسازی 4252 node / 8954 edge.

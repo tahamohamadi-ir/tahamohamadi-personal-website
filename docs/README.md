@@ -14,6 +14,7 @@
 ## Architecture Decisions
 
 - [ADR-011: Admin Session Authentication Baseline](adr/ADR-011-admin-session-authentication-baseline.md): detailed MVP session, cookie, CSRF, audit, and scaling rules; refines ADR-007.
+- [ADR-012: Media Variants and Focal Point](adr/ADR-012-media-variants-and-focal-point.md): defers focal points, generated variants, AVIF, and CDN routing until measured product and operations evidence exists.
 
 ## Frontend
 

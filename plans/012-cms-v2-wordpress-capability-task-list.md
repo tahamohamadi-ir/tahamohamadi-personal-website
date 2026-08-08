@@ -156,6 +156,14 @@
 
 **پذیرش:** policy frontend و server یکسان است و هیچ bypass قابل قبول وجود ندارد.
 
+**وضعیت اجرا — 2026-08-08:**
+
+- [x] allowlist مشترک frontend (`PNG/JPEG/WebP/PDF` و 10/20 MiB) با policy backend به‌صورت ایستا تطبیق داده شد.
+- [x] testهای منفی filename خطرناک، MIME/محتوای ناسازگار و فایل بزرگ، و testهای مسیر private/public، version و audit در suite موجودند.
+- [x] responseهای admin از `storageKey` خالی نگه داشته شده‌اند و public read تنها asset فعالِ referenced را می‌پذیرد.
+- [x] `npm.cmd run test:unit -- test/vitest/__tests__/admin-media-upload.spec.js` با 8 test و `MediaValidationUnitTest` با 5 test عبور کردند.
+- [ ] integration testهای Media Upload و QA واقعی upload/replace/archive هنوز به Docker/Testcontainers و session معتبر نیاز دارند؛ مرجع: `CMS-R1-VALIDATION-005` در ledger.
+
 ### T1.2 — یک Media Picker واحد برای همهٔ مصرف‌کننده‌ها
 
 **نوع:** VERIFY سپس FIX در صورت مشاهدهٔ مصرف‌کنندهٔ تکراری
@@ -175,6 +183,15 @@
 
 **تست‌ها:** component test برای filter/pagination/multiple/clear و E2E «upload → select → save entity».
 
+**وضعیت اجرا — 2026-08-08:**
+
+- [x] تمام فرم‌های شناسایی‌شدهٔ Settings، Composer، Blog، Portfolio، Publications و Resume از `AdminMediaSelector` استفاده می‌کنند؛ انتخاب UUID خام از لیست Resume و Media Library حذف شد.
+- [x] `AdminMediaSelector` type تک‌گزینه‌ای را به query سرور و policy upload منتقل می‌کند؛ `AdminMediaPickerModal` نیز accept/policy یکسان و انتخاب چندگانهٔ واقعی دارد.
+- [x] Portfolio cover و Resume document در backend نیز به‌ترتیب image و PDF را الزام می‌کنند؛ test منفی integration افزوده شده است.
+- [x] component suite Media Picker با 8 test عبور کرد، از جمله type filter/upload و multiple selection.
+- [ ] پوشش عملی pagination/clear در browser و E2E کامل باقی مانده است؛ مرجع: `CMS-R1-VALIDATION-005`.
+- [ ] `AdminPublicationService` هنوز MIME cover را در server الزام نمی‌کند، هرچند فرم Admin image-only است؛ مرجع: `CMS-R1-PUBLICATION-COVER-008`.
+
 ### T1.3 — metadata دوزبانه و accessibility رسانه
 
 **نوع:** VERIFY + BUILD اگر نقص policy وجود دارد
@@ -186,6 +203,11 @@
 - [ ] assetهای decorative باید explicit-marked باشند، نه با alt خالی اتفاقی.
 
 **پذیرش:** تصویر public بدون تصمیم روشن دربارهٔ alt به production نمی‌رود.
+
+**وضعیت اجرا — 2026-08-08:**
+
+- [x] فرم detail رسانه، alt و caption فارسی/انگلیسی را جداگانه نمایش و ویرایش می‌کند؛ caption در API جای alt را نمی‌گیرد.
+- [ ] policy مرکزی «meaningful image بدون alt» و نشانهٔ صریح decorative، و همچنین gate انتشار در همهٔ public projectionها هنوز ساخته نشده است؛ مرجع: `CMS-R1-ALT-006`.
 
 ### T1.4 — usage، replace و archive impact
 
@@ -199,6 +221,13 @@
 
 **تست‌ها:** media in use، replace incompatible، archive stale version، orphan after reference removal و unauthorized mutation.
 
+**وضعیت اجرا — 2026-08-08:**
+
+- [x] usage index صفحات، Composer، Blog، Portfolio، Publications، Resume و Site Settings را پوشش می‌دهد؛ UI پیش از replace/archive مصرف‌ها را نشان می‌دهد و archive فقط برای orphan فعال است.
+- [x] replace در backend هم‌خانوادهٔ MIME را کنترل و referenceها را جایگزین می‌کند؛ version و audit در service وجود دارد.
+- [ ] orphan endpoint فقط 100 candidate اول را برمی‌گرداند و pagination/filter واقعی ندارد؛ مرجع: `CMS-R1-ORPHAN-007`.
+- [ ] integration testهای mutation/authorization و مشاهدهٔ public projection پس از replace به Docker/Testcontainers و QA واقعی نیاز دارد؛ مرجع: `CMS-R1-VALIDATION-005`.
+
 ### T1.5 — spike focal point و responsive variants
 
 **نوع:** SPIKE/ADR
@@ -206,6 +235,10 @@
 - [ ] با assetهای واقعی نیاز به crop focal point، variant، WebP/AVIF و storage budget را اندازه‌گیری کنید.
 - [ ] domain model، migration، cache invalidation و CDN/storage implication را پیش از کدنویسی ثبت کنید.
 - [ ] تصمیم «انجام/تعویق» با ADR و rollback note ثبت شود.
+
+**وضعیت اجرا — 2026-08-08:**
+
+- [x] تصمیم تعویق focal point/variant/CDN با trigger بازگشت و rollback note در [ADR-012](../docs/adr/ADR-012-media-variants-and-focal-point.md) ثبت شد.
 
 ---
 

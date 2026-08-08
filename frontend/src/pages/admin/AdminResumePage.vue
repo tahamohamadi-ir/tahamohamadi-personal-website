@@ -245,12 +245,12 @@ onMounted(() => {
       <h2 class="text-h6 q-my-none">{{ t('admin.resume.document') }}</h2>
       <q-list bordered separator>
         <q-item v-for="item in documents" :key="item.id" clickable @click="selectDocument(item)">
-          <q-item-section><q-item-label>{{ item.languageCode }} · {{ item.mediaAssetId }}</q-item-label></q-item-section>
+          <q-item-section><q-item-label>{{ item.languageCode }}</q-item-label></q-item-section>
           <q-item-section side><q-badge :label="item.status" :color="item.status === 'PUBLISHED' ? 'positive' : 'grey-7'" /></q-item-section>
         </q-item>
       </q-list>
       <q-select v-model="documentForm.languageCode" :options="['fa', 'en']" :label="t('admin.resume.locale')" :disable="saving" />
-      <AdminMediaSelector v-model="documentForm.mediaAssetId" :label="t('admin.resume.documentMedia')" :disable="saving" />
+      <AdminMediaSelector v-model="documentForm.mediaAssetId" :allowed-types="['document']" :label="t('admin.resume.documentMedia')" :disable="saving" />
       <div class="row q-gutter-sm">
         <q-btn type="submit" color="primary" :loading="saving" :label="t('admin.resume.saveDocument')" />
         <AdminLifecycleActions v-if="documentForm.id" :status="documentForm.status" :saving="saving" :public-preview-path="documentPreviewPath" @publish="transition('documents', 'publish')" @archive="transition('documents', 'archive')" />

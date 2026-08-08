@@ -73,6 +73,7 @@ class AdminProjectIntegrationTest {
 
         MediaAsset cover = asset("cover");
         MediaAsset archivedCover = asset("archived-cover");
+        MediaAsset documentCover = documentAsset("document-cover");
         archivedCover.archive();
         media.saveAndFlush(archivedCover);
         Skill firstSkill = skill("first", 0);
@@ -88,6 +89,10 @@ class AdminProjectIntegrationTest {
                         .content(payload("archived-cover", archivedCover.getId(), List.of(), null, 0)).with(adminUser(admin))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isNotFound());
+        mvc.perform(post("/api/v1/admin/portfolio/projects").contentType(MediaType.APPLICATION_JSON)
+                        .content(payload("document-cover", documentCover.getId(), List.of(), null, 0)).with(adminUser(admin))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isBadRequest());
         mvc.perform(post("/api/v1/admin/portfolio/projects").contentType(MediaType.APPLICATION_JSON)
                         .content(payload("inactive-skill", cover.getId(), List.of(new SkillReference(inactiveSkill.getId(), 0)), null, 0)).with(adminUser(admin))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
@@ -248,6 +253,7 @@ class AdminProjectIntegrationTest {
     }
 
     private MediaAsset asset(String name) { return media.saveAndFlush(MediaAsset.create(UUID.randomUUID(), "storage-" + name + "-" + UUID.randomUUID(), name + ".png", "png", "image/png", 12, "a".repeat(64), 1, 1, Instant.now())); }
+    private MediaAsset documentAsset(String name) { return media.saveAndFlush(MediaAsset.create(UUID.randomUUID(), "storage-" + name + "-" + UUID.randomUUID(), name + ".pdf", "pdf", "application/pdf", 12, "a".repeat(64), null, null, Instant.now())); }
     private Skill skill(String key, int sortOrder) { SkillCategory category = skillCategories.saveAndFlush(SkillCategory.create(UUID.randomUUID(), "category-" + key + "-" + UUID.randomUUID(), 0, Instant.now())); return skills.saveAndFlush(Skill.create(UUID.randomUUID(), "skill-" + key + "-" + UUID.randomUUID(), category, sortOrder, Instant.now())); }
     private AppUser actor(String name) { return users.saveAndFlush(AppUser.create(name + "-" + UUID.randomUUID() + "@example.test", "hash", name, Instant.now())); }
     private void assertAudits(AppUser actor, String... actions) { List<AuditEvent> events = audit.findByActorIdOrderByOccurredAtDesc(actor.getId()); assertThat(events).extracting(AuditEvent::getAction).contains(actions); assertThat(events).allSatisfy(event -> { assertThat(event.getActor().getId()).isEqualTo(actor.getId()); assertThat(event.getDetails().toString()).doesNotContain("password", "bodyMarkdown", "storageKey", "email"); }); }

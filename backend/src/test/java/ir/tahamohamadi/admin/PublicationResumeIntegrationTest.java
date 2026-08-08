@@ -166,6 +166,10 @@ class PublicationResumeIntegrationTest {
                         .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("ARCHIVED"));
 
+        mvc.perform(post("/api/v1/admin/resume/documents").contentType(MediaType.APPLICATION_JSON)
+                        .content(documentPayload(imageAsset("wrong-resume-type").getId(), null).replace("\"fa\"", "\"en\""))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isBadRequest());
         MediaAsset first = asset("first-resume");
         String document = mvc.perform(post("/api/v1/admin/resume/documents").contentType(MediaType.APPLICATION_JSON)
                         .content(documentPayload(first.getId(), null)).with(adminUser(admin))
@@ -207,6 +211,10 @@ class PublicationResumeIntegrationTest {
 
     private MediaAsset asset(String name) {
         return media.saveAndFlush(MediaAsset.create(UUID.randomUUID(), "storage-" + name + "-" + UUID.randomUUID(), name + ".pdf", "pdf", "application/pdf", 12, "a".repeat(64), null, null, Instant.now()));
+    }
+
+    private MediaAsset imageAsset(String name) {
+        return media.saveAndFlush(MediaAsset.create(UUID.randomUUID(), "storage-" + name + "-" + UUID.randomUUID(), name + ".png", "png", "image/png", 12, "a".repeat(64), 1, 1, Instant.now()));
     }
 
     private AppUser actor(String name) {

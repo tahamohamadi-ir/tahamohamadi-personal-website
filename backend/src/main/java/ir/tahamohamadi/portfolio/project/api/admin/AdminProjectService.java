@@ -133,7 +133,12 @@ public class AdminProjectService {
 
     private MediaAsset cover(UUID id) {
         if (id == null) return null;
-        return media.findByIdAndStatusAndDeletedAtIsNull(id, MediaAssetStatus.ACTIVE).orElseThrow(() -> new NoSuchElementException("Media asset not found"));
+        MediaAsset asset = media.findByIdAndStatusAndDeletedAtIsNull(id, MediaAssetStatus.ACTIVE)
+                .orElseThrow(() -> new NoSuchElementException("Media asset not found"));
+        if (!asset.getMimeType().startsWith("image/")) {
+            throw new IllegalArgumentException("Project cover media asset must be an image");
+        }
+        return asset;
     }
 
     private void saveTranslations(PortfolioProject project, AdminProjectTranslationRequest fa, AdminProjectTranslationRequest en, Instant now) {

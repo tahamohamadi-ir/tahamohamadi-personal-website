@@ -55,7 +55,7 @@ async function load(requestedPage = 0) {
         size: 20,
         status: 'ACTIVE',
         query: query.value.trim() || undefined,
-        type: undefined
+        type: props.allowedTypes.length === 1 ? props.allowedTypes[0] : undefined
       }
     })
     items.value = response.data.items ?? []
@@ -121,7 +121,7 @@ function getMediaUrl(asset) {
 
 async function uploadInFlow() {
   if (!uploadFile.value) return
-  const validationError = validateMediaUpload(uploadFile.value)
+  const validationError = validateMediaUpload(uploadFile.value, props.allowedTypes)
   if (validationError) {
     error.value = { message: validationError }
     return
@@ -173,6 +173,9 @@ onMounted(() => {
     <label class="admin-media-selector__label text-caption text-weight-medium text-grey-8">
       {{ resolvedLabel }}
     </label>
+    <q-banner v-if="error" class="bg-red-1 text-negative" role="alert">
+      {{ error.message }}
+    </q-banner>
 
     <!-- Hidden QForm and QFile for upload policy integration and test contracts -->
     <q-form class="admin-media-selector__upload-form" @submit.prevent="uploadInFlow">

@@ -216,7 +216,7 @@ onMounted(() => { void load() })
       <q-list bordered separator>
         <q-item v-for="item in items" :key="item.id" clickable @click="select(item)">
           <q-item-section>
-            <q-item-label>{{ item.originalFilename ?? item.id }}</q-item-label>
+            <q-item-label>{{ item.originalFilename }}</q-item-label>
             <q-item-label caption>{{ item.mimeType }} · {{ t('admin.media.bytes', { count: item.sizeBytes }) }}</q-item-label>
           </q-item-section>
           <q-item-section side><q-badge :label="item.status" :color="item.status === 'ACTIVE' ? 'positive' : 'grey-7'" /></q-item-section>
