@@ -8,11 +8,12 @@ import PageBlockRenderer from 'src/components/public/PageBlockRenderer.vue'
 import PageState from 'src/components/public/PageState.vue'
 import PortfolioProjectList from 'src/components/public/PortfolioProjectList.vue'
 import TranslationUnavailable from 'src/components/public/TranslationUnavailable.vue'
+import HomeHero from 'src/components/public/HomeHero.vue'
 import MarkdownContent from 'src/components/content/MarkdownContent.vue'
 import TmButton from 'src/components/shared/TmButton.vue'
 import { useAsyncPage } from 'src/composables/useAsyncPage'
 import { usePublicSeoMeta } from 'src/composables/usePublicSeoMeta'
-import { PUBLIC_API_KEY } from 'src/services/apiContext'
+import { PUBLIC_API_KEY, PUBLIC_SITE_IDENTITY_KEY } from 'src/services/apiContext'
 
 const props = defineProps({
   initialData: {
@@ -22,6 +23,7 @@ const props = defineProps({
 })
 
 const api = inject(PUBLIC_API_KEY, null)
+const siteIdentity = inject(PUBLIC_SITE_IDENTITY_KEY, null)
 const route = useRoute()
 const { t } = useI18n()
 const activeLocale = computed(() => route.meta.locale || props.initialData?.locale || 'en')
@@ -57,6 +59,7 @@ const {
 })
 
 const page = computed(() => data.value?.page ?? null)
+const heroEyebrow = computed(() => siteIdentity?.value?.brandName ?? null)
 const homeBlocks = computed(() => page.value?.blocks ?? [])
 const collectionItems = computed(() => ({
   BLOG: data.value?.latestPosts ?? [],
@@ -80,7 +83,8 @@ const hasHero = computed(() => homeBlocks.value.some((block) => (
 )))
 const hasLegacyManagedContent = computed(() => (
   !homeBlocks.value.length
-  && Boolean(page.value?.summary?.trim() || page.value?.bodyMarkdown?.trim())
+  && !page.value?.title
+  && Boolean(page.value?.bodyMarkdown?.trim())
 ))
 
 const alternatePath = computed(() => error.value?.alternatePaths?.[0] ?? null)
@@ -120,66 +124,67 @@ onMounted(() => {
       />
     </div>
 
-    <template v-else-if="hasLegacyManagedContent">
-      <section class="public-home__hero">
-        <div class="tm-container public-home__hero-content">
-          <div class="public-home__hero-copy">
-            <h1 v-if="page?.title">{{ page.title }}</h1>
-            <p v-if="page?.summary" class="public-home__summary">{{ page.summary }}</p>
-            <div class="public-home__hero-actions">
-              <TmButton :to="workPath">{{ t('shell.navigation.portfolio') }}</TmButton>
-              <router-link class="public-home__contact-link tm-interactive" :to="contactPath">
-                {{ t('shell.navigation.contact') }}
-              </router-link>
-            </div>
+    <section
+      v-else-if="hasLegacyManagedContent"
+      class="tm-container tm-rich-content"
+    >
+      <h1 class="tm-page-title">
+        {{ page.title }}
+      </h1>
+      <p
+        v-if="page.summary"
+        class="public-home__summary"
+      >
+        {{ page.summary }}
+      </p>
+      <MarkdownContent
+        v-if="page.bodyMarkdown"
+        :markdown="page.bodyMarkdown"
+      />
+    </section>
+
+    <section
+      v-else-if="page?.title && !hasHero"
+      class="public-home__hero"
+    >
+      <div class="tm-container public-home__hero-content">
+        <div class="public-home__hero-copy">
+          <p v-if="heroEyebrow" class="public-home__eyebrow">{{ heroEyebrow }}</p>
+          <h1>{{ page.title }}</h1>
+          <p
+            v-if="page.summary"
+            class="public-home__summary"
+          >
+            {{ page.summary }}
+          </p>
+          <MarkdownContent
+            v-if="page.bodyMarkdown"
+            class="tm-rich-content"
+            :markdown="page.bodyMarkdown"
+          />
+          <div class="public-home__hero-actions">
+            <TmButton
+              variant="primary"
+              :to="workPath"
+            >
+              {{ t('home.hero.exploreWork') }}
+            </TmButton>
+            <router-link
+              :to="contactPath"
+              class="public-home__contact-link tm-interactive"
+            >
+              {{ t('home.hero.contactMe') }}
+            </router-link>
           </div>
-          <p class="public-home__hero-monogram" aria-hidden="true">TM</p>
         </div>
-      </section>
-
-      <section v-if="page?.bodyMarkdown" class="tm-container public-home__story">
-        <MarkdownContent :markdown="page.bodyMarkdown" />
-      </section>
-
-      <section v-if="selectedProjects.length" class="tm-container public-home__collection public-home__collection--work">
-        <div class="public-home__section-heading">
-          <p class="public-home__eyebrow">{{ t('shell.navigation.work') }}</p>
-          <h2>{{ t('shell.navigation.portfolio') }}</h2>
-          <router-link class="public-home__section-link tm-interactive" :to="workPath">{{ t('shell.navigation.portfolio') }}</router-link>
-        </div>
-        <PortfolioProjectList :projects="selectedProjects" />
-      </section>
-
-      <section v-if="latestPosts.length" class="tm-container public-home__collection">
-        <div class="public-home__section-heading">
-          <p class="public-home__eyebrow">{{ t('shell.navigation.writing') }}</p>
-          <h2>{{ t('shell.navigation.blog') }}</h2>
-          <router-link class="public-home__section-link tm-interactive" :to="writingPath">{{ t('shell.navigation.blog') }}</router-link>
-        </div>
-        <BlogPostList :posts="latestPosts" />
-      </section>
-
-      <section v-if="selectedPublications.length" class="tm-container public-home__collection">
-        <div class="public-home__section-heading">
-          <p class="public-home__eyebrow">{{ t('shell.navigation.research') }}</p>
-          <h2>{{ t('shell.navigation.publications') }}</h2>
-          <router-link class="public-home__section-link tm-interactive" :to="publicationsPath">{{ t('shell.navigation.publications') }}</router-link>
-        </div>
-        <ol class="public-home__publication-list">
-          <li v-for="publication in selectedPublications" :key="publication.slug" class="public-home__publication-item">
-            <article>
-              <p v-if="publication.year || publication.stage" class="public-home__publication-meta">{{ [publication.year, publication.stage].filter(Boolean).join(' · ') }}</p>
-              <h3>{{ publication.title }}</h3>
-              <p v-if="publication.abstractText">{{ publication.abstractText }}</p>
-            </article>
-          </li>
-        </ol>
-      </section>
-    </template>
-
-    <header v-else-if="page?.title && !hasHero" class="tm-container public-home__title">
-      <h1>{{ page.title }}</h1>
-    </header>
+        <p
+          class="public-home__hero-monogram"
+          aria-hidden="true"
+        >
+          TM
+        </p>
+      </div>
+    </section>
 
     <PageBlockRenderer
       v-if="homeBlocks.length"
@@ -190,16 +195,93 @@ onMounted(() => {
       :skills="skills"
       :social-links="socialLinks"
     />
+
+    <template v-else>
+      <section
+        v-if="selectedProjects.length"
+        class="tm-container public-home__collection public-home__collection--work"
+      >
+        <div class="public-home__section-heading">
+          <p class="public-home__eyebrow">
+            {{ t('shell.navigation.work') }}
+          </p>
+          <h2>{{ t('home.collections.selectedWorkTitle') }}</h2>
+        </div>
+        <PortfolioProjectList
+          :items="selectedProjects"
+          :locale="locale"
+        />
+        <router-link
+          :to="workPath"
+          class="public-home__section-link tm-interactive"
+        >
+          {{ t('home.collections.viewAllWork') }}
+        </router-link>
+      </section>
+
+      <section
+        v-if="latestPosts.length"
+        class="tm-container public-home__collection"
+      >
+        <div class="public-home__section-heading">
+          <p class="public-home__eyebrow">
+            {{ t('shell.navigation.writing') }}
+          </p>
+          <h2>{{ t('home.collections.latestWritingTitle') }}</h2>
+        </div>
+        <BlogPostList
+          :items="latestPosts"
+          :locale="locale"
+        />
+        <router-link
+          :to="writingPath"
+          class="public-home__section-link tm-interactive"
+        >
+          {{ t('home.collections.viewAllWriting') }}
+        </router-link>
+      </section>
+
+      <section
+        v-if="selectedPublications.length"
+        class="tm-container public-home__collection"
+      >
+        <div class="public-home__section-heading">
+          <p class="public-home__eyebrow">
+            {{ t('shell.navigation.publications') }}
+          </p>
+          <h2>{{ t('home.collections.featuredPublicationsTitle') }}</h2>
+        </div>
+        <ul class="public-home__publication-list">
+          <li
+            v-for="item in selectedPublications"
+            :key="item.slug"
+            class="public-home__publication-item"
+          >
+            <article>
+              <span class="public-home__publication-meta">{{ item.venue || item.stage }} {{ item.year }}</span>
+              <h3>
+                <router-link :to="`/${locale}/publications`">{{ item.title }}</router-link>
+              </h3>
+              <p v-if="item.abstractText">
+                {{ item.abstractText }}
+              </p>
+            </article>
+          </li>
+        </ul>
+        <router-link
+          :to="publicationsPath"
+          class="public-home__section-link tm-interactive"
+        >
+          {{ t('home.collections.viewAllPublications') }}
+        </router-link>
+      </section>
+    </template>
   </div>
 </template>
 
 <style scoped>
 .public-home {
   background: var(--tm-surface);
-}
-
-.public-home__status {
-  padding-block: var(--tm-space-5);
 }
 
 .public-home__title {
@@ -384,4 +466,5 @@ onMounted(() => {
   margin: 0;
   max-inline-size: 58ch;
 }
+
 </style>

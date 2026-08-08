@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createI18n } from 'vue-i18n'
 
 import AdminMediaPage from 'src/pages/admin/AdminMediaPage.vue'
+import AdminMediaPickerModal from 'src/components/admin/AdminMediaPickerModal.vue'
 import AdminMediaSelector from 'src/components/admin/AdminMediaSelector.vue'
 import { HTTP_CLIENT_KEY } from 'src/services/apiContext'
 import { normalizeApiError } from 'src/services/httpClient'
@@ -135,6 +136,9 @@ describe('admin media upload limits', () => {
     expect(httpClient.get).toHaveBeenCalledWith('/api/v1/admin/media', {
       params: { page: 0, size: 20, query: 'portrait', type: undefined, status: undefined }
     })
+    expect(httpClient.get).toHaveBeenCalledWith('/api/v1/admin/media/orphans', {
+      params: { page: 0, size: 20, query: 'portrait', type: undefined, status: undefined }
+    })
     wrapper.unmount()
   })
 
@@ -157,9 +161,13 @@ describe('admin media upload limits', () => {
           QSelect: { props: ['options'], template: '<output>{{ options[0]?.label }}</output>' },
           QInput: { props: ['modelValue'], emits: ['update:modelValue'], template: '<input :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">' },
           QBtn: { template: '<button><slot /></button>' },
+          QIcon: true,
+          QSpinner: true,
+          QChip: true,
           QForm: qFormStub,
           QFile: qFileStub,
-          QLinearProgress: true
+          QLinearProgress: true,
+          AdminMediaPickerModal: true
         }
       }
     })
@@ -196,7 +204,12 @@ describe('admin media upload limits', () => {
           QInput: { template: '<input>' },
           QSelect: { template: '<div />' },
           QBtn: { template: '<button><slot /></button>' },
-          QLinearProgress: true
+          QIcon: true,
+          QSpinner: true,
+          QChip: true,
+          QBanner: { template: '<div role="alert"><slot /></div>' },
+          QLinearProgress: true,
+          AdminMediaPickerModal: true
         }
       }
     })
@@ -209,6 +222,97 @@ describe('admin media upload limits', () => {
     expect(primeCsrfToken).toHaveBeenCalledWith(httpClient)
     expect(httpClient.post).toHaveBeenCalledWith('/api/v1/admin/media', expect.any(FormData), expect.any(Object))
     expect(wrapper.emitted('update:modelValue')).toContainEqual(['new-asset-id'])
+    wrapper.unmount()
+  })
+
+  it('keeps an image-only field image-only in both its list query and upload flow', async () => {
+    const httpClient = {
+      get: vi.fn().mockResolvedValue({ data: { items: [], page: 0, totalPages: 0 } }),
+      post: vi.fn()
+    }
+    const wrapper = mount(AdminMediaSelector, {
+      props: { allowedTypes: ['image'] },
+      global: {
+        plugins: [createTestI18n()],
+        provide: { [HTTP_CLIENT_KEY]: httpClient },
+        stubs: {
+          QForm: qFormStub,
+          QFile: qFileStub,
+          QInput: { template: '<input>' },
+          QSelect: { template: '<div />' },
+          QBtn: { template: '<button><slot /></button>' },
+          QIcon: true,
+          QSpinner: true,
+          QChip: true,
+          QBanner: { template: '<div role="alert"><slot /></div>' },
+          QLinearProgress: true,
+          AdminMediaPickerModal: true
+        }
+      }
+    })
+    await flushPromises()
+
+    expect(httpClient.get).toHaveBeenCalledWith('/api/v1/admin/media', {
+      params: {
+        page: 0,
+        size: 20,
+        status: 'ACTIVE',
+        query: undefined,
+        type: 'image'
+      }
+    })
+
+    await selectFile(wrapper.get('input[type="file"]'), new File([new Uint8Array(1024)], 'report.pdf', { type: 'application/pdf' }))
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(primeCsrfToken).not.toHaveBeenCalled()
+    expect(httpClient.post).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Unsupported media type.')
+    wrapper.unmount()
+  })
+
+  it('confirms all selected assets when a picker is used by a multiple-media field', async () => {
+    const httpClient = {
+      get: vi.fn().mockResolvedValue({
+        data: {
+          items: [
+            { id: 'first-image', originalFilename: 'first.png', mimeType: 'image/png', sizeBytes: 1024 },
+            { id: 'second-image', originalFilename: 'second.png', mimeType: 'image/png', sizeBytes: 2048 }
+          ],
+          page: 0,
+          totalPages: 1
+        }
+      })
+    }
+    const wrapper = mount(AdminMediaPickerModal, {
+      props: { modelValue: true, multiple: true, allowedTypes: ['image'] },
+      global: {
+        plugins: [createTestI18n()],
+        provide: { [HTTP_CLIENT_KEY]: httpClient },
+        stubs: {
+          QDialog: { template: '<div><slot /></div>' },
+          QCard: { template: '<section><slot /></section>' },
+          QFile: qFileStub,
+          QInput: { template: '<input>' },
+          QSelect: { template: '<div />' },
+          QBtn: { template: '<button @click="$emit(\'click\')"><slot /></button>' },
+          QBanner: true,
+          QIcon: true,
+          QChip: true,
+          QLinearProgress: true,
+          QInnerLoading: true
+        }
+      }
+    })
+    await flushPromises()
+
+    const cards = wrapper.findAll('.media-picker-modal__card')
+    await cards[0].trigger('click')
+    await cards[1].trigger('click')
+    await wrapper.findAll('.media-picker-modal__actions button')[1].trigger('click')
+
+    expect(wrapper.emitted('select')).toContainEqual([['first-image', 'second-image']])
     wrapper.unmount()
   })
 })

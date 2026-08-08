@@ -1,10 +1,28 @@
-﻿import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { flushPromises, mount } from '@vue/test-utils'
 import { Quasar } from 'quasar'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+beforeEach(() => {
+  if (typeof globalThis.document === 'undefined') {
+    globalThis.document = {
+      title: '',
+      head: { querySelector: () => null, querySelectorAll: () => [] },
+      querySelector: () => null,
+      querySelectorAll: () => [],
+      createElement: () => ({ setAttribute: () => {}, remove: () => {} })
+    }
+  }
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.clearAllTimers()
+})
+
 
 import { i18n } from 'src/boot/i18n'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'

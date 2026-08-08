@@ -24,17 +24,19 @@ public class AdminProjectService {
     private final PortfolioProjectSkillRepository projectSkills;
     private final PortfolioProjectMediaRepository projectMedia;
     private final MediaAssetRepository media;
+    private final MediaAssetTranslationRepository mediaTranslations;
     private final SkillRepository skills;
     private final AuditEventRepository audit;
     private final ObjectMapper mapper;
     private final AuthenticatedAuditActor actor;
 
-    public AdminProjectService(PortfolioProjectRepository projects, PortfolioProjectTranslationRepository translations, PortfolioProjectSkillRepository projectSkills, PortfolioProjectMediaRepository projectMedia, MediaAssetRepository media, SkillRepository skills, AuditEventRepository audit, ObjectMapper mapper, AuthenticatedAuditActor actor) {
+    public AdminProjectService(PortfolioProjectRepository projects, PortfolioProjectTranslationRepository translations, PortfolioProjectSkillRepository projectSkills, PortfolioProjectMediaRepository projectMedia, MediaAssetRepository media, MediaAssetTranslationRepository mediaTranslations, SkillRepository skills, AuditEventRepository audit, ObjectMapper mapper, AuthenticatedAuditActor actor) {
         this.projects = projects;
         this.translations = translations;
         this.projectSkills = projectSkills;
         this.projectMedia = projectMedia;
         this.media = media;
+        this.mediaTranslations = mediaTranslations;
         this.skills = skills;
         this.audit = audit;
         this.mapper = mapper;
@@ -133,7 +135,12 @@ public class AdminProjectService {
 
     private MediaAsset cover(UUID id) {
         if (id == null) return null;
-        return media.findByIdAndStatusAndDeletedAtIsNull(id, MediaAssetStatus.ACTIVE).orElseThrow(() -> new NoSuchElementException("Media asset not found"));
+        MediaAsset asset = media.findByIdAndStatusAndDeletedAtIsNull(id, MediaAssetStatus.ACTIVE)
+                .orElseThrow(() -> new NoSuchElementException("Media asset not found"));
+        if (!asset.getMimeType().startsWith("image/")) {
+            throw new IllegalArgumentException("Project cover media asset must be an image");
+        }
+        return asset;
     }
 
     private void saveTranslations(PortfolioProject project, AdminProjectTranslationRequest fa, AdminProjectTranslationRequest en, Instant now) {
@@ -161,6 +168,7 @@ public class AdminProjectService {
         List<UUID> ids = references.stream().map(AdminProjectMediaReferenceRequest::mediaAssetId).toList();
         List<MediaAsset> assets = media.findAllById(ids);
         if (assets.size() != ids.size() || assets.stream().anyMatch(asset -> asset.getDeletedAt() != null || asset.getStatus() != MediaAssetStatus.ACTIVE || !asset.getMimeType().startsWith("image/"))) throw new NoSuchElementException("Gallery media asset not found");
+        requireLocalizedGalleryAlt(ids);
         Map<UUID, MediaAsset> byId = assets.stream().collect(Collectors.toMap(MediaAsset::getId, value -> value));
         projectMedia.deleteAllByProjectId(project.getId());
         projectMedia.flush();
@@ -197,8 +205,25 @@ public class AdminProjectService {
         if (project.getVersion() != requested) throw new ObjectOptimisticLockingFailureException(PortfolioProject.class, project.getId());
     }
 
-    private static void requirePublishable(PortfolioProject project) {
+    private void requirePublishable(PortfolioProject project) {
         if (project.getStartedOn() == null) throw new IllegalArgumentException("startedOn is required before publishing");
+        requireLocalizedGalleryAlt(projectMedia.findByProjectIdWithAssetOrderBySortOrder(project.getId()).stream()
+                .map(value -> value.getMediaAsset().getId()).toList());
+    }
+
+    private void requireLocalizedGalleryAlt(List<UUID> ids) {
+        if (ids.isEmpty()) return;
+        Map<UUID, Set<LanguageCode>> languagesByAsset = mediaTranslations
+                .findByMediaAssetIdInAndDeletedAtIsNull(ids)
+                .stream()
+                .filter(value -> value.getAltText() != null && !value.getAltText().isBlank())
+                .collect(Collectors.groupingBy(
+                        value -> value.getMediaAsset().getId(),
+                        Collectors.mapping(MediaAssetTranslation::getLanguageCode, Collectors.toSet())
+                ));
+        if (ids.stream().anyMatch(id -> !languagesByAsset.getOrDefault(id, Set.of()).containsAll(Set.of(LanguageCode.fa, LanguageCode.en)))) {
+            throw new IllegalArgumentException("Portfolio gallery media requires Persian and English alt text");
+        }
     }
 
     private void record(String action, UUID id) {

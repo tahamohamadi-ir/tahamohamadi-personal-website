@@ -6,6 +6,19 @@ Testing is required to keep the project maintainable, secure, and safe for AI-as
 
 Every feature must include tests that match its risk level.
 
+## Fast-track testing policy
+
+The project may run a narrow RED -> GREEN slice before broader validation to reach an operational release quickly. The narrow pass must still cover the changed contract and main behavior. If a relevant test or QA check is deliberately deferred, create or update an entry in `docs/status/deferred-validation.md` with the actual evidence, risk, mitigation, owner, and concrete return trigger.
+
+The following are not deferrable for the affected change:
+
+- Unauthorized/forbidden access, RBAC, session and CSRF behavior for Admin or mutation endpoints.
+- Draft/archived content protection, preview protection, and public visibility rules.
+- Validation, XSS-safe rendering, unsafe upload/import rejection, and material data-integrity/migration behavior.
+- The changed API/DTO contract and the primary changed user flow.
+
+Broader browser matrices, visual regression, non-critical viewport QA, performance/load checks, or additional coverage beyond the focused slice may be deferred only through that ledger and only when the non-deferrable checks above pass.
+
 ## Required Test Types
 
 Backend:
@@ -82,3 +95,5 @@ A feature is considered tested when:
 - Integration tests pass if database/API behavior changed.
 - E2E smoke flow passes if public or admin flow changed.
 - Security negative tests pass for protected operations.
+
+If the release intentionally stops before all normally applicable checks, report it as `implemented` or `operational` according to `docs/governance/fast-track-delivery.md`, not as `release-verified`.

@@ -8,6 +8,7 @@ import { i18n } from 'src/boot/i18n'
 import PublicLayout from 'src/layouts/PublicLayout.vue'
 import LanguagePage from 'src/pages/LanguagePage.vue'
 import routes from 'src/router/routes'
+import { PUBLIC_API_KEY } from 'src/services/apiContext'
 
 function createTestRouter() {
   return createRouter({
@@ -23,7 +24,10 @@ async function mountPublicLayoutAt(path) {
 
   return mount(PublicLayout, {
     global: {
-      plugins: [Quasar, createPinia(), router, i18n]
+      plugins: [Quasar, createPinia(), router, i18n],
+      provide: {
+        [PUBLIC_API_KEY]: { getSiteChrome: () => Promise.resolve(null) }
+      }
     }
   })
 }

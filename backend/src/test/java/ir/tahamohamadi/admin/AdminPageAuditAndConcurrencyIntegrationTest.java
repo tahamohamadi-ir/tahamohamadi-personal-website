@@ -183,6 +183,15 @@ class AdminPageAuditAndConcurrencyIntegrationTest {
         UUID revisionId = UUID.fromString(JsonPath.read(revisions, "$[0].id"));
         long sourceVersion = pages.findById(pageId).orElseThrow().getVersion();
 
+        mvc.perform(post("/api/v1/admin/pages/{id}/revisions/{revisionId}/restore", pageId, revisionId)
+                        .param("version", Long.toString(sourceVersion)).with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(post("/api/v1/admin/pages/{id}/revisions/{revisionId}/restore-as-draft", pageId, revisionId)
+                        .param("version", Long.toString(sourceVersion - 1)).with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("OPTIMISTIC_LOCK_CONFLICT"));
+
         String restored = mvc.perform(post("/api/v1/admin/pages/{id}/revisions/{revisionId}/restore-as-draft", pageId, revisionId)
                         .param("version", Long.toString(sourceVersion)).with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DRAFT"))

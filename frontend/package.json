@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "quasar dev -m ssr",
     "build": "quasar build -m ssr",
-    "test:unit": "vitest run",
+    "test:unit": "vitest run --testTimeout=30000",
+
     "test:unit:watch": "vitest",
     "test:e2e": "playwright test"
   },

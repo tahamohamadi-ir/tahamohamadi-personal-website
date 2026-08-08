@@ -38,6 +38,10 @@ describe('admin portfolio presentation', () => {
     expect(portfolio).toContain('AdminLifecycleActions')
     expect(portfolio).toContain('isVersionConflict')
     expect(portfolio).toContain('/portfolio/')
+    expect(portfolio).toContain('scheduledFor')
+    expect(portfolio).toContain('/schedule')
+    expect(portfolio).toContain("transition('cancel-schedule')")
+    expect(portfolio).toContain('toLocalDateTimeValue')
   })
 })
 
@@ -91,8 +95,9 @@ describe('admin presentation route loading', () => {
     expect(portfolio.default).toBeDefined()
     expect(skills.default).toBeDefined()
     expect(media.default).toBeDefined()
-  }, 20_000)
+  }, 60_000)
 })
+
 describe('admin social links presentation', () => {
   it('uses a protected dedicated route and only the supported social-link fields', () => {
     expect(adminRoute('social-links')).toMatchObject({

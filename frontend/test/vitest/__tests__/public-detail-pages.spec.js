@@ -65,7 +65,13 @@ const DETAILS = [
       slug: 'safe-project',
       title: 'Safe project',
       summary: 'Plain-text <em>project summary</em>.',
-      bodyMarkdown: '## Project notes\n\nSafe **Markdown** content.'
+      bodyMarkdown: '## Project notes\n\nSafe **Markdown** content.',
+      gallery: [{
+        mediaAssetId: 'project-image',
+        url: '/api/v1/public/media/project-image',
+        sortOrder: 0,
+        alt: 'Research workspace prototype'
+      }]
     },
     requiredText: ['Plain-text <em>project summary</em>.']
   },
@@ -197,6 +203,17 @@ async function renderDetail(detail, component, api, locale = 'en') {
 }
 
 describe('localized public detail page contract', () => {
+  it('renders portfolio gallery media only with the localized public alt supplied by the API', async () => {
+    const detail = DETAILS.find((value) => value.name === 'portfolio-detail')
+    const Page = await loadComponent(detail.pagePath)
+    const api = { getProject: vi.fn().mockResolvedValue(detail.response) }
+    const wrapper = await mountDetail(detail, Page, api)
+    await flushPromises()
+
+    expect(wrapper.get('.tm-detail-page__gallery img').attributes('alt')).toBe('Research workspace prototype')
+    wrapper.unmount()
+  })
+
   it('assigns all supported detail routes to their dedicated pages in both locales', async () => {
     const { default: routes } = await import('src/router/routes')
 

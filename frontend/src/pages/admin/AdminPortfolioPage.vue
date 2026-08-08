@@ -8,6 +8,7 @@ import AdminLocaleTabs from 'src/components/admin/AdminLocaleTabs.vue'
 import AdminMarkdownPreview from 'src/components/admin/AdminMarkdownPreview.vue'
 import AdminMediaSelector from 'src/components/admin/AdminMediaSelector.vue'
 import AdminPaginatedTable from 'src/components/admin/AdminPaginatedTable.vue'
+import AdminSchedulePanel from 'src/components/admin/AdminSchedulePanel.vue'
 import AdminStatePanel from 'src/components/admin/AdminStatePanel.vue'
 import {
   createUnsavedChangesGuard,
@@ -40,12 +41,21 @@ function translation() {
   }
 }
 
+function toLocalDateTimeValue(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (part) => String(part).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 function createForm(value = {}) {
   return {
     id: value.id ?? null,
     projectKey: value.projectKey ?? '',
     coverMediaId: value.coverMediaId ?? null,
     status: value.status ?? 'DRAFT',
+    scheduledFor: toLocalDateTimeValue(value.scheduledFor),
     startedOn: value.startedOn ?? '',
     endedOn: value.endedOn ?? '',
     projectUrl: value.projectUrl ?? '',
@@ -192,6 +202,24 @@ async function transition(action) {
   finally { saving.value = false }
 }
 
+async function schedule() {
+  if (!form.value.id || !form.value.scheduledFor) return
+  saving.value = true
+  error.value = null
+  try {
+    await primeCsrfToken(httpClient)
+    const response = await httpClient.post(
+      `/api/v1/admin/portfolio/projects/${form.value.id}/schedule`,
+      null,
+      { params: { version: form.value.version, scheduledFor: new Date(form.value.scheduledFor).toISOString() } }
+    )
+    replaceForm(response.data)
+    await load(page.value)
+  }
+  catch (cause) { error.value = normalizeApiError(cause) }
+  finally { saving.value = false }
+}
+
 onMounted(() => { void load() })
 </script>
 
@@ -217,7 +245,7 @@ onMounted(() => { void load() })
       <q-input v-model="form.projectUrl" type="url" :label="t('admin.portfolio.projectUrl')" :disable="saving" />
       <q-input v-model="form.repositoryUrl" type="url" :label="t('admin.portfolio.repositoryUrl')" :disable="saving" />
       <q-input v-model.number="form.sortOrder" type="number" min="0" :label="t('admin.portfolio.sortOrder')" :disable="saving" />
-      <AdminMediaSelector v-model="form.coverMediaId" :label="t('admin.portfolio.coverMedia')" :disable="saving" />
+      <AdminMediaSelector v-model="form.coverMediaId" :allowed-types="['image']" :label="t('admin.portfolio.coverMedia')" :disable="saving" />
       <AdminMediaSelector v-model="galleryMediaIds" multiple :allowed-types="['image']" :label="t('admin.portfolio.gallery')" :disable="saving" />
       <q-select v-model="selectedSkillIds" :options="skillOptions" option-label="label" option-value="value" emit-value map-options multiple use-chips :label="t('admin.portfolio.associatedSkills')" :disable="saving" />
       <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />
@@ -231,6 +259,14 @@ onMounted(() => { void load() })
       <AdminMarkdownPreview v-model="activeTranslation.bodyMarkdown" />
       <q-input v-model="activeTranslation.seoTitle" :label="t('admin.portfolio.seoTitle')" :disable="saving" />
       <q-input v-model="activeTranslation.seoDescription" type="textarea" :label="t('admin.portfolio.seoDescription')" :disable="saving" />
+      <AdminSchedulePanel
+        v-if="form.id"
+        v-model="form.scheduledFor"
+        :status="form.status"
+        :disable="saving"
+        @schedule="schedule"
+        @cancel="transition('cancel-schedule')"
+      />
       <div class="row q-gutter-sm"><q-btn type="submit" color="primary" :loading="saving" :label="t('admin.portfolio.save')" /><AdminLifecycleActions v-if="form.id" :status="form.status" :saving="saving" :public-preview-path="publicPreviewPath" @publish="transition('publish')" @archive="transition('archive')" /></div>
     </q-form>
   </q-page>

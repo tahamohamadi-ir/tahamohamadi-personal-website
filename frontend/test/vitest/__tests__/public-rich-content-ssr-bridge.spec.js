@@ -3,7 +3,26 @@ import { createSSRApp, h } from 'vue'
 import { renderToString } from '@vue/server-renderer'
 import { createMemoryHistory, createRouter, RouterView } from 'vue-router'
 import { flushPromises } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+beforeEach(() => {
+  if (typeof globalThis.document === 'undefined') {
+    globalThis.document = {
+      title: '',
+      head: { querySelector: () => null, querySelectorAll: () => [] },
+      querySelector: () => null,
+      querySelectorAll: () => [],
+      createElement: () => ({ setAttribute: () => {}, remove: () => {} })
+    }
+  }
+})
+
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  vi.clearAllTimers()
+})
+
 
 import { i18n } from 'src/boot/i18n'
 import PublicHomePage from 'src/pages/public/PublicHomePage.vue'

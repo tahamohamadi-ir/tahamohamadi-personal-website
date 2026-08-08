@@ -45,6 +45,8 @@ The complete Product + Technical + Architecture + Roadmap + AI Development Setup
 
 AI coding tools should read this file together with .codex rules before implementing features.
 
+For fast-track work, use [the delivery policy](docs/governance/fast-track-delivery.md) and record every intentionally deferred test, QA, security hardening, or operational risk in the [deferred validation ledger](docs/status/deferred-validation.md). Fast delivery never waives critical security, data-integrity, or publication-safety controls.
+
 ## MVP
 
 The MVP includes:

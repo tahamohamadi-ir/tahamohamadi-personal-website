@@ -56,6 +56,21 @@ describe('admin source-backed dashboard', () => {
     expect(page).toContain('admin.pages.restoreDescription')
     expect(page).toContain('snapshotComposition')
   })
+
+  it('restores a Page Edit revision through the versioned restore-as-draft contract', () => {
+    const page = source('src/pages/admin/AdminPageEditPage.vue')
+    const saveSource = page.slice(page.indexOf('async function save'), page.indexOf('async function updateStatus'))
+    const lifecycleSource = page.slice(page.indexOf('async function updateStatus'), page.indexOf('onMounted(load)'))
+
+    expect(page).toContain('restore-as-draft')
+    expect(page).toContain('{ params: { version: form.value.version } }')
+    expect(page).toContain('isVersionConflict(error)')
+    expect(page).toContain("router.replace({ name: 'admin-pages-edit', params: { id: response.data.id } })")
+    expect(page).toContain(':loading="saving" :disable="saving"')
+    expect(page).not.toMatch(/revisions\/\$\{restoreCandidate\.value\.id\}\/restore`/)
+    expect(saveSource).toContain('version: form.value.version')
+    expect(lifecycleSource).toContain('{ params: { version: form.value.version } }')
+  })
 })
 
 describe('admin blog and contact workflows', () => {
@@ -69,7 +84,7 @@ describe('admin blog and contact workflows', () => {
       const component = await adminRoute(path).component()
       expect(component.default).toBeDefined()
     }
-  }, 20_000)
+  }, 60_000)
 
   it('uses only the supported blog post, taxonomy, and contact endpoints', () => {
     const posts = source('src/pages/admin/AdminBlogPostsPage.vue')

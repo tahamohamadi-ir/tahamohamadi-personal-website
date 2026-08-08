@@ -2,7 +2,8 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-import MarkdownContent from 'src/components/content/MarkdownContent.vue'
+import AdminMarkdownPreview from 'src/components/admin/AdminMarkdownPreview.vue'
+import AdminMediaSelector from 'src/components/admin/AdminMediaSelector.vue'
 import { documentToMarkdown, markdownToDocument, readingTimeMinutes } from 'src/services/articleDocument'
 
 const props = defineProps({ modelValue: { type: String, default: '' }, document: { type: Object, default: null }, mediaIds: { type: Array, default: () => [] }, disable: Boolean })
@@ -69,7 +70,7 @@ watch(() => props.document, (value) => { if (value?.blocks) blocks.value = value
           <q-input v-model="block.value" type="textarea" autogrow :label="t('admin.articleEditor.types.code')" :disable="disable" @update:model-value="sync" />
         </template>
         <template v-else-if="block.type === 'image'">
-          <q-select v-model="block.mediaId" :options="mediaOptions" emit-value map-options :label="t('admin.blogPosts.media')" :disable="disable" @update:model-value="sync" />
+          <AdminMediaSelector v-model="block.mediaId" :allowed-types="['image']" :label="t('admin.blogPosts.media')" :disable="disable" @update:model-value="sync" />
           <q-input v-model="block.alt" :label="t('admin.articleEditor.imageAlt')" :disable="disable" @update:model-value="sync" />
           <q-input v-model="block.caption" :label="t('admin.articleEditor.imageCaption')" :disable="disable" @update:model-value="sync" />
         </template>

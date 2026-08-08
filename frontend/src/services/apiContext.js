@@ -3,6 +3,7 @@ import { createPublicApi } from './publicApi'
 
 export const HTTP_CLIENT_KEY = Symbol('http-client')
 export const PUBLIC_API_KEY = Symbol('public-api')
+export const PUBLIC_SITE_IDENTITY_KEY = Symbol('public-site-identity')
 
 const HTTP_PROTOCOLS = new Set([
   'http:',

@@ -116,6 +116,8 @@ Recommended backend modules:
 8. All publishable content must support Draft, Published, and Archived states.
 9. All public content must support Persian and English translations.
 10. Every feature must include acceptance criteria and tests.
+11. The project may use small fast-track vertical slices to become operational quickly, but every intentionally deferred test, QA, security hardening, or operational risk must be recorded in `docs/status/deferred-validation.md` with an owner and a concrete return trigger.
+12. Fast-track work never defers authorization, CSRF/session protection, secrets handling, input/output safety, public publication rules, or data integrity. Follow `docs/governance/fast-track-delivery.md`.
 
 ## Primary Project Reference Document
 
@@ -146,6 +148,8 @@ Before implementing any task, an AI coding agent must read:
 - `docs/master-plan.md`
 - related `.codex/*-rules.md` files
 - related `docs/*` files
+
+For a fast-track task, the agent must also read `docs/governance/fast-track-delivery.md` and the relevant open entries in `docs/status/deferred-validation.md`.
 
 The agent must not implement unrelated features.
 The agent must not introduce new infrastructure unless the task explicitly requires it.
