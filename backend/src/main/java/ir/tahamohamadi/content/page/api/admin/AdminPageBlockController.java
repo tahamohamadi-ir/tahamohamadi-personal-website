@@ -124,11 +124,7 @@ public class AdminPageBlockController {
 
     private void validateSection(PageSectionRequest section) {
         if (!"STANDARD".equals(section.type().trim().toUpperCase(Locale.ROOT)) || !"SINGLE_COLUMN".equals(section.layout().trim().toUpperCase(Locale.ROOT))) throw new IllegalArgumentException("Unsupported page section");
-        if (section.settingsJson() != null && !section.settingsJson().isBlank()) {
-            try {
-                if (!objectMapper.readTree(section.settingsJson()).isObject()) throw new IllegalArgumentException("Section settings must be a JSON object");
-            } catch (com.fasterxml.jackson.core.JsonProcessingException exception) { throw new IllegalArgumentException("Section settings must be valid JSON", exception); }
-        }
+        if (section.settingsJson() != null && !section.settingsJson().isBlank()) throw new IllegalArgumentException("Section settings are not supported");
     }
 
     private long updatePageVersion(UUID pageId, long current, Instant now) {

@@ -46,6 +46,21 @@
 - **معیار بستن:** یک اجرای موفق روی PostgreSQL توسعه، ثبت نتیجهٔ Home و نمونه‌کار در هر دو locale و حذف/بازنشانی دادهٔ آزمایشی طبق runbook.
 - **شواهد رفع:** —
 
+### CMS-R2-COMPOSER-011 — اعتبارسنجی runtime قرارداد Composer
+
+- **وضعیت:** `OPEN`
+- **شدت:** `P2`
+- **تاریخ ثبت:** `2026-08-08`
+- **Scope / مرجع:** [plan 012، T2.1](../../plans/012-cms-v2-wordpress-capability-task-list.md)؛ `AdminPageBlockComposer` و `AdminPageBlockController`
+- **آنچه انجام شد:** catalog Admin و renderer با ده block allowlisted backend همسان شد، UI فقط `SINGLE_COLUMN` می‌فرستد و server section setting غیرمجاز را رد می‌کند. Vitest قرارداد (8 test)، build SSR و compile/test backend اجرا و سبز شدند.
+- **آنچه عمداً انجام نشد:** درخواست HTTP واقعی برای رد block/section ناشناخته، restore revision حاوی دادهٔ نامعتبر و parity preview/public با PostgreSQL هنوز اجرا نشده است.
+- **اثر و ریسک:** اگرچه قراردادهای source و build هم‌راستا هستند، نگاشت `Problem Details` و transaction واقعی در محیط PostgreSQL هنوز evidence ندارد.
+- **Mitigation فعلی:** server allowlist و renderer fail-closed فعال‌اند؛ UI دیگر انتخاب ناسازگار عرضه نمی‌کند.
+- **مالک:** owner Composer CMS
+- **Trigger بازگشت:** پیش از اعلام Composer به‌عنوان قابلیت عملیاتی یا فعال‌کردن catalog block جدید
+- **معیار بستن:** integration testهای مثبت/منفی در PostgreSQL و یک QA session برای save/preview هر دو locale ثبت شود.
+- **شواهد رفع:** —
+
 ### CMS-R1-VALIDATION-005 — اجرای تازهٔ تست‌ها و QA Release 1 Media
 
 - **وضعیت:** `OPEN`

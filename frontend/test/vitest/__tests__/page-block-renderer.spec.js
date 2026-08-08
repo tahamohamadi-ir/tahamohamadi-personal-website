@@ -106,6 +106,12 @@ describe('public page block renderer contract', () => {
     expect(composer).not.toContain('v-html')
   })
 
+  it('does not offer block or section choices that the persisted CMS contract rejects', () => {
+    expect(composer).not.toContain("'DIVIDER', 'SPACER', 'GALLERY', 'STATS', 'QUOTE'")
+    expect(composer).not.toContain("'TWO_COLUMN', 'THREE_COLUMN', 'FOUR_COLUMN'")
+    expect(composer).toContain("const layoutOptions = computed(() => [\n  'SINGLE_COLUMN'")
+  })
+
   it('fails closed for meaningful media without localized alt and makes decorative media explicit', () => {
     expect(composer).toContain('decorative')
     expect(source).toContain('isDecorativeMedia')

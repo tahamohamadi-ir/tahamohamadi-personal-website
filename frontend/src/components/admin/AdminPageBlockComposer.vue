@@ -48,7 +48,7 @@ const removalOpen = computed({
 })
 
 const blockOptions = computed(() => [
-  'HERO', 'RICH_TEXT', 'MEDIA', 'MEDIA_TEXT', 'CALL_TO_ACTION', 'COLLECTION', 'SKILLS', 'RESUME', 'SOCIAL_LINKS', 'CONTACT', 'DIVIDER', 'SPACER', 'GALLERY', 'STATS', 'QUOTE'
+  'HERO', 'RICH_TEXT', 'MEDIA', 'MEDIA_TEXT', 'CALL_TO_ACTION', 'COLLECTION', 'SKILLS', 'RESUME', 'SOCIAL_LINKS', 'CONTACT'
 ].map((value) => ({ value, label: t(`admin.composer.blockTypes.${value}`) })))
 const collectionOptions = computed(() => [
   'BLOG', 'PORTFOLIO', 'PUBLICATIONS'
@@ -62,20 +62,8 @@ const autosaveLabel = computed(() => t(`admin.composer.autosave.${autosaveState.
 const sectionOptions = computed(() => sections.value.map((section, index) => ({ value: index, label: t('admin.composer.sectionHeading', { index: index + 1 }) })))
 
 const layoutOptions = computed(() => [
-  'SINGLE_COLUMN', 'TWO_COLUMN', 'THREE_COLUMN', 'FOUR_COLUMN'
+  'SINGLE_COLUMN'
 ].map((value) => ({ value, label: t(`admin.composer.sectionLayoutOptions.${value}`) })))
-
-const ratioOptions = computed(() => [
-  'EQUAL', 'WIDE_NARROW', 'NARROW_WIDE', 'GOLDEN', 'QUARTER_THREE'
-].map((value) => ({ value, label: t(`admin.composer.sectionRatioOptions.${value}`) })))
-
-const paddingOptions = computed(() => [
-  'NONE', 'COMPACT', 'STANDARD', 'SPACIOUS'
-].map((value) => ({ value, label: t(`admin.composer.sectionPaddingOptions.${value}`) })))
-
-const backgroundOptions = computed(() => [
-  'TRANSPARENT', 'LIGHT', 'SUBTLE', 'DARK', 'ACCENT'
-].map((value) => ({ value, label: t(`admin.composer.sectionBackgroundOptions.${value}`) })))
 
 const settingsDrawerOpen = computed({
   get: () => settingsDrawerIndex.value !== null,
@@ -116,14 +104,6 @@ function onDecorativeChange(block) {
   block.en.alt = ''
 }
 
-function isDecorativeBlock(type) {
-  return ['DIVIDER', 'SPACER'].includes(type)
-}
-
-function showMultiColumn(layout) {
-  return layout && layout !== 'SINGLE_COLUMN'
-}
-
 const activeTranslations = computed(() => blocks.value.map((block) => ({
   fa: complete(block, block.fa),
   en: complete(block, block.en)
@@ -136,7 +116,6 @@ const previewBlocks = computed(() => serverPreviewBlocks.value ?? blocks.value.m
 })))
 
 function complete(block, value = {}) {
-  if (isDecorativeBlock(block.type)) return true
   const hasEditorialText = Boolean(value.title || value.lead || value.bodyMarkdown)
   if (isMediaBlock(block.type) && isDecorativeMedia(block)) return Boolean(block.settings?.mediaId)
   if (block.type === 'MEDIA') return Boolean(block.settings?.mediaId && value.alt)
@@ -163,7 +142,7 @@ function defaultBlock() {
 }
 
 function defaultSection(value = {}) {
-  return { type: 'STANDARD', layout: 'SINGLE_COLUMN', ratio: 'EQUAL', padding: 'STANDARD', background: 'TRANSPARENT', fullWidth: false, enabled: true, settingsJson: null, ...value }
+  return { type: 'STANDARD', layout: 'SINGLE_COLUMN', enabled: true, settingsJson: null, ...value }
 }
 
 function normalize(block) {
@@ -294,9 +273,7 @@ function onBlockTypeChange(block) {
     ? new Set(['source', 'limit'])
     : isMediaBlock(block.type)
       ? new Set(['mediaId', 'decorative'])
-      : block.type === 'SPACER'
-        ? new Set(['height'])
-        : new Set()
+      : new Set()
   block.settings = Object.fromEntries(Object.entries(block.settings ?? {}).filter(([key]) => allowed.has(key)))
 }
 
@@ -328,22 +305,13 @@ function settingsPayload(settings) {
   return Object.keys(compact).length ? JSON.stringify(compact) : null
 }
 
-function sectionSettingsPayload(section) {
-  const data = {}
-  if (section.ratio && section.ratio !== 'EQUAL') data.ratio = section.ratio
-  if (section.padding && section.padding !== 'STANDARD') data.padding = section.padding
-  if (section.background && section.background !== 'TRANSPARENT') data.background = section.background
-  if (section.fullWidth) data.fullWidth = true
-  return Object.keys(data).length ? JSON.stringify(data) : null
-}
-
 function compositionPayload() {
   const activeSections = sections.value.length ? sections.value : [defaultSection()]
   return activeSections.map((section, sectionIndex) => ({
     type: section.type,
     layout: section.layout,
     enabled: section.enabled,
-    settingsJson: sectionSettingsPayload(section),
+    settingsJson: null,
     blocks: blocks.value.filter((block) => (block.sectionIndex ?? 0) === sectionIndex).map((block) => ({
       type: block.type,
       enabled: block.enabled,
@@ -432,7 +400,7 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
 
     <q-inner-loading :showing="loading" />
 
-    <!-- Section cards with layout controls -->
+    <!-- Section cards reflect the only persisted layout. -->
     <q-card v-for="(section, sectionIndex) in sections" :key="`section-${sectionIndex}`" flat bordered class="admin-composer__section q-mb-sm">
       <q-card-section class="admin-composer__section-header row items-center q-col-gutter-sm q-py-sm">
         <div class="col"><h3 class="text-subtitle2 q-my-none">{{ t('admin.composer.sectionHeading', { index: sectionIndex + 1 }) }}</h3></div>
@@ -444,23 +412,11 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
         </div>
       </q-card-section>
 
-      <!-- Section layout controls -->
+      <!-- Section layout is intentionally constrained to the current server contract. -->
       <q-card-section class="admin-composer__section-controls q-pt-none">
         <div class="row q-col-gutter-sm">
           <div class="col-12 col-sm-3">
             <q-select v-model="section.layout" :options="layoutOptions" emit-value map-options dense outlined :label="t('admin.composer.sectionLayout')" :disable="disable || saving" />
-          </div>
-          <div v-if="showMultiColumn(section.layout)" class="col-12 col-sm-3">
-            <q-select v-model="section.ratio" :options="ratioOptions" emit-value map-options dense outlined :label="t('admin.composer.sectionRatio')" :disable="disable || saving" />
-          </div>
-          <div class="col-12 col-sm-2">
-            <q-select v-model="section.padding" :options="paddingOptions" emit-value map-options dense outlined :label="t('admin.composer.sectionPadding')" :disable="disable || saving" />
-          </div>
-          <div class="col-12 col-sm-2">
-            <q-select v-model="section.background" :options="backgroundOptions" emit-value map-options dense outlined :label="t('admin.composer.sectionBackground')" :disable="disable || saving" />
-          </div>
-          <div class="col-12 col-sm-2">
-            <q-toggle v-model="section.fullWidth" :label="section.fullWidth ? t('admin.composer.sectionFullWidth') : t('admin.composer.sectionContained')" :disable="disable || saving" dense />
           </div>
         </div>
       </q-card-section>
@@ -487,21 +443,17 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
           <q-btn class="admin-composer__move" flat round icon="keyboard_arrow_up" :disable="index === 0 || disable || saving" :aria-label="t('admin.composer.moveUp', { index: index + 1 })" @click="move(index, -1)" />
           <q-btn class="admin-composer__move" flat round icon="keyboard_arrow_down" :disable="index === blocks.length - 1 || disable || saving" :aria-label="t('admin.composer.moveDown', { index: index + 1 })" @click="move(index, 1)" />
           <q-btn flat round icon="content_copy" :aria-label="t('admin.composer.duplicate', { index: index + 1 })" :disable="disable || saving" @click="duplicate(index)" />
-          <q-btn v-if="!isDecorativeBlock(block.type)" flat round icon="settings" :aria-label="t('admin.composer.blockSettings')" :disable="disable || saving" @click="openSettingsDrawer(index)" />
+          <q-btn flat round icon="settings" :aria-label="t('admin.composer.blockSettings')" :disable="disable || saving" @click="openSettingsDrawer(index)" />
           <q-btn flat round color="negative" icon="delete" :aria-label="t('admin.composer.remove', { index: index + 1 })" :disable="disable || saving" @click="requestRemove(index)" />
         </div>
       </q-card-section>
 
-      <!-- Block content (skip for decorative types) -->
-      <q-card-section v-if="!isDecorativeBlock(block.type)" class="q-pt-none">
+      <q-card-section class="q-pt-none">
         <AdminMediaSelector v-if="isMediaBlock(block.type)" v-model="block.settings.mediaId" :allowed-types="['image']" :label="t('admin.composer.media')" :disable="disable || saving" />
         <q-toggle v-if="isMediaBlock(block.type)" v-model="block.settings.decorative" :label="t('admin.composer.decorativeMedia')" :disable="disable || saving" @update:model-value="onDecorativeChange(block)" />
         <template v-if="block.type === 'COLLECTION'">
           <q-select v-model="block.settings.source" :options="collectionOptions" emit-value map-options :label="t('admin.composer.collection')" :disable="disable || saving" />
           <q-input v-model.number="block.settings.limit" type="number" min="1" max="12" :label="t('admin.composer.limit')" :disable="disable || saving" />
-        </template>
-        <template v-if="block.type === 'SPACER'">
-          <q-input v-model.number="block.settings.height" type="number" min="8" max="200" label="Height (px)" :disable="disable || saving" />
         </template>
         <AdminLocaleTabs v-model="locale" :translations="activeTranslations[index]" />
         <template v-if="locale === 'fa'">
@@ -524,13 +476,6 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
         </template>
       </q-card-section>
 
-      <!-- Decorative block placeholder -->
-      <q-card-section v-else class="admin-composer__decorative-placeholder q-pt-none">
-        <div v-if="block.type === 'DIVIDER'" class="admin-composer__divider-preview"><hr></div>
-        <div v-else-if="block.type === 'SPACER'" class="admin-composer__spacer-preview">
-          <span class="text-caption text-grey-7">{{ block.settings?.height ?? 48 }}px</span>
-        </div>
-      </q-card-section>
     </q-card>
 
     <q-btn color="primary" :label="t('admin.composer.save')" :loading="saving" :disable="disable || loading" @click="save" />
@@ -635,33 +580,6 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
 
 .admin-composer__drag-handle:hover {
   opacity: 1;
-}
-
-.admin-composer__decorative-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--tm-space-4);
-}
-
-.admin-composer__divider-preview {
-  inline-size: 100%;
-}
-
-.admin-composer__divider-preview hr {
-  border: none;
-  border-block-start: 1px solid var(--tm-border-subtle);
-  margin: 0;
-}
-
-.admin-composer__spacer-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-block-size: 48px;
-  border: 1px dashed var(--tm-border-subtle);
-  border-radius: var(--tm-radius-card);
-  padding: var(--tm-space-2);
 }
 
 .admin-composer__preview-canvas { background: var(--tm-admin-surface-subtle); overflow: auto; padding: var(--tm-space-4); }

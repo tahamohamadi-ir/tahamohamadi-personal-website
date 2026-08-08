@@ -274,6 +274,13 @@
 
 **پذیرش:** یک block تنها در صورتی قابل ذخیره است که frontend، server، preview و public renderer آن را بفهمند.
 
+**وضعیت اجرا — 2026-08-08:**
+
+- [x] catalog Composer و allowlist renderer به ده block قابل‌ذخیرهٔ backend محدود شد؛ گزینه‌های نیمه‌تمام `DIVIDER`، `SPACER`، `GALLERY`، `STATS` و `QUOTE` دیگر در Admin یا public registry ظاهر نمی‌شوند.
+- [x] Composer فقط layout `SINGLE_COLUMN` و `settingsJson=null` می‌فرستد؛ backend هر section setting ناشناخته را رد می‌کند، پس UI نمی‌تواند داده‌ای بسازد که schema فعلی persist نمی‌کند.
+- [x] Vitest قرارداد catalog ابتدا RED و سپس GREEN شد (8 test) و build SSR frontend و compile/test متمرکز backend موفق بودند.
+- [ ] validation HTTP برای block/section ناشناخته، revision restore و preview واقعی هنوز به PostgreSQL/Testcontainers و QA session نیاز دارد؛ مرجع: `CMS-R2-COMPOSER-011` در ledger.
+
 ### T2.2 — parity عمومی و preview
 
 **نوع:** VERIFY
