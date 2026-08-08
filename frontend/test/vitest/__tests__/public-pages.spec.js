@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { Quasar } from 'quasar'
 import { createMemoryHistory, createRouter } from 'vue-router'
@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { i18n } from 'src/boot/i18n'
 import PageBlockRenderer from 'src/components/public/PageBlockRenderer.vue'
 import PublicHomePage from 'src/pages/public/PublicHomePage.vue'
+import PortfolioPage from 'src/pages/public/PortfolioPage.vue'
 import { PUBLIC_API_KEY } from 'src/services/apiContext'
 import {
   createHttpClient,
@@ -65,7 +66,7 @@ async function mountPublicPage(component, {
     routes: [{
       path: '/page',
       component,
-      meta: { pageKey }
+      meta: { pageKey, locale }
     }]
   })
 
@@ -519,6 +520,52 @@ describe('public page introduction contract', () => {
     expect(wrapper.get('.public-home__hero')).toBeTruthy()
     expect(wrapper.get('.public-home__publication-item').text()).toContain('Published paper')
     expect(wrapper.findAll('h1')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it('filters Portfolio through the locale-owned skill query without losing the clear action', async () => {
+    const api = {
+      getSkills: vi.fn().mockResolvedValue({
+        items: [{ key: 'systems', name: 'Systems design' }]
+      }),
+      listPortfolio: vi.fn().mockResolvedValue({
+        items: [], page: 0, totalPages: 0
+      })
+    }
+    const wrapper = await mountPublicPage(PortfolioPage, {
+      props: {
+        initialData: {
+          items: [{
+            slug: 'project',
+            title: 'Project',
+            summary: 'Summary',
+            canonicalPath: '/en/portfolio/project'
+          }],
+          page: 0,
+          totalPages: 1
+        }
+      },
+      api
+    })
+
+    await flushPromises()
+    await wrapper.get('[data-skill-filter="systems"]').trigger('click')
+    await flushPromises()
+
+    expect(api.listPortfolio).toHaveBeenCalledWith('en', {
+      skill: 'systems',
+      page: 0,
+      size: 20
+    })
+    expect(wrapper.get('.portfolio-filter__control').attributes('aria-pressed')).toBe('false')
+
+    await wrapper.get('.portfolio-filter__control').trigger('click')
+    await flushPromises()
+
+    expect(api.listPortfolio).toHaveBeenLastCalledWith('en', {
+      page: 0,
+      size: 20
+    })
     wrapper.unmount()
   })
 

@@ -119,6 +119,9 @@ export default {
     }
   },
   collections: {
+    portfolio: {
+      filterLabel: 'Filter portfolio projects by skill',
+      all: 'All projects'
     blog: {
       discoveryLabel: 'Browse blog posts',
       searchLabel: 'Search writing',
