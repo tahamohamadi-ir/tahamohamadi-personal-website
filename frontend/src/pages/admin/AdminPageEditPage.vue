@@ -126,18 +126,28 @@ function promptRestore(revision) {
 }
 
 async function confirmRestore() {
-  if (!restoreCandidate.value) return
+  if (!restoreCandidate.value || !form.value || form.value.version == null) return
+  saving.value = true
+  error.value = null
   try {
     await primeCsrfToken(httpClient)
-    const response = await httpClient.post(`/api/v1/admin/pages/${pageId.value}/revisions/${restoreCandidate.value.id}/restore`)
-    form.value = createForm(response.data)
+    const response = await httpClient.post(
+      `/api/v1/admin/pages/${pageId.value}/revisions/${restoreCandidate.value.id}/restore-as-draft`,
+      null,
+      { params: { version: form.value.version } }
+    )
     changes.markSaved()
     restoreConfirmationOpen.value = false
     revisionDialog.value = false
-    await loadRevisions()
+    restoreCandidate.value = null
+    await router.replace({ name: 'admin-pages-edit', params: { id: response.data.id } })
+    await load()
   }
   catch (cause) {
     error.value = normalizeApiError(cause)
+  }
+  finally {
+    saving.value = false
   }
 }
 
@@ -155,7 +165,8 @@ async function save() {
     const payload = {
       pageKey: form.value.pageKey,
       fa: form.value.fa,
-      en: form.value.en
+      en: form.value.en,
+      version: form.value.version
     }
     const response = await httpClient.put(`/api/v1/admin/pages/${pageId.value}`, payload)
     form.value = createForm(response.data)
@@ -178,7 +189,11 @@ async function updateStatus(newStatus) {
   error.value = null
   try {
     await primeCsrfToken(httpClient)
-    const response = await httpClient.post(`/api/v1/admin/pages/${pageId.value}/${newStatus.toLowerCase()}`)
+    const response = await httpClient.post(
+      `/api/v1/admin/pages/${pageId.value}/${newStatus.toLowerCase()}`,
+      null,
+      { params: { version: form.value.version } }
+    )
     form.value = createForm(response.data)
     changes.markSaved()
   }
@@ -370,7 +385,7 @@ onBeforeRouteLeave(async () => changes.confirmLeave())
         <q-card-section>{{ t('admin.pages.revisions.restoreDescription') }}</q-card-section>
         <q-card-actions align="right">
           <q-btn v-close-popup flat :label="t('admin.unsaved.cancel')" />
-          <q-btn color="primary" unelevated :label="t('admin.pages.revisions.confirmRestore')" @click="confirmRestore" />
+          <q-btn color="primary" unelevated :loading="saving" :disable="saving" :label="t('admin.pages.revisions.confirmRestore')" @click="confirmRestore" />
         </q-card-actions>
       </q-card>
     </q-dialog>

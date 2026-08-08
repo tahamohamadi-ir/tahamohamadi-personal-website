@@ -40,6 +40,8 @@ Catch visual defects before users do. Functional tests confirm the button works;
 - A diff report for each change, with the pixel delta.
 - A list of visual defects with viewport and browser.
 
+If visual QA is postponed for a low-risk fast-track change in TahaMohamadi.ir, log the omitted route, locale, state, viewport/browser, user impact, mitigation, owner, and return trigger in `docs/status/deferred-validation.md`. This is never a substitute for the affected flow's required functional or accessibility/safety checks.
+
 ## Workflow
 
 1. **Enumerate the states** — Not just the happy one. Empty, loading, error, long content, and the state with a 60-character name in a field designed for eight.

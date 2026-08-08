@@ -29,6 +29,8 @@ Implement the current requirement completely with the least unnecessary complexi
 6. Run focused checks first, then broader checks when the change's risk or repository conventions justify them.
 7. Report the result, actual verification, and any material unresolved risk.
 
+For TahaMohamadi.ir fast-track work, use `docs/governance/fast-track-delivery.md`: keep verification proportional, but record any deliberately unrun non-critical check in `docs/status/deferred-validation.md`. YAGNI never justifies hiding a gap or weakening a safety-critical control.
+
 ## Control implementation scope
 
 - Do not build features, configuration, extension points, fallback modes, or infrastructure for hypothetical future needs.

@@ -4,6 +4,10 @@
 
 Security must be designed from the beginning, especially for Admin Panel, authentication, file upload, and contact form.
 
+## Fast-track boundary
+
+Speed may defer only non-critical hardening after the affected baseline is safe. It must never waive authentication, backend authorization, session/CSRF protection, secret handling, input validation/output sanitization, safe file/import processing, public draft/preview protection, or data integrity. Any deferred security improvement must be recorded in `docs/status/deferred-validation.md` with severity, mitigation, owner, return trigger, and closure evidence. An open `P0` or `P1` entry blocks release of the affected flow.
+
 ## Authentication
 
 1. Admin login is required for all admin routes.

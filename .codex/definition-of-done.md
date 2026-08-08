@@ -1,6 +1,14 @@
 ﻿# Definition of Done
 
-A task is done only when all relevant items below are satisfied.
+Use this checklist to declare the evidence-backed status of a task. A task may be `implemented` or `operational` with explicitly logged non-critical follow-up; only `release-verified` means all applicable broader validation is complete.
+
+## Status declaration
+
+- `implemented`: scoped implementation and focused verification are complete; any remaining validation is visible in the ledger.
+- `operational`: all applicable non-deferrable security, data, publication, contract and deployment gates are complete.
+- `release-verified`: operational plus the broader release validation relevant to the change is complete.
+
+Use the status that the evidence supports. A task is not fully `release-verified` merely because its code was merged. For fast-track work, follow `docs/governance/fast-track-delivery.md` and record each deliberate gap in `docs/status/deferred-validation.md`. Never call a task operational or release-verified if an open `P0`/`P1` ledger item applies to that flow.
 
 ## Requirement
 
@@ -49,6 +57,7 @@ A task is done only when all relevant items below are satisfied.
 - [ ] Inputs are validated.
 - [ ] XSS risk is handled.
 - [ ] File upload risk is handled if applicable.
+- [ ] The task does not defer auth/RBAC/CSRF, secrets, input/output safety, public publication protection, or data integrity.
 
 ## Testing
 
@@ -56,6 +65,7 @@ A task is done only when all relevant items below are satisfied.
 - [ ] Integration tests pass where needed.
 - [ ] E2E/smoke tests pass where needed.
 - [ ] Regression risks are considered.
+- [ ] Any intentionally unrun relevant check is linked to a ledger entry with mitigation, owner and return trigger.
 
 ## Documentation
 
@@ -68,3 +78,8 @@ A task is done only when all relevant items below are satisfied.
 
 - [ ] Commit message is clear.
 - [ ] Working tree is clean after commit.
+
+## Fast-track handoff
+
+- [ ] The reported status is `implemented`, `operational`, or `release-verified` and matches the evidence.
+- [ ] Open ledger IDs and their user/release impact are named in the handoff.

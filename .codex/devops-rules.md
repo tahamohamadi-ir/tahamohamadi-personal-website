@@ -54,6 +54,10 @@ GitHub Actions should run:
 4. Run health checks after deployment.
 5. Keep rollback instructions documented.
 
+## Fast-track release evidence
+
+An operational fast-track release still requires the applicable migration/rollback path, health checks, secrets-safe configuration, and a safe feature-flag or rollback owner for risky rollout. Broader load testing, monitoring refinement, cross-environment QA, or deployment automation may be deferred only when recorded in `docs/status/deferred-validation.md` with a mitigation and concrete return trigger. Do not call a release `release-verified` while its relevant ledger entries remain open.
+
 ## Backup Rules
 
 Backup must include:
