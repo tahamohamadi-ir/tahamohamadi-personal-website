@@ -242,6 +242,15 @@
 
 - [x] تصمیم تعویق focal point/variant/CDN با trigger بازگشت و rollback note در [ADR-012](../docs/adr/ADR-012-media-variants-and-focal-point.md) ثبت شد.
 
+### تکمیل اجرایی R1 — محتوای نمونهٔ محلی از مسیر CMS
+
+**نوع:** BUILD، فقط توسعه
+
+- [x] seed صریح و profile-guarded برای CMS کاملاً خالی، یک Home دوزبانهٔ منتشرشده، دو block تصویر‌دار، هویت سایت و یک نمونه‌کار galleryدار افزوده شد.
+- [x] دو تصویر تولیدیِ توسعه‌ای همراه با alt فارسی/انگلیسی از `Media Library` ثبت می‌شوند؛ public page به متن یا URL نمونهٔ ثابت وابسته نیست.
+- [x] مسیر اجرا و منع production در `scripts/seed/README.md` ثبت شد.
+- [ ] اجرای واقعی seed روی PostgreSQL توسعه و QA SSR صفحات `/fa`، `/en` و نمونه‌کار هنوز انجام نشده است؛ مرجع: `CMS-DEMO-SEED-010` در ledger.
+
 ---
 
 ## 5. Release 2 — Composer، Canvas و preview

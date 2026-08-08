@@ -31,6 +31,21 @@
 
 ## موارد باز
 
+### CMS-DEMO-SEED-010 — اجرای واقعی محتوای نمونهٔ توسعه‌ای
+
+- **وضعیت:** `OPEN`
+- **شدت:** `P2`
+- **تاریخ ثبت:** `2026-08-08`
+- **Scope / مرجع:** `DemoContentSeeder`، `scripts/seed/README.md` و تکمیل اجرایی R1 در [plan 012](../../plans/012-cms-v2-wordpress-capability-task-list.md)
+- **آنچه انجام شد:** seed به دو guard مستقل (`demo` profile و `taha.demo-seed.enabled=true`) محدود است، فقط CMS کاملاً خالی را می‌پذیرد و Home/Portfolio دوزبانه و دو asset معمولی Media Library را از resourceهای توسعه می‌سازد. backend همراه با sourceهای جدید compile و `MediaValidationUnitTest` با 5 test سبز شد.
+- **آنچه عمداً انجام نشد:** اجرای seed روی PostgreSQL توسعه، مشاهدهٔ SSR مسیرهای `/fa` و `/en` و صفحهٔ نمونه‌کار، و پاکسازی دادهٔ حاصل از اجرای آزمایشی هنوز انجام نشده است.
+- **اثر و ریسک:** تا زمان اجرای واقعی، ناسازگاری JDBC/فایل‌سیستم یا mapping public فقط در محیط عملی آشکار می‌شود؛ دادهٔ نمونه نباید production-ready تلقی شود.
+- **Mitigation فعلی:** seed با profile و property صریح، guard CMS خالی و resourceهای داخلی محدود شده و در profile پیش‌فرض فعال نیست.
+- **مالک:** owner توسعهٔ CMS
+- **Trigger بازگشت:** پیش از استفادهٔ demo برای بازبینی محصول، QA بصری یا هر محیط غیرمحلی
+- **معیار بستن:** یک اجرای موفق روی PostgreSQL توسعه، ثبت نتیجهٔ Home و نمونه‌کار در هر دو locale و حذف/بازنشانی دادهٔ آزمایشی طبق runbook.
+- **شواهد رفع:** —
+
 ### CMS-R1-VALIDATION-005 — اجرای تازهٔ تست‌ها و QA Release 1 Media
 
 - **وضعیت:** `OPEN`
