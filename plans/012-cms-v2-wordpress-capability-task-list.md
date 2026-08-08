@@ -190,7 +190,7 @@
 - [x] Portfolio و Publication cover و Resume document در backend نیز به‌ترتیب image/image/PDF را الزام می‌کنند؛ test منفی integration افزوده شده است.
 - [x] component suite Media Picker با 8 test عبور کرد، از جمله type filter/upload و multiple selection.
 - [ ] پوشش عملی pagination/clear در browser و E2E کامل باقی مانده است؛ مرجع: `CMS-R1-VALIDATION-005`.
-- [ ] `AdminPublicationService` هنوز MIME cover را در server الزام نمی‌کند، هرچند فرم Admin image-only است؛ مرجع: `CMS-R1-PUBLICATION-COVER-008`.
+- [x] `AdminPublicationService` نیز asset فعال غیرتصویری را برای cover در create/update رد می‌کند؛ اجرای HTTP integration هنوز در `CMS-R1-VALIDATION-005` باز است.
 
 ### T1.3 — metadata دوزبانه و accessibility رسانه
 
@@ -226,7 +226,7 @@
 
 - [x] usage index صفحات، Composer، Blog، Portfolio، Publications، Resume و Site Settings را پوشش می‌دهد؛ UI پیش از replace/archive مصرف‌ها را نشان می‌دهد و archive فقط برای orphan فعال است.
 - [x] replace در backend هم‌خانوادهٔ MIME را کنترل و referenceها را جایگزین می‌کند؛ version و audit در service وجود دارد.
-- [ ] orphan endpoint فقط 100 candidate اول را برمی‌گرداند و pagination/filter واقعی ندارد؛ مرجع: `CMS-R1-ORPHAN-007`.
+- [x] orphan endpoint اکنون `PageResponse` پایدار با page/size/query/type/status دارد و پنل Media Library فهرست، pagination و empty state مستقل آن را نمایش می‌دهد.
 - [ ] integration testهای mutation/authorization و مشاهدهٔ public projection پس از replace به Docker/Testcontainers و QA واقعی نیاز دارد؛ مرجع: `CMS-R1-VALIDATION-005`.
 
 ### T1.5 — spike focal point و responsive variants

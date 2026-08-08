@@ -61,19 +61,19 @@
 - **معیار بستن:** decision صریح meaningful/decorative، validation server-side در publish و test فارسی/انگلیسی برای همهٔ renderer/projectionهای تصویر ثبت شود.
 - **شواهد رفع:** —
 
-### CMS-R1-ORPHAN-007 — گزارش orphan هنوز pagination و filter واقعی ندارد
+### CMS-R1-ORPHAN-007 — اعتبارسنجی HTTP گزارش orphan صفحه‌بندی‌شده
 
 - **وضعیت:** `OPEN`
 - **شدت:** `P2`
 - **تاریخ ثبت:** `2026-08-08`
 - **Scope / مرجع:** [plan 012، T1.4](../../plans/012-cms-v2-wordpress-capability-task-list.md)؛ `MediaOrphanReportService`
-- **آنچه انجام شد:** usage index و نمایش هشدار orphan در Media Library بررسی شد.
-- **آنچه عمداً انجام نشد:** endpoint اکنون فقط 100 candidate اول را بررسی می‌کند و API/UI page/filter/empty-state مستقل ندارد.
-- **اثر و ریسک:** در کتابخانهٔ بزرگ، orphanهای واقعی دیده نمی‌شوند و گزارش برای cleanup کامل قابل اتکا نیست.
-- **Mitigation فعلی:** archive از UI فقط برای orphanهای گزارش‌شده فعال است و server archive asset referenced را رد می‌کند.
+- **آنچه انجام شد:** endpoint اکنون پس از refresh usage index، با `PageResponse` و filterهای query/type/status، orphanها را از کل library query می‌کند؛ پنل مستقل Admin list/pagination/empty state دارد و `MediaOrphanReportServiceUnitTest` اجرا و سبز شد.
+- **آنچه عمداً انجام نشد:** اجرای HTTP/SQL واقعی این query و flow archive پس از حذف آخرین reference به‌دلیل نبود Docker/Testcontainers انجام نشده است.
+- **اثر و ریسک:** syntax یا pagination query native ممکن است فقط در PostgreSQL runtime آشکار شود؛ تا آن زمان cleanup بزرگ release-verified نیست.
+- **Mitigation فعلی:** محدودیت 100 مورد حذف شده، query بر usage index تازه‌شده تکیه دارد، archive server همچنان asset referenced را رد می‌کند.
 - **مالک:** owner Media Library
-- **Trigger بازگشت:** پیش از cleanup عملیاتی یا زمانی که library از 100 asset فعال فراتر رود
-- **معیار بستن:** PageResponse پایدار، filter مستند، empty state و test حذف reference/صفحه‌بندی اضافه و اجرا شود.
+- **Trigger بازگشت:** پیش از cleanup عملیاتی گسترده یا rollout Media Library.
+- **معیار بستن:** integration PostgreSQL برای page/filter و حذف آخرین reference، به‌همراه یک QA session Admin، اجرا و سبز شود.
 - **شواهد رفع:** —
 
 ### CMS-R1-PUBLICATION-COVER-008 — backend publication cover هنوز image-only نیست

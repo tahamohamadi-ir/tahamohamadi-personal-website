@@ -136,6 +136,9 @@ describe('admin media upload limits', () => {
     expect(httpClient.get).toHaveBeenCalledWith('/api/v1/admin/media', {
       params: { page: 0, size: 20, query: 'portrait', type: undefined, status: undefined }
     })
+    expect(httpClient.get).toHaveBeenCalledWith('/api/v1/admin/media/orphans', {
+      params: { page: 0, size: 20, query: 'portrait', type: undefined, status: undefined }
+    })
     wrapper.unmount()
   })
 
