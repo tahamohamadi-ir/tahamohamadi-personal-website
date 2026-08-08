@@ -187,7 +187,7 @@
 
 - [x] تمام فرم‌های شناسایی‌شدهٔ Settings، Composer، Blog، Portfolio، Publications و Resume از `AdminMediaSelector` استفاده می‌کنند؛ انتخاب UUID خام از لیست Resume و Media Library حذف شد.
 - [x] `AdminMediaSelector` type تک‌گزینه‌ای را به query سرور و policy upload منتقل می‌کند؛ `AdminMediaPickerModal` نیز accept/policy یکسان و انتخاب چندگانهٔ واقعی دارد.
-- [x] Portfolio cover و Resume document در backend نیز به‌ترتیب image و PDF را الزام می‌کنند؛ test منفی integration افزوده شده است.
+- [x] Portfolio و Publication cover و Resume document در backend نیز به‌ترتیب image/image/PDF را الزام می‌کنند؛ test منفی integration افزوده شده است.
 - [x] component suite Media Picker با 8 test عبور کرد، از جمله type filter/upload و multiple selection.
 - [ ] پوشش عملی pagination/clear در browser و E2E کامل باقی مانده است؛ مرجع: `CMS-R1-VALIDATION-005`.
 - [ ] `AdminPublicationService` هنوز MIME cover را در server الزام نمی‌کند، هرچند فرم Admin image-only است؛ مرجع: `CMS-R1-PUBLICATION-COVER-008`.
@@ -207,7 +207,8 @@
 **وضعیت اجرا — 2026-08-08:**
 
 - [x] فرم detail رسانه، alt و caption فارسی/انگلیسی را جداگانه نمایش و ویرایش می‌کند؛ caption در API جای alt را نمی‌گیرد.
-- [ ] policy مرکزی «meaningful image بدون alt» و نشانهٔ صریح decorative، و همچنین gate انتشار در همهٔ public projectionها هنوز ساخته نشده است؛ مرجع: `CMS-R1-ALT-006`.
+- [x] Page Builder برای هر تصویر meaningful، alt مستقل فارسی/انگلیسی را در backend الزام می‌کند؛ decorative فقط با `settings.decorative=true` و alt خالی مجاز است. renderer برای تصویر meaningful بدون alt fail-closed است.
+- [ ] همین تصمیم هنوز به Portfolio gallery و collection/public cover projectionهای خارج از Page Builder تعمیم نیافته است؛ مرجع: `CMS-R1-ALT-006`.
 
 ### T1.4 — usage، replace و archive impact
 

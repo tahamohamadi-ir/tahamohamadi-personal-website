@@ -115,6 +115,7 @@ public class AdminPageBlockController {
         String type = block.type().trim().toUpperCase(Locale.ROOT);
         if (!TYPES.contains(type)) throw new IllegalArgumentException("Unsupported page block type");
         validateSettings(type, block.settingsJson());
+        validateMediaAccessibility(type, block.settingsJson(), block.fa(), block.en());
         UUID id = UUID.randomUUID();
         jdbc.update("insert into content_page_block (id,content_page_id,content_page_section_id,block_type,sort_order,is_enabled,settings_json,created_at,updated_at,version) values (?,?,?,?,?,?,?,?,?,0)", id, pageId, sectionId, type, index, block.enabled(), block.settingsJson(), timestamp(now), timestamp(now));
         insertTranslation(id, "fa", block.fa(), now);
@@ -150,7 +151,7 @@ public class AdminPageBlockController {
                 throw new IllegalArgumentException("Block settings must be a JSON object");
             }
             Set<String> allowed = switch (type) {
-                case "HERO", "MEDIA", "MEDIA_TEXT" -> Set.of("mediaId");
+                case "HERO", "MEDIA", "MEDIA_TEXT" -> Set.of("mediaId", "decorative");
                 case "COLLECTION" -> Set.of("source", "limit");
                 default -> Set.of();
             };
@@ -159,6 +160,9 @@ public class AdminPageBlockController {
             });
             if (value.has("mediaId") && !value.get("mediaId").isTextual()) {
                 throw new IllegalArgumentException("Media setting must be an asset identifier");
+            }
+            if (value.has("decorative") && !value.get("decorative").isBoolean()) {
+                throw new IllegalArgumentException("Decorative media setting must be boolean");
             }
             if (value.has("mediaId")) {
                 UUID mediaId;
@@ -176,6 +180,28 @@ public class AdminPageBlockController {
             }
             if (value.has("limit") && (!value.get("limit").canConvertToInt() || value.get("limit").asInt() < 1 || value.get("limit").asInt() > 12)) {
                 throw new IllegalArgumentException("Collection limit must be between 1 and 12");
+            }
+        } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
+            throw new IllegalArgumentException("Block settings must be valid JSON", exception);
+        }
+    }
+
+    private void validateMediaAccessibility(
+            String type,
+            String settingsJson,
+            BlockTranslationRequest fa,
+            BlockTranslationRequest en
+    ) {
+        if (!Set.of("HERO", "MEDIA", "MEDIA_TEXT").contains(type) || settingsJson == null || settingsJson.isBlank()) return;
+        try {
+            JsonNode settings = objectMapper.readTree(settingsJson);
+            if (!settings.has("mediaId")) return;
+            boolean decorative = settings.path("decorative").asBoolean(false);
+            if (decorative && (hasText(fa.alt()) || hasText(en.alt()))) {
+                throw new IllegalArgumentException("Decorative media must not have alt text");
+            }
+            if (!decorative && (!hasText(fa.alt()) || !hasText(en.alt()))) {
+                throw new IllegalArgumentException("Meaningful media requires localized alt text");
             }
         } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
             throw new IllegalArgumentException("Block settings must be valid JSON", exception);
@@ -202,6 +228,8 @@ public class AdminPageBlockController {
     }
 
     private static Timestamp timestamp(Instant value) { return Timestamp.from(value); }
+
+    private static boolean hasText(String value) { return value != null && !value.isBlank(); }
 
     public record PageBlocksRequest(@NotNull @Min(0) Long version, @NotNull @Size(max = 50) List<@Valid PageBlockRequest> blocks) { }
     public record PageCompositionRequest(@NotNull @Min(0) Long version, @NotNull @Size(min = 1, max = 20) List<@Valid PageSectionRequest> sections) { }

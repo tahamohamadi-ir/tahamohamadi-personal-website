@@ -6,6 +6,8 @@ import ir.tahamohamadi.content.page.ContentPage;
 import ir.tahamohamadi.content.page.ContentPageRepository;
 import ir.tahamohamadi.identity.user.AppUser;
 import ir.tahamohamadi.identity.user.AppUserRepository;
+import ir.tahamohamadi.media.asset.MediaAsset;
+import ir.tahamohamadi.media.asset.MediaAssetRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,7 @@ class AdminPageBlockIntegrationTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired AppUserRepository users;
     @Autowired ContentPageRepository pages;
+    @Autowired MediaAssetRepository media;
     @Autowired AuditEventRepository audit;
 
     @BeforeEach
@@ -86,6 +89,24 @@ class AdminPageBlockIntegrationTest {
     }
 
     @Test
+    void requiresLocalizedAltOrAnExplicitDecorativeDecisionForMediaBlocks() throws Exception {
+        AppUser admin = users.saveAndFlush(AppUser.create("media-alt-" + UUID.randomUUID() + "@example.test", "hash", "Media Alt Admin", Instant.now()));
+        ContentPage page = pages.saveAndFlush(ContentPage.create(UUID.randomUUID(), "media-alt-" + UUID.randomUUID(), Instant.now()));
+        MediaAsset image = media.saveAndFlush(MediaAsset.create(UUID.randomUUID(), "media-alt-" + UUID.randomUUID(), "image.png", "png", "image/png", 1, "a".repeat(64), 1, 1, Instant.now()));
+
+        mvc.perform(put("/api/v1/admin/pages/{pageId}/blocks", page.getId())
+                        .contentType(MediaType.APPLICATION_JSON).content(mediaPayload(image.getId(), false, "", ""))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(put("/api/v1/admin/pages/{pageId}/blocks", page.getId())
+                        .contentType(MediaType.APPLICATION_JSON).content(mediaPayload(image.getId(), true, "", ""))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.blocks[0].settingsJson").value(org.hamcrest.Matchers.containsString("decorative")));
+    }
+
+    @Test
     void servesDraftPreviewOnlyWithShortLivedTokenAndNoStoreNoIndexHeaders() throws Exception {
         AppUser admin = users.saveAndFlush(AppUser.create("preview-" + UUID.randomUUID() + "@example.test", "hash", "Preview Admin", Instant.now()));
         ContentPage page = pages.saveAndFlush(ContentPage.create(UUID.randomUUID(), "preview-" + UUID.randomUUID(), Instant.now()));
@@ -128,6 +149,10 @@ class AdminPageBlockIntegrationTest {
                   {"type":"STANDARD","layout":"SINGLE_COLUMN","enabled":true,"blocks":[{"type":"CALL_TO_ACTION","enabled":true,"fa":{"title":"دوم","actionPath":"/fa/contact"},"en":{"title":"Second","actionPath":"/en/contact"}}]}
                 ]}
                 """;
+    }
+
+    private static String mediaPayload(UUID mediaId, boolean decorative, String faAlt, String enAlt) {
+        return "{\"version\":0,\"blocks\":[{\"type\":\"MEDIA\",\"enabled\":true,\"settingsJson\":\"{\\\"mediaId\\\":\\\"" + mediaId + "\\\",\\\"decorative\\\":" + decorative + "}\",\"fa\":{\"alt\":\"" + faAlt + "\"},\"en\":{\"alt\":\"" + enAlt + "\"}}]}";
     }
 
     private static SecurityMockMvcRequestPostProcessors.UserRequestPostProcessor adminUser(AppUser user) {

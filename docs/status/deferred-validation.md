@@ -37,7 +37,7 @@
 - **شدت:** `P1` برای اعلام عملیاتی‌بودن Release 1
 - **تاریخ ثبت:** `2026-08-08`
 - **Scope / مرجع:** [plan 012، T1.1، T1.2 و T1.4](../../plans/012-cms-v2-wordpress-capability-task-list.md)
-- **آنچه انجام شد:** قراردادهای upload/list/select/replace/archive به‌صورت ایستا ممیزی شد؛ testهای منفی type field، انتخاب چندگانهٔ picker و backend type guardهای Portfolio/Resume افزوده شدند. `admin-media-upload.spec.js` با 8 test و `MediaValidationUnitTest` با 5 test عبور کردند.
+- **آنچه انجام شد:** قراردادهای upload/list/select/replace/archive به‌صورت ایستا ممیزی شد؛ testهای منفی type field، انتخاب چندگانهٔ picker و backend type guardهای Portfolio/Publication/Resume افزوده شدند. دو Vitest متمرکز با مجموع 15 test و `MediaValidationUnitTest` با 5 test عبور کردند؛ backend و همهٔ test sourceها نیز compile شدند.
 - **آنچه عمداً انجام نشد:** `AdminProjectIntegrationTest`، `PublicationResumeIntegrationTest` و `MediaUploadIntegrationTest` تلاش شدند اما پیش از test body به‌دلیل نبود Docker/Testcontainers اجرا نشدند؛ E2E «upload → select → save» و QA session معتبر Admin نیز باقی است.
 - **اثر و ریسک:** تغییرهای selector یا validation ممکن است در integration runtime، CSRF/multipart یا flow واقعی فرم‌ها شکست بخورند؛ Release 1 release-verified نیست.
 - **Mitigation فعلی:** policy server برای محتوای upload و type guardهای domain فعال است؛ تغییرهای frontend کوچک و shared هستند.
@@ -52,13 +52,13 @@
 - **شدت:** `P1` برای انتشار public imageهای جدید
 - **تاریخ ثبت:** `2026-08-08`
 - **Scope / مرجع:** [plan 012، T1.3](../../plans/012-cms-v2-wordpress-capability-task-list.md)
-- **آنچه انجام شد:** metadata دوزبانهٔ alt/caption در Media Library و alt محلی blockها بررسی شد.
-- **آنچه عمداً انجام نشد:** مدل/flag decorative، publish gate برای تصویر meaningful و test projectionهای هر locale ساخته نشده‌اند.
-- **اثر و ریسک:** تصویر public ممکن است بدون تصمیم روشن accessibility منتشر شود یا caption به‌اشتباه نقش alt بگیرد.
-- **Mitigation فعلی:** Page renderer از alt محلی block استفاده می‌کند و Admin metadata جداگانه نگهداری می‌شود؛ این mitigation gate انتشار نیست.
+- **آنچه انجام شد:** metadata دوزبانهٔ alt/caption در Media Library و alt محلی blockها بررسی شد. Page Builder اکنون در backend برای `HERO`، `MEDIA` و `MEDIA_TEXT` alt فارسی و انگلیسی را الزام می‌کند؛ `decorative=true` تنها راه ذخیرهٔ alt خالی است و renderer برای meaningful media بدون alt fail-closed است.
+- **آنچه عمداً انجام نشد:** مدل/flag decorative و publish gate یکسان هنوز برای Portfolio gallery و collection/public cover projectionهای بیرون از Page Builder ساخته نشده‌اند.
+- **اثر و ریسک:** تصویر public خارج از Page Builder ممکن است بدون تصمیم روشن accessibility منتشر شود یا caption به‌اشتباه نقش alt بگیرد.
+- **Mitigation فعلی:** Page Builder اکنون gate دارد و renderer آن امن است؛ Media Library metadata جداگانه نگهداری می‌شود. این mitigation هنوز تمام projectionها را نمی‌بندد.
 - **مالک:** owner مدل محتوای CMS
-- **Trigger بازگشت:** پیش از افزودن image جدید به landing/public page یا انتشار محتوای تصویری تازه
-- **معیار بستن:** decision صریح meaningful/decorative، validation server-side در publish و test فارسی/انگلیسی برای renderer/projection ثبت شود.
+- **Trigger بازگشت:** پیش از افزودن image جدید به landing/public page یا انتشار Portfolio/public collection تصویری تازه
+- **معیار بستن:** decision صریح meaningful/decorative، validation server-side در publish و test فارسی/انگلیسی برای همهٔ renderer/projectionهای تصویر ثبت شود.
 - **شواهد رفع:** —
 
 ### CMS-R1-ORPHAN-007 — گزارش orphan هنوز pagination و filter واقعی ندارد
@@ -82,13 +82,13 @@
 - **شدت:** `P1` برای integrity محتوای Publication
 - **تاریخ ثبت:** `2026-08-08`
 - **Scope / مرجع:** [plan 012، T1.2](../../plans/012-cms-v2-wordpress-capability-task-list.md)؛ `AdminPublicationService`
-- **آنچه انجام شد:** picker فیلد cover در Admin Publications با `allowedTypes=['image']` محدود است.
-- **آنچه عمداً انجام نشد:** service backend هنوز asset فعال PDF را برای cover رد نمی‌کند.
-- **اثر و ریسک:** client غیر UI یا درخواست دست‌کاری‌شده می‌تواند cover ناسازگار ایجاد کند و قرارداد public را بشکند.
-- **Mitigation فعلی:** UI shared type policy و status active را اعمال می‌کند؛ این mitigation مرجع نهایی نیست.
+- **آنچه انجام شد:** picker فیلد cover در Admin Publications با `allowedTypes=['image']` محدود است و `AdminPublicationService` اکنون asset فعال غیرتصویری را در create/update رد می‌کند. test منفی integration افزوده و backend testCompile با موفقیت اجرا شد.
+- **آنچه عمداً انجام نشد:** اجرای integration test واقعی به‌دلیل نبود Docker/Testcontainers انجام نشده است.
+- **اثر و ریسک:** منطق server اکنون guard دارد، اما evidence HTTP/runtime آن تا اجرای Testcontainers کامل نیست.
+- **Mitigation فعلی:** UI shared type policy، status active و guard نهایی service اعمال می‌شوند.
 - **مالک:** owner Publication domain
 - **Trigger بازگشت:** پیش از rollout Publications با cover یا هر API-client جدید
-- **معیار بستن:** server image-only را enforce کند و test مثبت/منفی create/update اجرا شود.
+- **معیار بستن:** integration test مثبت/منفی create/update در Docker/Testcontainers اجرا شود.
 - **شواهد رفع:** —
 
 ### CMS-R0-REVISION-001 — ناسازگاری مسیر restore در Page Edit

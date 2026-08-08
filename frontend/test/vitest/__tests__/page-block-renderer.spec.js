@@ -19,6 +19,7 @@ const siteFooter = readFileSync(resolve(process.cwd(), 'src/components/public/Si
 const navigationPage = readFileSync(resolve(process.cwd(), 'src/pages/admin/AdminNavigationPage.vue'), 'utf8')
 const settingsPage = readFileSync(resolve(process.cwd(), 'src/pages/admin/AdminSiteSettingsPage.vue'), 'utf8')
 const pagesAdmin = readFileSync(resolve(process.cwd(), 'src/pages/admin/AdminPagesPage.vue'), 'utf8')
+const blockController = readFileSync(resolve(process.cwd(), '../backend/src/main/java/ir/tahamohamadi/content/page/api/admin/AdminPageBlockController.java'), 'utf8')
 
 describe('public page block renderer contract', () => {
   it('keeps the composer to an allowlisted set of SSR-safe block types', () => {
@@ -80,7 +81,7 @@ describe('public page block renderer contract', () => {
     expect(composer).toContain("t('admin.composer.previewTitle')")
     expect(composer).toContain('validateActionPaths')
     expect(composer).toContain("block.type === 'MEDIA'")
-    expect(composer).toContain('Boolean(value.alt)')
+    expect(composer).toContain('Boolean(block.settings?.mediaId && value.alt)')
     expect(composer).toContain('mapValidationErrors')
     expect(composer).toContain('<q-dialog v-model="removalOpen" persistent>')
     expect(composer).toContain("t('admin.composer.remove'")
@@ -101,6 +102,15 @@ describe('public page block renderer contract', () => {
     expect(composer).toContain("t('admin.composer.removeTitle')")
     expect(composer).toContain("t('admin.composer.moved'")
     expect(composer).not.toContain('v-html')
+  })
+
+  it('fails closed for meaningful media without localized alt and makes decorative media explicit', () => {
+    expect(composer).toContain('decorative')
+    expect(source).toContain('isDecorativeMedia')
+    expect(source).toContain('mediaRenderable')
+    expect(blockController).toContain('validateMediaAccessibility')
+    expect(blockController).toContain('Decorative media must not have alt text')
+    expect(blockController).toContain('Meaningful media requires localized alt text')
   })
 
   it('loads CMS-backed shell data through the SSR snapshot boundary', () => {

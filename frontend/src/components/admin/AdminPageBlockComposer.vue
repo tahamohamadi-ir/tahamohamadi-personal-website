@@ -102,6 +102,20 @@ function supportsAlt(type) {
   return ['HERO', 'MEDIA', 'MEDIA_TEXT'].includes(type)
 }
 
+function isMediaBlock(type) {
+  return ['HERO', 'MEDIA', 'MEDIA_TEXT'].includes(type)
+}
+
+function isDecorativeMedia(block) {
+  return isMediaBlock(block.type) && block.settings?.decorative === true
+}
+
+function onDecorativeChange(block) {
+  if (!isDecorativeMedia(block)) return
+  block.fa.alt = ''
+  block.en.alt = ''
+}
+
 function isDecorativeBlock(type) {
   return ['DIVIDER', 'SPACER'].includes(type)
 }
@@ -124,7 +138,8 @@ const previewBlocks = computed(() => serverPreviewBlocks.value ?? blocks.value.m
 function complete(block, value = {}) {
   if (isDecorativeBlock(block.type)) return true
   const hasEditorialText = Boolean(value.title || value.lead || value.bodyMarkdown)
-  if (block.type === 'MEDIA') return Boolean(value.alt)
+  if (isMediaBlock(block.type) && isDecorativeMedia(block)) return Boolean(block.settings?.mediaId)
+  if (block.type === 'MEDIA') return Boolean(block.settings?.mediaId && value.alt)
   if (block.type === 'CALL_TO_ACTION') return Boolean(value.actionLabel && value.actionPath)
   if (block.type === 'MEDIA_TEXT') return Boolean(hasEditorialText && value.alt)
   return hasEditorialText
@@ -277,8 +292,8 @@ function openSettingsDrawer(index) {
 function onBlockTypeChange(block) {
   const allowed = block.type === 'COLLECTION'
     ? new Set(['source', 'limit'])
-    : ['HERO', 'MEDIA', 'MEDIA_TEXT'].includes(block.type)
-      ? new Set(['mediaId'])
+    : isMediaBlock(block.type)
+      ? new Set(['mediaId', 'decorative'])
       : block.type === 'SPACER'
         ? new Set(['height'])
         : new Set()
@@ -479,7 +494,8 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
 
       <!-- Block content (skip for decorative types) -->
       <q-card-section v-if="!isDecorativeBlock(block.type)" class="q-pt-none">
-        <AdminMediaSelector v-if="['HERO', 'MEDIA', 'MEDIA_TEXT'].includes(block.type)" v-model="block.settings.mediaId" :allowed-types="['image']" :label="t('admin.composer.media')" :disable="disable || saving" />
+        <AdminMediaSelector v-if="isMediaBlock(block.type)" v-model="block.settings.mediaId" :allowed-types="['image']" :label="t('admin.composer.media')" :disable="disable || saving" />
+        <q-toggle v-if="isMediaBlock(block.type)" v-model="block.settings.decorative" :label="t('admin.composer.decorativeMedia')" :disable="disable || saving" @update:model-value="onDecorativeChange(block)" />
         <template v-if="block.type === 'COLLECTION'">
           <q-select v-model="block.settings.source" :options="collectionOptions" emit-value map-options :label="t('admin.composer.collection')" :disable="disable || saving" />
           <q-input v-model.number="block.settings.limit" type="number" min="1" max="12" :label="t('admin.composer.limit')" :disable="disable || saving" />
@@ -495,7 +511,7 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
           <AdminMarkdownPreview v-if="supportsMarkdown(block.type)" v-model="block.fa.bodyMarkdown" />
           <q-input v-if="supportsAction(block.type)" v-model="block.fa.actionLabel" :label="t('admin.composer.actionLabelFa')" :disable="disable || saving" />
           <q-input v-if="supportsAction(block.type)" v-model="block.fa.actionPath" :label="t('admin.composer.actionPathFa')" :hint="t('admin.composer.actionHint')" :error="Boolean(fieldError(index, 'actionPath'))" :error-message="fieldError(index, 'actionPath')" :disable="disable || saving" />
-          <q-input v-if="supportsAlt(block.type)" v-model="block.fa.alt" :label="t('admin.composer.altFa')" :disable="disable || saving" />
+          <q-input v-if="supportsAlt(block.type) && !isDecorativeMedia(block)" v-model="block.fa.alt" :label="t('admin.composer.altFa')" :disable="disable || saving" />
         </template>
         <template v-else>
           <q-input v-if="supportsEyebrow(block.type)" v-model="block.en.eyebrow" :label="t('admin.composer.eyebrowEn')" :disable="disable || saving" />
@@ -504,7 +520,7 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
           <AdminMarkdownPreview v-if="supportsMarkdown(block.type)" v-model="block.en.bodyMarkdown" />
           <q-input v-if="supportsAction(block.type)" v-model="block.en.actionLabel" :label="t('admin.composer.actionLabelEn')" :disable="disable || saving" />
           <q-input v-if="supportsAction(block.type)" v-model="block.en.actionPath" :label="t('admin.composer.actionPathEn')" :hint="t('admin.composer.actionHint')" :error="Boolean(fieldError(index, 'actionPath'))" :error-message="fieldError(index, 'actionPath')" :disable="disable || saving" />
-          <q-input v-if="supportsAlt(block.type)" v-model="block.en.alt" :label="t('admin.composer.altEn')" :disable="disable || saving" />
+          <q-input v-if="supportsAlt(block.type) && !isDecorativeMedia(block)" v-model="block.en.alt" :label="t('admin.composer.altEn')" :disable="disable || saving" />
         </template>
       </q-card-section>
 

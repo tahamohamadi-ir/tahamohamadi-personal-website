@@ -71,6 +71,15 @@ class PublicationResumeIntegrationTest {
     void administersLocalizedPublicationsWithSecurityLifecycleVersionsAuditsAndPublicFiltering() throws Exception {
         AppUser admin = actor("publication-admin");
         String payload = publicationPayload("first", null, 2);
+        MediaAsset documentCover = asset("wrong-publication-cover");
+
+        mvc.perform(post("/api/v1/admin/publications").contentType(MediaType.APPLICATION_JSON)
+                        .content(publicationPayload("wrong-cover", null, 0).replace(
+                                "\"sortOrder\":0",
+                                "\"coverMediaId\":\"" + documentCover.getId() + "\",\"sortOrder\":0"
+                        ))
+                        .with(adminUser(admin)).with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isBadRequest());
 
         mvc.perform(post("/api/v1/admin/publications").contentType(MediaType.APPLICATION_JSON).content(payload)
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))

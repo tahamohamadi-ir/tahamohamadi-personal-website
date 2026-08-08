@@ -120,8 +120,16 @@ function mediaAlt(block) {
   return typeof block.alt === 'string' ? block.alt.trim() : ''
 }
 
+function isDecorativeMedia(block) {
+  return block.decorative === true
+}
+
+function mediaRenderable(block) {
+  return Boolean(mediaUrl(block) && (isDecorativeMedia(block) || mediaAlt(block)))
+}
+
 function heroMediaUrl(block) {
-  return mediaAlt(block) ? mediaUrl(block) : null
+  return mediaRenderable(block) ? mediaUrl(block) : null
 }
 
 function blockClasses(block) {
@@ -189,7 +197,7 @@ function entrySummary(entry) {
           <figure v-if="heroMediaUrl(block)" class="page-block__hero-media">
             <img
               :src="heroMediaUrl(block)"
-              :alt="mediaAlt(block)"
+                :alt="isDecorativeMedia(block) ? '' : mediaAlt(block)"
               width="1600"
               height="900"
               fetchpriority="high"
@@ -208,10 +216,10 @@ function entrySummary(entry) {
           <div class="page-block__media-layout">
             <figure class="page-block__media-figure">
               <img
-                v-if="mediaUrl(block)"
+                v-if="mediaRenderable(block)"
                 class="page-block__media"
                 :src="mediaUrl(block)"
-                :alt="block.alt ?? ''"
+                :alt="isDecorativeMedia(block) ? '' : mediaAlt(block)"
                 width="1200"
                 height="800"
                 loading="lazy"
