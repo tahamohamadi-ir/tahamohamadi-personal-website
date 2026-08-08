@@ -46,19 +46,19 @@
 - **معیار بستن:** integration testهای backend در محیط Docker سالم عبور کنند و یک flow واقعی upload، multiple select، save، replace و archive با session/CSRF معتبر ثبت شود.
 - **شواهد رفع:** —
 
-### CMS-R1-ALT-006 — تصمیم alt برای تصاویر meaningful و decorative مرکزی نیست
+### CMS-R1-ALT-006 — اجرای integration policy alt تصاویر public
 
 - **وضعیت:** `OPEN`
 - **شدت:** `P1` برای انتشار public imageهای جدید
 - **تاریخ ثبت:** `2026-08-08`
 - **Scope / مرجع:** [plan 012، T1.3](../../plans/012-cms-v2-wordpress-capability-task-list.md)
-- **آنچه انجام شد:** metadata دوزبانهٔ alt/caption در Media Library و alt محلی blockها بررسی شد. Page Builder اکنون در backend برای `HERO`، `MEDIA` و `MEDIA_TEXT` alt فارسی و انگلیسی را الزام می‌کند؛ `decorative=true` تنها راه ذخیرهٔ alt خالی است و renderer برای meaningful media بدون alt fail-closed است.
-- **آنچه عمداً انجام نشد:** مدل/flag decorative و publish gate یکسان هنوز برای Portfolio gallery و collection/public cover projectionهای بیرون از Page Builder ساخته نشده‌اند.
-- **اثر و ریسک:** تصویر public خارج از Page Builder ممکن است بدون تصمیم روشن accessibility منتشر شود یا caption به‌اشتباه نقش alt بگیرد.
-- **Mitigation فعلی:** Page Builder اکنون gate دارد و renderer آن امن است؛ Media Library metadata جداگانه نگهداری می‌شود. این mitigation هنوز تمام projectionها را نمی‌بندد.
+- **آنچه انجام شد:** Page Builder برای `HERO`، `MEDIA` و `MEDIA_TEXT` alt فارسی/انگلیسی یا `decorative=true` را الزام می‌کند و renderer meaningful media را fail-closed نگه می‌دارد. Portfolio gallery به‌صورت policy معنادار تعریف شد: الصاق و publish بدون هر دو alt در backend رد می‌شود و public API تنها alt همان locale را می‌دهد. `CollectionMedia` هم بدون alt محلی render نمی‌شود؛ logo سایت نام برند CMS را دریافت می‌کند.
+- **آنچه عمداً انجام نشد:** اجرای HTTP integration برای رد gallery بدون alt و پاسخ fa/en، و QA دستی با asset واقعی، به‌دلیل نبود Docker/Testcontainers انجام نشده است.
+- **اثر و ریسک:** قانون و renderer در source/test متمرکز پوشش دارند، اما binding runtime PostgreSQL و DOM واقعی هنوز evidence عملیاتی ندارند.
+- **Mitigation فعلی:** تمام rendererهای فعلی Media Library fail-closed یا با alternative متن صریح‌اند؛ Page Builder decorative decision دارد و Portfolio gallery decorative را نمی‌پذیرد.
 - **مالک:** owner مدل محتوای CMS
-- **Trigger بازگشت:** پیش از افزودن image جدید به landing/public page یا انتشار Portfolio/public collection تصویری تازه
-- **معیار بستن:** decision صریح meaningful/decorative، validation server-side در publish و test فارسی/انگلیسی برای همهٔ renderer/projectionهای تصویر ثبت شود.
+- **Trigger بازگشت:** پیش از rollout Media Library یا افزودن asset واقعی به landing/public page.
+- **معیار بستن:** integration testهای backend در Docker برای reject/allow gallery و پاسخ fa/en، به‌همراه QA واقعی public images، اجرا و ثبت شوند.
 - **شواهد رفع:** —
 
 ### CMS-R1-ORPHAN-007 — اعتبارسنجی HTTP گزارش orphan صفحه‌بندی‌شده

@@ -13,7 +13,7 @@ import MarkdownContent from 'src/components/content/MarkdownContent.vue'
 import TmButton from 'src/components/shared/TmButton.vue'
 import { useAsyncPage } from 'src/composables/useAsyncPage'
 import { usePublicSeoMeta } from 'src/composables/usePublicSeoMeta'
-import { PUBLIC_API_KEY } from 'src/services/apiContext'
+import { PUBLIC_API_KEY, PUBLIC_SITE_IDENTITY_KEY } from 'src/services/apiContext'
 
 const props = defineProps({
   initialData: {
@@ -23,6 +23,7 @@ const props = defineProps({
 })
 
 const api = inject(PUBLIC_API_KEY, null)
+const siteIdentity = inject(PUBLIC_SITE_IDENTITY_KEY, null)
 const route = useRoute()
 const { t } = useI18n()
 const activeLocale = computed(() => route.meta.locale || props.initialData?.locale || 'en')
@@ -58,6 +59,7 @@ const {
 })
 
 const page = computed(() => data.value?.page ?? null)
+const heroEyebrow = computed(() => siteIdentity?.value?.brandName ?? null)
 const homeBlocks = computed(() => page.value?.blocks ?? [])
 const collectionItems = computed(() => ({
   BLOG: data.value?.latestPosts ?? [],
@@ -147,9 +149,7 @@ onMounted(() => {
     >
       <div class="tm-container public-home__hero-content">
         <div class="public-home__hero-copy">
-          <p class="public-home__eyebrow">
-            TAHA MOHAMADI
-          </p>
+          <p v-if="heroEyebrow" class="public-home__eyebrow">{{ heroEyebrow }}</p>
           <h1>{{ page.title }}</h1>
           <p
             v-if="page.summary"

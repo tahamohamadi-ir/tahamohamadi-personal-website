@@ -72,6 +72,7 @@ class AdminProjectIntegrationTest {
                 .andExpect(status().isBadRequest());
 
         MediaAsset cover = asset("cover");
+        MediaAsset galleryWithoutAlt = asset("gallery-without-alt");
         MediaAsset archivedCover = asset("archived-cover");
         MediaAsset documentCover = documentAsset("document-cover");
         archivedCover.archive();
@@ -91,6 +92,10 @@ class AdminProjectIntegrationTest {
                 .andExpect(status().isNotFound());
         mvc.perform(post("/api/v1/admin/portfolio/projects").contentType(MediaType.APPLICATION_JSON)
                         .content(payload("document-cover", documentCover.getId(), List.of(), null, 0)).with(adminUser(admin))
+                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/admin/portfolio/projects").contentType(MediaType.APPLICATION_JSON)
+                        .content(payloadWithGallery("gallery-without-alt", cover.getId(), galleryWithoutAlt.getId())).with(adminUser(admin))
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isBadRequest());
         mvc.perform(post("/api/v1/admin/portfolio/projects").contentType(MediaType.APPLICATION_JSON)
@@ -250,6 +255,11 @@ class AdminProjectIntegrationTest {
 
     private String payloadWithoutStarted(String key, UUID coverMediaId) {
         return payload(key, coverMediaId, List.of(), null, 0).replace("\"startedOn\":\"2025-01-01\",", "");
+    }
+
+    private String payloadWithGallery(String key, UUID coverMediaId, UUID galleryMediaId) {
+        return payload(key, coverMediaId, List.of(), null, 0)
+                .replace("\"gallery\":[]", "\"gallery\":[{\"mediaAssetId\":\"" + galleryMediaId + "\",\"sortOrder\":0}]");
     }
 
     private MediaAsset asset(String name) { return media.saveAndFlush(MediaAsset.create(UUID.randomUUID(), "storage-" + name + "-" + UUID.randomUUID(), name + ".png", "png", "image/png", 12, "a".repeat(64), 1, 1, Instant.now())); }

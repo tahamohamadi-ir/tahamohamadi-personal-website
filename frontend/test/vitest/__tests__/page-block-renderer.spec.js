@@ -43,6 +43,8 @@ describe('public page block renderer contract', () => {
     expect(homePage).toContain('homeBlocks')
     expect(homePage).toContain(':hero-heading-level="1"')
     expect(homePage).toContain('hasLegacyManagedContent')
+    expect(homePage).toContain('PUBLIC_SITE_IDENTITY_KEY')
+    expect(homePage).not.toContain('TAHA MOHAMADI')
     expect(composedPage).toContain('PageBlockRenderer')
     expect(composedPage).toContain('useComposedPageData')
     expect(composedPageData).toContain("currentApi.getPage(locale.value, slug.value)")
@@ -115,6 +117,7 @@ describe('public page block renderer contract', () => {
 
   it('loads CMS-backed shell data through the SSR snapshot boundary', () => {
     expect(publicLayout).toContain('currentApi.getSiteChrome(language.value)')
+    expect(publicLayout).toContain('PUBLIC_SITE_IDENTITY_KEY')
     expect(publicLayout).toContain('siteChrome.identity || siteChrome.navigation?.length')
     expect(publicLayout).toContain("property: 'og:image'")
     expect(publicLayout).toContain("public-shell--standard-density")

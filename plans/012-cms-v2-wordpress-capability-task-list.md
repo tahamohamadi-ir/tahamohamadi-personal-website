@@ -208,7 +208,8 @@
 
 - [x] فرم detail رسانه، alt و caption فارسی/انگلیسی را جداگانه نمایش و ویرایش می‌کند؛ caption در API جای alt را نمی‌گیرد.
 - [x] Page Builder برای هر تصویر meaningful، alt مستقل فارسی/انگلیسی را در backend الزام می‌کند؛ decorative فقط با `settings.decorative=true` و alt خالی مجاز است. renderer برای تصویر meaningful بدون alt fail-closed است.
-- [ ] همین تصمیم هنوز به Portfolio gallery و collection/public cover projectionهای خارج از Page Builder تعمیم نیافته است؛ مرجع: `CMS-R1-ALT-006`.
+- [x] Portfolio gallery به‌صورت قراردادی meaningful است: Admin الصاق/انتشار بدون alt فارسی و انگلیسی را رد می‌کند و public projection فقط alt همان locale را برمی‌گرداند. `CollectionMedia` نیز بدون alt محلی render نمی‌شود؛ logo سایت نام برند CMS را به‌عنوان متن جایگزین دارد.
+- [ ] اجرای HTTP integration برای validation gallery و پاسخ locale-specific در Docker/Testcontainers باقی مانده است؛ مرجع: `CMS-R1-VALIDATION-005`.
 
 ### T1.4 — usage، replace و archive impact
 
