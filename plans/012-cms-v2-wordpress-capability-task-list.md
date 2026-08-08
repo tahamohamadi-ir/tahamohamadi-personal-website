@@ -306,6 +306,14 @@
 
 **تست‌ها:** keyboard-only reorder، focus restoration، duplicate locality، delete confirmation و route leave.
 
+**وضعیت اجرا — 2026-08-08:**
+
+- [x] حرکت section و block با دکمه‌های keyboard در دسترس است و برای mutationهای move، duplicate و delete اعلان `aria-live` دارد.
+- [x] حذف block و section هر دو اکنون به confirmation مشترک متصل‌اند؛ پس از delete section/block یا duplicate block، focus به کارت جانشین یا clone منتقل می‌شود.
+- [x] drag handle یک control فعال نیست؛ دکمه‌های keyboard مسیر مرجع reorder باقی می‌مانند.
+- [x] Vitest قرارداد ابتدا RED و سپس GREEN شد (9 test) و build SSR frontend موفق بود.
+- [ ] keyboard-only QA، تعامل واقعی focus در مرورگر و پوشش route leave/duplicate locality در سطح component یا E2E باقی مانده است؛ مرجع: `CMS-R2-CANVAS-012` در ledger.
+
 ### T2.4 — undo/redo و autosave Draft
 
 **نوع:** VERIFY

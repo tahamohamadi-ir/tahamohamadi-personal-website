@@ -61,6 +61,21 @@
 - **معیار بستن:** integration testهای مثبت/منفی در PostgreSQL و یک QA session برای save/preview هر دو locale ثبت شود.
 - **شواهد رفع:** —
 
+### CMS-R2-CANVAS-012 — QA رفتار destructive و focus Composer
+
+- **وضعیت:** `OPEN`
+- **شدت:** `P2`
+- **تاریخ ثبت:** `2026-08-08`
+- **Scope / مرجع:** [plan 012، T2.3](../../plans/012-cms-v2-wordpress-capability-task-list.md)؛ `AdminPageBlockComposer.vue`
+- **آنچه انجام شد:** حذف section به confirmation موجود متصل شد و حذف block/section و duplicate block focus را به عنصر منطقی بعدی منتقل می‌کنند. Vitest قرارداد (9 test) و build SSR موفق‌اند.
+- **آنچه عمداً انجام نشد:** keyboard-only QA در مرورگر، اجرای component/E2E برای focus واقعی و route leave با تغییر ذخیره‌نشده انجام نشده است.
+- **اثر و ریسک:** مسیر destructive اکنون confirmation دارد، اما بدون QA واقعی امکان تفاوت رفتار focus در Quasar/مرورگر باقی است.
+- **Mitigation فعلی:** دکمه‌های keyboard مسیر reorder رسمی‌اند، drag handle فعال نیست و confirmation پیش از mutation destructive نمایش داده می‌شود.
+- **مالک:** owner Composer CMS
+- **Trigger بازگشت:** پیش از rollout Canvas یا هر تغییر در drag-and-drop Composer
+- **معیار بستن:** یک QA session keyboard-only و component/E2E ثبت‌شده برای delete، move، duplicate، focus و unsaved route leave.
+- **شواهد رفع:** —
+
 ### CMS-R1-VALIDATION-005 — اجرای تازهٔ تست‌ها و QA Release 1 Media
 
 - **وضعیت:** `OPEN`

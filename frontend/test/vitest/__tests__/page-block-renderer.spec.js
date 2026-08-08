@@ -112,6 +112,13 @@ describe('public page block renderer contract', () => {
     expect(composer).toContain("const layoutOptions = computed(() => [\n  'SINGLE_COLUMN'")
   })
 
+  it('requires confirmation before deleting a section and restores focus after local canvas mutations', () => {
+    expect(composer).toContain('requestRemoveSection')
+    expect(composer).toContain("kind: 'section'")
+    expect(composer).toContain('data-composer-section-index')
+    expect(composer).toContain('data-composer-block-index="${index + 1}"')
+  })
+
   it('fails closed for meaningful media without localized alt and makes decorative media explicit', () => {
     expect(composer).toContain('decorative')
     expect(source).toContain('isDecorativeMedia')

@@ -239,14 +239,22 @@ function removeSection(index) {
     else if (block.sectionIndex > index) block.sectionIndex -= 1
   })
   announce(t('admin.composer.sectionRemoved', { index: index + 1 }))
+  nextTick(() => document.querySelector(`[data-composer-section-index="${Math.min(index, sections.value.length - 1)}"]`)?.focus())
 }
-function requestRemove(index) { pendingRemoval.value = index }
+function requestRemoveSection(index) { pendingRemoval.value = { kind: 'section', index } }
+function requestRemoveBlock(index) { pendingRemoval.value = { kind: 'block', index } }
 function remove() {
-  if (pendingRemoval.value === null) return
-  const removedIndex = pendingRemoval.value
-  blocks.value.splice(pendingRemoval.value, 1)
+  const pending = pendingRemoval.value
+  if (!pending) return
   pendingRemoval.value = null
+  if (pending.kind === 'section') {
+    removeSection(pending.index)
+    return
+  }
+  const removedIndex = pending.index
+  blocks.value.splice(removedIndex, 1)
   announce(t('admin.composer.removed', { index: removedIndex + 1 }))
+  nextTick(() => document.querySelector(`[data-composer-block-index="${Math.min(removedIndex, blocks.value.length - 1)}"]`)?.focus())
 }
 function move(index, offset) {
   const target = index + offset
@@ -263,6 +271,7 @@ function duplicate(index) {
   clone.id = null
   blocks.value.splice(index + 1, 0, clone)
   announce(t('admin.composer.duplicated', { index: index + 2 }))
+  nextTick(() => document.querySelector(`[data-composer-block-index="${index + 1}"]`)?.focus())
 }
 function openSettingsDrawer(index) {
   settingsDrawerIndex.value = index
@@ -401,14 +410,14 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
     <q-inner-loading :showing="loading" />
 
     <!-- Section cards reflect the only persisted layout. -->
-    <q-card v-for="(section, sectionIndex) in sections" :key="`section-${sectionIndex}`" flat bordered class="admin-composer__section q-mb-sm">
+    <q-card v-for="(section, sectionIndex) in sections" :key="`section-${sectionIndex}`" flat bordered tabindex="-1" :data-composer-section-index="sectionIndex" class="admin-composer__section q-mb-sm">
       <q-card-section class="admin-composer__section-header row items-center q-col-gutter-sm q-py-sm">
         <div class="col"><h3 class="text-subtitle2 q-my-none">{{ t('admin.composer.sectionHeading', { index: sectionIndex + 1 }) }}</h3></div>
         <div class="col-auto"><q-toggle v-model="section.enabled" :label="t('admin.composer.visible')" :disable="disable || saving" /></div>
         <div class="col-auto q-gutter-xs">
           <q-btn flat round icon="keyboard_arrow_up" :aria-label="t('admin.composer.moveSectionUp', { index: sectionIndex + 1 })" :disable="sectionIndex === 0 || disable || saving" @click="moveSection(sectionIndex, -1)" />
           <q-btn flat round icon="keyboard_arrow_down" :aria-label="t('admin.composer.moveSectionDown', { index: sectionIndex + 1 })" :disable="sectionIndex === sections.length - 1 || disable || saving" @click="moveSection(sectionIndex, 1)" />
-          <q-btn flat round color="negative" icon="delete" :aria-label="t('admin.composer.removeSection', { index: sectionIndex + 1 })" :disable="sections.length <= 1 || disable || saving" @click="removeSection(sectionIndex)" />
+          <q-btn flat round color="negative" icon="delete" :aria-label="t('admin.composer.removeSection', { index: sectionIndex + 1 })" :disable="sections.length <= 1 || disable || saving" @click="requestRemoveSection(sectionIndex)" />
         </div>
       </q-card-section>
 
@@ -444,7 +453,7 @@ onBeforeUnmount(() => clearTimeout(autosaveTimer))
           <q-btn class="admin-composer__move" flat round icon="keyboard_arrow_down" :disable="index === blocks.length - 1 || disable || saving" :aria-label="t('admin.composer.moveDown', { index: index + 1 })" @click="move(index, 1)" />
           <q-btn flat round icon="content_copy" :aria-label="t('admin.composer.duplicate', { index: index + 1 })" :disable="disable || saving" @click="duplicate(index)" />
           <q-btn flat round icon="settings" :aria-label="t('admin.composer.blockSettings')" :disable="disable || saving" @click="openSettingsDrawer(index)" />
-          <q-btn flat round color="negative" icon="delete" :aria-label="t('admin.composer.remove', { index: index + 1 })" :disable="disable || saving" @click="requestRemove(index)" />
+          <q-btn flat round color="negative" icon="delete" :aria-label="t('admin.composer.remove', { index: index + 1 })" :disable="disable || saving" @click="requestRemoveBlock(index)" />
         </div>
       </q-card-section>
 
