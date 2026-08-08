@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject, nextTick, onMounted, watch } from 'vue'
+import { computed, inject, nextTick, onMounted, provide, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useMeta } from 'quasar'
@@ -7,7 +7,7 @@ import SiteFooter from 'src/components/public/SiteFooter.vue'
 import SiteHeader from 'src/components/public/SiteHeader.vue'
 import SkipLink from 'src/components/public/SkipLink.vue'
 import { useAsyncPage } from 'src/composables/useAsyncPage'
-import { PUBLIC_API_KEY } from 'src/services/apiContext'
+import { PUBLIC_API_KEY, PUBLIC_SITE_IDENTITY_KEY } from 'src/services/apiContext'
 
 const route = useRoute()
 const { locale } = useI18n()
@@ -22,6 +22,8 @@ const { data: siteChrome, load: loadSiteChrome, hasInitialState } = useAsyncPage
   isEmpty: () => false,
   ssrKey: () => chromeKey.value
 })
+const siteIdentity = computed(() => siteChrome.value?.identity ?? null)
+provide(PUBLIC_SITE_IDENTITY_KEY, siteIdentity)
 
 useMeta(() => {
   const mediaId = siteChrome.value?.identity?.ogMediaId
@@ -83,7 +85,7 @@ watch(
     <SiteHeader
       :locale="language"
       :direction="direction"
-      :site="siteChrome?.identity ?? null"
+      :site="siteIdentity"
       :navigation="siteChrome && (siteChrome.identity || siteChrome.navigation?.length) ? siteChrome.navigation : null"
     />
     <q-page-container>
@@ -100,7 +102,7 @@ watch(
     <SiteFooter
       :locale="language"
       :direction="direction"
-      :site="siteChrome?.identity ?? null"
+      :site="siteIdentity"
       :navigation="siteChrome && (siteChrome.identity || siteChrome.navigation?.length) ? siteChrome.navigation : null"
     />
   </q-layout>

@@ -117,8 +117,17 @@ public class AdminMediaController {
     }
 
     @GetMapping("/orphans")
-    List<MediaOrphanResponse> orphans() {
-        return orphans.findOrphans();
+    PageResponse<MediaOrphanResponse> orphans(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) MediaAssetStatus status
+    ) {
+        return PageResponse.from(orphans.findOrphans(
+                PageRequest.of(validPage(page), validSize(size), Sort.by(Sort.Order.desc("updatedAt"), Sort.Order.desc("id"))),
+                validQuery(query), mimePrefix(type), status
+        ));
     }
 
     private static int validPage(int page) {

@@ -40,6 +40,8 @@ Verify a web application by driving it, systematically. Automated tests confirm 
 - For each defect: steps, expected, actual, evidence (screenshot, console error, failing request).
 - Notes on what was checked, so gaps are visible.
 
+For TahaMohamadi.ir, if a browser pass is intentionally not run for a fast-track slice, record the omitted routes, states, viewports, risk, mitigation, owner, and return trigger in `docs/status/deferred-validation.md`. Do not turn an unrun security, Admin authorization/CSRF, publication-state, or primary-flow check into an accepted gap.
+
 ## Workflow
 
 1. **Walk the happy path first** — Confirm the feature does what it claims for a normal user with normal data. If this fails, stop; there is nothing else to test yet.

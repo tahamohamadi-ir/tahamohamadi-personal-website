@@ -245,7 +245,7 @@ onMounted(() => { void load() })
       <q-input v-model="form.projectUrl" type="url" :label="t('admin.portfolio.projectUrl')" :disable="saving" />
       <q-input v-model="form.repositoryUrl" type="url" :label="t('admin.portfolio.repositoryUrl')" :disable="saving" />
       <q-input v-model.number="form.sortOrder" type="number" min="0" :label="t('admin.portfolio.sortOrder')" :disable="saving" />
-      <AdminMediaSelector v-model="form.coverMediaId" :label="t('admin.portfolio.coverMedia')" :disable="saving" />
+      <AdminMediaSelector v-model="form.coverMediaId" :allowed-types="['image']" :label="t('admin.portfolio.coverMedia')" :disable="saving" />
       <AdminMediaSelector v-model="galleryMediaIds" multiple :allowed-types="['image']" :label="t('admin.portfolio.gallery')" :disable="saving" />
       <q-select v-model="selectedSkillIds" :options="skillOptions" option-label="label" option-value="value" emit-value map-options multiple use-chips :label="t('admin.portfolio.associatedSkills')" :disable="saving" />
       <AdminLocaleTabs v-model="selectedLocale" :translations="translations" />

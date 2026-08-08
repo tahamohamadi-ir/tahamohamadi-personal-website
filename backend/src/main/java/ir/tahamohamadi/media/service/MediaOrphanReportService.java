@@ -5,11 +5,11 @@ import ir.tahamohamadi.media.api.admin.MediaUsageResponse;
 import ir.tahamohamadi.media.asset.MediaAsset;
 import ir.tahamohamadi.media.asset.MediaAssetRepository;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -26,18 +26,17 @@ public class MediaOrphanReportService {
         this.references = references;
     }
 
-    public List<MediaOrphanResponse> findOrphans() {
-        List<MediaAsset> candidates = assets
-                .findByDeletedAtIsNullOrderByUpdatedAtDescIdDesc(PageRequest.of(0, 100))
-                .getContent();
-        Set<UUID> referencedIds = references.referencedIds(
-                candidates.stream().map(MediaAsset::getId).toList()
-        );
-
-        return candidates.stream()
-                .filter(asset -> !referencedIds.contains(asset.getId()))
-                .map(asset -> new MediaOrphanResponse(asset.getId()))
-                .toList();
+    public Page<MediaOrphanResponse> findOrphans(
+            Pageable pageable,
+            String query,
+            String mimePrefix,
+            ir.tahamohamadi.media.asset.MediaAssetStatus status
+    ) {
+        references.refreshUsageIndex();
+        return assets.findOrphans(query, mimePrefix, status == null ? null : status.name(), pageable)
+                .map(asset -> new MediaOrphanResponse(
+                        asset.getId(), asset.getOriginalFilename(), asset.getMimeType(), asset.getStatus().name()
+                ));
     }
 
     public List<MediaUsageResponse> usages(UUID id) {

@@ -60,3 +60,6 @@ recent_changes.diff
 
 v2/
 
+# WordPress reference samples (if copied under this repository)
+/sample/
+

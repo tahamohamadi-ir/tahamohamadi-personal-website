@@ -18,8 +18,7 @@ const { t } = useI18n()
 
 const supportedBlocks = new Set([
   'hero', 'rich-text', 'media', 'media-text', 'call-to-action', 'collection',
-  'skills', 'resume', 'social-links', 'contact', 'divider', 'spacer',
-  'gallery', 'stats', 'quote'
+  'skills', 'resume', 'social-links', 'contact'
 ])
 
 const visibleBlocks = computed(() => {
@@ -120,8 +119,16 @@ function mediaAlt(block) {
   return typeof block.alt === 'string' ? block.alt.trim() : ''
 }
 
+function isDecorativeMedia(block) {
+  return block.decorative === true
+}
+
+function mediaRenderable(block) {
+  return Boolean(mediaUrl(block) && (isDecorativeMedia(block) || mediaAlt(block)))
+}
+
 function heroMediaUrl(block) {
-  return mediaAlt(block) ? mediaUrl(block) : null
+  return mediaRenderable(block) ? mediaUrl(block) : null
 }
 
 function blockClasses(block) {
@@ -189,7 +196,7 @@ function entrySummary(entry) {
           <figure v-if="heroMediaUrl(block)" class="page-block__hero-media">
             <img
               :src="heroMediaUrl(block)"
-              :alt="mediaAlt(block)"
+                :alt="isDecorativeMedia(block) ? '' : mediaAlt(block)"
               width="1600"
               height="900"
               fetchpriority="high"
@@ -208,10 +215,10 @@ function entrySummary(entry) {
           <div class="page-block__media-layout">
             <figure class="page-block__media-figure">
               <img
-                v-if="mediaUrl(block)"
+                v-if="mediaRenderable(block)"
                 class="page-block__media"
                 :src="mediaUrl(block)"
-                :alt="block.alt ?? ''"
+                :alt="isDecorativeMedia(block) ? '' : mediaAlt(block)"
                 width="1200"
                 height="800"
                 loading="lazy"
@@ -291,23 +298,6 @@ function entrySummary(entry) {
           </div>
         </template>
 
-        <!-- Decorative: Divider -->
-        <template v-else-if="block.type === 'divider'">
-          <hr class="page-block__divider" aria-hidden="true">
-        </template>
-
-        <!-- Decorative: Spacer -->
-        <template v-else-if="block.type === 'spacer'">
-          <div class="page-block__spacer" :style="{ blockSize: `${block.height ?? 48}px` }" aria-hidden="true" />
-        </template>
-
-        <!-- Quote block -->
-        <template v-else-if="block.type === 'quote'">
-          <blockquote class="page-block__quote">
-            <p v-if="block.lead" class="page-block__quote-text">{{ block.lead }}</p>
-            <footer v-if="block.title" class="page-block__quote-attribution">— {{ block.title }}</footer>
-          </blockquote>
-        </template>
 
         <template v-else>
           <slot :name="block.type" :block="block">
@@ -358,17 +348,6 @@ function entrySummary(entry) {
 .page-block__social-links { display: flex; flex-wrap: wrap; gap: var(--tm-space-3); }
 .page-block__social-item { display: inline-flex; align-items: center; min-block-size: var(--tm-control-min-size); padding-inline: var(--tm-space-4); border: 1px solid var(--tm-border-subtle); border-radius: var(--tm-radius-control); color: var(--tm-action-primary); font-weight: 700; text-decoration: none; transition: border-color var(--tm-motion-state) ease, background-color var(--tm-motion-state) ease; }
 .page-block__social-item:hover { border-color: var(--tm-action-primary); background: var(--tm-interactive-surface-hover); }
-
-/* New block types */
-.page-block--divider { padding-block: 0; border-block-end: none; }
-.page-block__divider { border: none; border-block-start: 1px solid var(--tm-editorial-rule); margin: 0; }
-
-.page-block--spacer { padding-block: 0; border-block-end: none; }
-.page-block__spacer { display: block; }
-
-.page-block__quote { border-inline-start: 4px solid var(--tm-action-primary); margin: 0; padding: var(--tm-space-6); padding-inline-start: var(--tm-space-8); background: var(--tm-editorial-muted-surface); border-radius: var(--tm-radius-card); }
-.page-block__quote-text { font-size: clamp(1.125rem, 2.5vw, 1.5rem); line-height: 1.6; margin: 0; font-style: italic; color: var(--tm-text-primary); }
-.page-block__quote-attribution { margin-block-start: var(--tm-space-3); color: var(--tm-text-secondary); font-size: .95rem; font-style: normal; }
 
 /* Section grid layouts */
 .page-section__grid { display: grid; gap: var(--tm-space-6); }

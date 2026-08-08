@@ -19,6 +19,7 @@ const siteFooter = readFileSync(resolve(process.cwd(), 'src/components/public/Si
 const navigationPage = readFileSync(resolve(process.cwd(), 'src/pages/admin/AdminNavigationPage.vue'), 'utf8')
 const settingsPage = readFileSync(resolve(process.cwd(), 'src/pages/admin/AdminSiteSettingsPage.vue'), 'utf8')
 const pagesAdmin = readFileSync(resolve(process.cwd(), 'src/pages/admin/AdminPagesPage.vue'), 'utf8')
+const blockController = readFileSync(resolve(process.cwd(), '../backend/src/main/java/ir/tahamohamadi/content/page/api/admin/AdminPageBlockController.java'), 'utf8')
 
 describe('public page block renderer contract', () => {
   it('keeps the composer to an allowlisted set of SSR-safe block types', () => {
@@ -42,6 +43,8 @@ describe('public page block renderer contract', () => {
     expect(homePage).toContain('homeBlocks')
     expect(homePage).toContain(':hero-heading-level="1"')
     expect(homePage).toContain('hasLegacyManagedContent')
+    expect(homePage).toContain('PUBLIC_SITE_IDENTITY_KEY')
+    expect(homePage).not.toContain('TAHA MOHAMADI')
     expect(composedPage).toContain('PageBlockRenderer')
     expect(composedPage).toContain('useComposedPageData')
     expect(composedPageData).toContain("currentApi.getPage(locale.value, slug.value)")
@@ -80,7 +83,7 @@ describe('public page block renderer contract', () => {
     expect(composer).toContain("t('admin.composer.previewTitle')")
     expect(composer).toContain('validateActionPaths')
     expect(composer).toContain("block.type === 'MEDIA'")
-    expect(composer).toContain('Boolean(value.alt)')
+    expect(composer).toContain('Boolean(block.settings?.mediaId && value.alt)')
     expect(composer).toContain('mapValidationErrors')
     expect(composer).toContain('<q-dialog v-model="removalOpen" persistent>')
     expect(composer).toContain("t('admin.composer.remove'")
@@ -103,8 +106,37 @@ describe('public page block renderer contract', () => {
     expect(composer).not.toContain('v-html')
   })
 
+  it('does not offer block or section choices that the persisted CMS contract rejects', () => {
+    expect(composer).not.toContain("'DIVIDER', 'SPACER', 'GALLERY', 'STATS', 'QUOTE'")
+    expect(composer).not.toContain("'TWO_COLUMN', 'THREE_COLUMN', 'FOUR_COLUMN'")
+    expect(composer).toContain("const layoutOptions = computed(() => [\n  'SINGLE_COLUMN'")
+  })
+
+  it('requires confirmation before deleting a section and restores focus after local canvas mutations', () => {
+    expect(composer).toContain('requestRemoveSection')
+    expect(composer).toContain("kind: 'section'")
+    expect(composer).toContain('data-composer-section-index')
+    expect(composer).toContain('data-composer-block-index="${index + 1}"')
+  })
+
+  it('keeps section mutations in the same local history and autosave lifecycle as blocks', () => {
+    expect(composer).toContain('snapshotComposition')
+    expect(composer).toContain('watch([blocks, sections]')
+    expect(composer).toContain('sections.value = snapshot.sections')
+  })
+
+  it('fails closed for meaningful media without localized alt and makes decorative media explicit', () => {
+    expect(composer).toContain('decorative')
+    expect(source).toContain('isDecorativeMedia')
+    expect(source).toContain('mediaRenderable')
+    expect(blockController).toContain('validateMediaAccessibility')
+    expect(blockController).toContain('Decorative media must not have alt text')
+    expect(blockController).toContain('Meaningful media requires localized alt text')
+  })
+
   it('loads CMS-backed shell data through the SSR snapshot boundary', () => {
     expect(publicLayout).toContain('currentApi.getSiteChrome(language.value)')
+    expect(publicLayout).toContain('PUBLIC_SITE_IDENTITY_KEY')
     expect(publicLayout).toContain('siteChrome.identity || siteChrome.navigation?.length')
     expect(publicLayout).toContain("property: 'og:image'")
     expect(publicLayout).toContain("public-shell--standard-density")

@@ -32,6 +32,7 @@ const totalPages = ref(0)
 const query = ref('')
 const selectedType = ref(props.allowedTypes.length === 1 ? props.allowedTypes[0] : null)
 const activeAsset = ref(null)
+const selectedAssetIds = ref([])
 const uploadFile = ref(null)
 const uploading = ref(false)
 const uploadProgress = ref(0)
@@ -46,6 +47,7 @@ const typeOptions = computed(() => [
 
 const canGoBack = computed(() => page.value > 0)
 const canGoForward = computed(() => page.value + 1 < totalPages.value)
+const hasSelection = computed(() => selectedAssetIds.value.length > 0)
 
 function formatFileSize(bytes) {
   if (!bytes) return '0 B'
@@ -77,10 +79,7 @@ async function load(requestedPage = 0) {
     page.value = response.data.page ?? requestedPage
     totalPages.value = response.data.totalPages ?? 0
 
-    if (props.selectedId && !activeAsset.value) {
-      const match = items.value.find((item) => item.id === props.selectedId)
-      if (match) activeAsset.value = match
-    }
+    syncSelectedAssets()
   }
   catch (cause) {
     error.value = normalizeApiError(cause)
@@ -90,13 +89,32 @@ async function load(requestedPage = 0) {
   }
 }
 
+function selectedIds(value = props.selectedId) {
+  if (Array.isArray(value)) return value.filter((id) => typeof id === 'string')
+  return typeof value === 'string' ? [value] : []
+}
+
+function syncSelectedAssets() {
+  const currentIds = selectedIds()
+  selectedAssetIds.value = props.multiple ? currentIds : currentIds.slice(0, 1)
+  activeAsset.value = items.value.find((item) => item.id === selectedAssetIds.value.at(-1)) ?? null
+}
+
 function selectAsset(asset) {
+  if (props.multiple) {
+    selectedAssetIds.value = selectedAssetIds.value.includes(asset.id)
+      ? selectedAssetIds.value.filter((id) => id !== asset.id)
+      : [...selectedAssetIds.value, asset.id]
+    activeAsset.value = selectedAssetIds.value.includes(asset.id) ? asset : null
+    return
+  }
+  selectedAssetIds.value = [asset.id]
   activeAsset.value = asset
 }
 
 function confirmSelection() {
-  if (!activeAsset.value) return
-  emit('select', activeAsset.value.id)
+  if (!hasSelection.value) return
+  emit('select', props.multiple ? [...selectedAssetIds.value] : selectedAssetIds.value[0])
   emit('update:modelValue', false)
 }
 
@@ -106,8 +124,7 @@ function closeModal() {
 
 function acceptsUpload(file) {
   if (!file) return false
-  const policyResult = validateMediaUpload(file)
-  return policyResult.valid
+  return !validateMediaUpload(file, props.allowedTypes)
 }
 
 async function handleUpload() {
@@ -150,9 +167,14 @@ async function handleUpload() {
 
 watch(() => props.modelValue, (isOpen) => {
   if (isOpen) {
+    syncSelectedAssets()
     void load(0)
   }
-})
+}, { immediate: true })
+
+watch(() => props.selectedId, () => {
+  if (props.modelValue) syncSelectedAssets()
+}, { deep: true })
 </script>
 
 <template>
@@ -171,6 +193,7 @@ watch(() => props.modelValue, (isOpen) => {
       <div class="media-picker-modal__uploader q-px-md q-pt-sm">
         <q-file
           v-model="uploadFile"
+          :accept="allowedTypes.includes('image') && allowedTypes.includes('document') ? 'image/*,application/pdf' : (allowedTypes.includes('image') ? 'image/*' : 'application/pdf')"
           outlined
           dense
           clearable
@@ -228,7 +251,7 @@ watch(() => props.modelValue, (isOpen) => {
               v-for="item in items"
               :key="item.id"
               class="media-picker-modal__card"
-              :class="{ 'media-picker-modal__card--active': activeAsset?.id === item.id }"
+              :class="{ 'media-picker-modal__card--active': selectedAssetIds.includes(item.id) }"
               @click="selectAsset(item)"
             >
               <div class="media-picker-modal__card-thumb">
@@ -310,7 +333,7 @@ watch(() => props.modelValue, (isOpen) => {
           <q-btn
             color="primary"
             unelevated
-            :disable="!activeAsset"
+            :disable="!hasSelection"
             :label="t('admin.mediaSelector.confirm')"
             @click="confirmSelection"
           />

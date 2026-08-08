@@ -21,6 +21,9 @@ const uploadFile = ref(null)
 const uploadProgress = ref(0)
 const page = ref(0)
 const totalPages = ref(0)
+const orphanPage = ref(0)
+const orphanTotalPages = ref(0)
+const orphanTotal = ref(0)
 const query = ref('')
 const type = ref(null)
 const statusFilter = ref(null)
@@ -44,7 +47,9 @@ function metadata(value = {}) {
 
 const isImage = computed(() => selected.value?.mimeType?.startsWith('image/') ?? false)
 const replacementTypes = computed(() => isImage.value ? ['image'] : ['document'])
-const selectedIsOrphan = computed(() => orphans.value.some((orphan) => orphan.id === selected.value?.id))
+const selectedIsOrphan = computed(() => (
+  selected.value?.status === 'ACTIVE' && usages.value.length === 0
+))
 const typeOptions = computed(() => [
   { label: t('admin.mediaSelector.allTypes'), value: null },
   { label: t('admin.mediaSelector.types.image'), value: 'image' },
@@ -56,18 +61,29 @@ const statusOptions = computed(() => [
   { label: t('admin.media.archived'), value: 'ARCHIVED' }
 ])
 
-async function load(requestedPage = page.value) {
+function mediaFilters() {
+  return {
+    query: query.value.trim() || undefined,
+    type: type.value || undefined,
+    status: statusFilter.value || undefined
+  }
+}
+
+async function load(requestedPage = page.value, requestedOrphanPage = orphanPage.value) {
   state.value = 'loading'
   error.value = null
   try {
     const [response, orphanResponse] = await Promise.all([
-      httpClient.get('/api/v1/admin/media', { params: { page: requestedPage, size: 20, query: query.value.trim() || undefined, type: type.value || undefined, status: statusFilter.value || undefined } }),
-      httpClient.get('/api/v1/admin/media/orphans')
+      httpClient.get('/api/v1/admin/media', { params: { page: requestedPage, size: 20, ...mediaFilters() } }),
+      httpClient.get('/api/v1/admin/media/orphans', { params: { page: requestedOrphanPage, size: 20, ...mediaFilters() } })
     ])
     items.value = response.data.items ?? []
     page.value = response.data.page ?? requestedPage
     totalPages.value = response.data.totalPages ?? 0
-    orphans.value = Array.isArray(orphanResponse.data) ? orphanResponse.data : []
+    orphans.value = orphanResponse.data.items ?? []
+    orphanPage.value = orphanResponse.data.page ?? requestedOrphanPage
+    orphanTotalPages.value = orphanResponse.data.totalPages ?? 0
+    orphanTotal.value = orphanResponse.data.totalElements ?? 0
     state.value = items.value.length === 0 ? 'empty' : 'ready'
   }
   catch (cause) { error.value = normalizeApiError(cause); state.value = 'error' }
@@ -110,7 +126,7 @@ async function upload() {
     selected.value = response.data
     form.value = metadata(response.data)
     uploadFile.value = null
-    await load(0)
+    await load(0, 0)
   }
   catch (cause) { error.value = normalizeApiError(cause) }
   finally { uploading.value = false }
@@ -128,7 +144,7 @@ async function saveMetadata() {
     })
     selected.value = response.data
     form.value = metadata(response.data)
-    await load(page.value)
+    await load(page.value, orphanPage.value)
   }
   catch (cause) { error.value = normalizeApiError(cause) }
   finally { uploading.value = false }
@@ -146,7 +162,7 @@ async function archive() {
     selected.value = null
     usages.value = []
     form.value = metadata()
-    await load(page.value)
+    await load(page.value, orphanPage.value)
   }
   catch (cause) { error.value = normalizeApiError(cause) }
   finally { archiving.value = false }
@@ -166,7 +182,7 @@ async function replace() {
     replacementMediaId.value = null
     selected.value = null
     usages.value = []
-    await load(0)
+    await load(0, 0)
     await select(response.data)
   }
   catch (cause) { error.value = normalizeApiError(cause) }
@@ -178,7 +194,7 @@ function confirmArchive() {
   void archive()
 }
 
-watch([query, type, statusFilter], () => { void load(0) })
+watch([query, type, statusFilter], () => { void load(0, 0) })
 onMounted(() => { void load() })
 </script>
 
@@ -203,9 +219,25 @@ onMounted(() => { void load() })
       <q-linear-progress v-if="uploading" :value="uploadProgress / 100" :aria-label="t('admin.media.uploadProgress')" />
       <q-btn type="submit" color="primary" no-caps :loading="uploading" :label="t('admin.media.upload')" />
     </q-form>
-    <q-banner v-if="orphans.length" class="bg-orange-1 text-warning" role="status">
-      {{ t('admin.media.orphanNotice', { count: orphans.length }) }}
-    </q-banner>
+    <section class="admin-panel q-pa-md q-gutter-md" aria-labelledby="orphan-report-title">
+      <div>
+        <h2 id="orphan-report-title" class="text-h6 q-my-none">{{ t('admin.media.orphaned') }}</h2>
+        <p class="admin-page__description">{{ t('admin.media.orphanNotice', { count: orphanTotal }) }}</p>
+      </div>
+      <p v-if="!orphanTotal" class="q-my-none text-body2">{{ t('admin.state.empty') }}</p>
+      <template v-else>
+        <q-list bordered separator>
+          <q-item v-for="orphan in orphans" :key="orphan.id" clickable @click="select(orphan)">
+            <q-item-section>
+              <q-item-label>{{ orphan.originalFilename }}</q-item-label>
+              <q-item-label caption>{{ orphan.mimeType }}</q-item-label>
+            </q-item-section>
+            <q-item-section side><q-badge :label="t('admin.media.orphaned')" color="warning" /></q-item-section>
+          </q-item>
+        </q-list>
+        <AdminPaginatedTable :page="orphanPage" :total-pages="orphanTotalPages" @change-page="(requestedPage) => load(page, requestedPage)" />
+      </template>
+    </section>
     <div class="admin-media__filters">
       <q-input v-model="query" debounce="300" clearable :label="t('admin.mediaSelector.search')" :disable="state === 'loading'" />
       <q-select v-model="type" :options="typeOptions" emit-value map-options :label="t('admin.mediaSelector.type')" :disable="state === 'loading'" />
@@ -216,7 +248,7 @@ onMounted(() => { void load() })
       <q-list bordered separator>
         <q-item v-for="item in items" :key="item.id" clickable @click="select(item)">
           <q-item-section>
-            <q-item-label>{{ item.originalFilename ?? item.id }}</q-item-label>
+            <q-item-label>{{ item.originalFilename }}</q-item-label>
             <q-item-label caption>{{ item.mimeType }} · {{ t('admin.media.bytes', { count: item.sizeBytes }) }}</q-item-label>
           </q-item-section>
           <q-item-section side><q-badge :label="item.status" :color="item.status === 'ACTIVE' ? 'positive' : 'grey-7'" /></q-item-section>

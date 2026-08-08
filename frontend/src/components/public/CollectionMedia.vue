@@ -1,18 +1,27 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   media: {
     type: Object,
     required: true
   }
 })
+
+const renderable = computed(() => (
+  typeof props.media?.url === 'string'
+  && props.media.url.trim().length > 0
+  && typeof props.media?.altText === 'string'
+  && props.media.altText.trim().length > 0
+))
 </script>
 
 <template>
-  <div class="collection-media">
+  <div v-if="renderable" class="collection-media">
     <img
       class="collection-media__image"
       :src="media.url"
-      :alt="media.altText ?? ''"
+      :alt="media.altText"
     >
   </div>
 </template>

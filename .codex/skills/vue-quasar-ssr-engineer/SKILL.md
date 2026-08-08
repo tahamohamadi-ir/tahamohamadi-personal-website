@@ -42,6 +42,8 @@ Do not inspect `node_modules`, `dist`, `.quasar`, `target`, `coverage`, or `.git
 
 Use RED -> GREEN -> REFACTOR. Run only the requested checks; otherwise give the human the focused Vitest command, full `npm run test:unit`, and `npm run build` to run. When Playwright is installed and browser verification is requested, cover the affected locales/routes plus hydration/Vue warnings, landmarks, 375px overflow, keyboard skip link, mobile navigation, Escape/focus restoration, alternate language behavior, and reduced motion. Ignore browser-extension errors only when clearly attributable to an extension.
 
+If a non-critical browser, visual, or broader regression check is deliberately postponed for a fast-track slice, record it in `docs/status/deferred-validation.md` with evidence, impact, mitigation, owner, and return trigger. Never defer SSR determinism, locale isolation, public publication state, safe rendering, or the changed primary flow; use `fast-track-delivery` for the project policy.
+
 ## Examples
 
 - "Add a localized portfolio-detail state" -> load Vue/Quasar, SSR/API, and locale/a11y references; use the API alternate path rather than rewriting the slug.

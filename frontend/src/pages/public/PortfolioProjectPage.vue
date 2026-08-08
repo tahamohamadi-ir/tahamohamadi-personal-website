@@ -103,7 +103,7 @@ onMounted(() => {
       </dl>
 
       <section v-if="data?.gallery?.length" class="tm-detail-page__gallery" :aria-label="t('public.caseStudy.gallery')">
-        <img v-for="item in data.gallery" :key="item.mediaAssetId" :src="item.url" alt="" loading="lazy" decoding="async">
+        <img v-for="item in data.gallery" :key="item.mediaAssetId" :src="item.url" :alt="item.alt" loading="lazy" decoding="async">
       </section>
 
       <MarkdownContent v-if="data?.bodyMarkdown" :markdown="data.bodyMarkdown">
